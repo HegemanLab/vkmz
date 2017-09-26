@@ -1,6 +1,4 @@
-'''
-Can run this script to navigate through the entire local workflow. Works for single input files or multiple.
-'''
+# Can run this script to navigate through the entire local workflow. Works for single input files or multiple.
 
 import os
 import extractNeededElementalData
@@ -53,20 +51,16 @@ if new_ratios == 'new':
 
     # Continues to add as many files as the user wants.
     while new_file.lower() != "done":
-
         # Makes sure file is accessible
         if not os.access(new_file, os.R_OK):
             print "%s is not accessible." % new_file
             print "Please try again. The files you use must be in the same file as this script."
-
         else:
-
             # Checks for one of the two desired file extensions and if the file is accessible and has the correct
             # ending then it is added to the list of the files.
             # This isn't a perfect error catching method but should catch enough.
             if ".mzXML" in new_file or ".mzML" in new_file:
                 files.append(new_file)
-
             else:
                 print("\nIncorrect file extension.")
 
