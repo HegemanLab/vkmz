@@ -8,8 +8,6 @@ from MzXML import MzXML
 from process_mzs import process_mzs as XML_process
 from flexPlot import plotVanK
 
-print('foo')
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
 parser.add_argument('--input',     '-i', nargs='*', default='',     help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
@@ -21,8 +19,21 @@ args = parser.parse_args()
 
 # exits script if a load argument is used
 vkLoad = getattr(args, "load")
-if vkLoad != '':
-  exit()
+if vkLoad != '':    # FLAG: not sanitation of inpute filename
+  try:
+    # read in ratios
+    with open(vkLoad, 'r') as f:
+      ratios = f.readlines()
+    # split ratios into proper value
+    for i in range(0, len(ratios)):
+      ratios[i] = ratios[i].split(', ')
+    # Cast to correct type
+    ratios[0] = map(lambda x: float(x), ratios[0])
+    ratios[1] = map(lambda x: float(x), ratios[1])
+    ratios[2] = map(lambda x: float(x), ratios[2])
+  except ValueError:
+    print('The %s data file could not be loaded.' % vkLoad)
+  exit()    # vkLoad ~ should be ready to be piped to ploter
 
 # code beyond this point assumes no load argument was used
 # make a list from input files argument
