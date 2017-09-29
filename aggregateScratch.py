@@ -15,7 +15,7 @@ parser.add_argument('--output',    '-o', action='store_true', default='False', h
 parser.add_argument('--threshold', '-t', nargs='?', default='10',   type=int, help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
 parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
 parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
-parser.add_argument('--multiprocessing', '-m', action='store_true', default='False', help='Call variable to use multiprocessing. One process per core.')
+parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
 # set peak threshold value
@@ -89,6 +89,16 @@ write_ratios = vkOutput     # original variable
 # argparse sanitizes input
 vkPolarity = getattr(args, 'polarity').lower()
 
+# argparse sanitizes input
+vkPlotTypes = getattr(args, 'plottype')
+
+vkMultiprocessing = getattr(args, "multiprocessing")
+print(vkMultiprocessing)
+if vkMultiprocessing:
+  import multiprocessing
+  vkCores = multiprocessing.cpu_count()
+  print(vkCores)
+
 # vk ratio dataset builder for each polarity
 # dataset is list with four elements.
 # input mass to charge ratios checked against database of masses with known chemical structure
@@ -108,27 +118,6 @@ def buildRatios(vkPolarity):
     print('neg ratio')
 
 buildRatios(vkPolarity)
-
-# read plot-type
-vkPlotType = getattr(args, 'plottype')      # argparse sanitizes
-#if vkPlotType == '':       # --input cannot be empty
-#  raise ValueError("No plot type specified. See -h for help menu.")
-#  exit()
-#else:
-#  vkPlotTypes = []
-#  for vkPlot in vkPlotType:
-#    #if vkPlot.lower().with(('scatter', 'heatmap', '3d')):        # verify files extension of --input
-#    if 'scatter' or 'heatmap' or '3d' in vkPlot.lower():        # verify files extension of --input
-#      vkPlotTypes.append(vkPlot.lower())
-#    else:
-#      raise ValueError('Input was set to "%s". It must be set to the filepath of a mzML or mzXML file.' % (vkFile))
-#      exit()
-
-vkMultiprocessing = getattr(args, "multiprocessing")
-if vkMultiprocessing:
-  import multiprocessing
-  vkCores = multiprocessing.cpu_count()
-  print(vkCores)
 
 # get lookup table.
 lt = bmrb.getLookupTable('bmrb-db2.csv')
