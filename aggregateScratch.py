@@ -18,9 +18,20 @@ parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices
 parser.add_argument('--multiprocessing', '-m', action='store_true', default='False', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
+# set peak threshold value
+# note that a dynamic threshold function has been made and should be implemented
+vkThreshold = getattr(args, "threshold")
+if 0 <= vkThreshold <= 100:         # argparse has already removed non-integers
+  vkThreshold = vkThreshold * 0.01
+  error = vkThreshold       # original variable name
+else:
+  raise ValueError("The given threshold, %i, is out of bounds." % (vkThreshold))
+  exit()
+
+# read polarity
 # exits script if a load argument is used
 vkLoad = getattr(args, "load")
-if vkLoad != '':    # FLAG: not sanitation of inpute filename
+if vkLoad != '':    # FLAG: no sanitation of input filename
   try:
     # read in ratios
     with open(vkLoad, 'r') as f:
@@ -53,12 +64,15 @@ else:
 
 # Use correct processing based on file type. Gets both pos and neg mode because this check is made anyways s o little
 # cost to just gather both sets here.
+vkInputMzs = [[],[]]
 for vkFile in vkInputFiles:
   if vkFile.lower().endswith('.mzxml'):
       mzXML = MzXML()
       mzXML.parse_file(vkFile)
-      vkInputMzs = XML_process(mzXML, threshold=vkThreshold)
-  elif vkFile.lower().endswith('.mzxml'):
+      vkInputMzsTemp = XML_process(mzXML, threshold=vkThreshold)
+      vkInputMzs[0] = vkInputMzs[0] + vkInputMzsTemp[0]
+      vkInputMzs[1] = vkInputMzs[1] + vkInputMzsTemp[1]
+  elif vkFile.lower().endswith('.mzxml'):   #FLAG, test this filetype
       vkInputMzs = ML_process(f, threshold=vkThreshold)
 # Removes all duplicates from both neg and pos lists
 vkInputMzs[0] = list(set(vkInputMzs[0]))
@@ -72,17 +86,6 @@ else:
   vkOutput = 'n'
 write_ratios = vkOutput     # original variable
 
-# set peak threshold value
-# note that a dynamic threshold function has been made and should be implemented
-vkThreshold = getattr(args, "threshold")
-if 0 <= vkThreshold <= 100:         # argparse has already removed non-integers
-  vkThreshold = vkThreshold * 0.01
-  error = vkThreshold       # original variable name
-else:
-  raise ValueError("The given threshold, %i, is out of bounds." % (vkThreshold))
-  exit()
-
-# read polarity
 # argparse sanitizes input
 vkPolarity = getattr(args, 'polarity').lower()
 
@@ -107,21 +110,19 @@ def buildRatios(vkPolarity):
 buildRatios(vkPolarity)
 
 # read plot-type
-vkPlotType = getattr(args, 'plottype')
-if vkPlotType == '':       # --input cannot be empty
-  raise ValueError("No plot type specified. See -h for help menu.")
-  exit()
-else:
-  vkPlotTypes = []
-  for vkPlot in vkPlotType:
-    #if vkPlot.lower().with(('scatter', 'heatmap', '3d')):        # verify files extension of --input
-    if 'scatter' or 'heatmap' or '3d' in vkPlot.lower():        # verify files extension of --input
-      vkPlotTypes.append(vkPlot.lower())
-    else:
-      raise ValueError('Input was set to "%s". It must be set to the filepath of a mzML or mzXML file.' % (vkFile))
-      exit()
-  for vkType in vkPlotTypes:
-    print(vkType)
+vkPlotType = getattr(args, 'plottype')      # argparse sanitizes
+#if vkPlotType == '':       # --input cannot be empty
+#  raise ValueError("No plot type specified. See -h for help menu.")
+#  exit()
+#else:
+#  vkPlotTypes = []
+#  for vkPlot in vkPlotType:
+#    #if vkPlot.lower().with(('scatter', 'heatmap', '3d')):        # verify files extension of --input
+#    if 'scatter' or 'heatmap' or '3d' in vkPlot.lower():        # verify files extension of --input
+#      vkPlotTypes.append(vkPlot.lower())
+#    else:
+#      raise ValueError('Input was set to "%s". It must be set to the filepath of a mzML or mzXML file.' % (vkFile))
+#      exit()
 
 vkMultiprocessing = getattr(args, "multiprocessing")
 if vkMultiprocessing:
@@ -161,22 +162,14 @@ if vkPolarity == 'pos' or vkPolarity == 'both':
   for mz in vkInputMzs[1]:
     pos_comps.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, 'pos'), lt)) # adjust mass and search in lookup table. Store result in list.
   pos_comps = filter(lambda a: a != 'No Match', pos_comps) # Filter out no matches
-  print("pos_comps is")
-  print(pos_comps)
   pos_elements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=pos_comps) # Get elements from compounds
-  print("pos_elements is")
-  print(pos_elements)
   pos_ratios = processElementalData.process_elemental_data(pos_elements) # Turn elements into ratios
-  print("pos_ratios is")
-  print(pos_ratios)
   if write_ratios == True:
     pos_filename = 'example-ratios-pos.csv'  # forcing file name. FLAG
     with open(neg_filename, 'w') as f: 
       for ratio in neg_ratios:
-        print(ratio)
         f.writelines(str(ratio).strip('[]') + '\n')
   plotType = vkPlotTypes
   for vkType in vkPlotTypes:
-    print(vkType)
     plotVanK(ratiosList=pos_ratios, typeOfPlot=vkType)
 
