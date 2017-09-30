@@ -91,34 +91,22 @@ def buildRatios(polarity, vkInputMzs):
   if polarity == 'both':
     buildRatios('pos', vkInputMzs) 
     buildRatios('neg', vkInputMzs) 
-  if polarity == 'pos':
-    pos_comps = list()
-    for mz in vkInputMzs[1]:
-      pos_comps.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, 'pos'), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
-    pos_comps = filter(lambda a: a != 'No Match', pos_comps) # Filter out no matches
-    pos_elements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=pos_comps) # Get elements from compounds
-    pos_ratios = processElementalData.process_elemental_data(pos_elements) # Turn elements into ratios
-    if vkOutput:
-      pos_filename = 'example-ratios-pos.csv'  # forcing file name. FLAG
-      with open(pos_filename, 'w') as f: 
-        for ratio in pos_ratios:
-          f.writelines(str(ratio).strip('[]') + '\n')
-    for vkType in vkPlotTypes:
-      vkPlotter(pos_ratios, vkType)
-  if polarity == 'neg':
-    neg_comps = list()
-    for mz in vkInputMzs[0]:
-      neg_comps.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, 'neg'), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
-    neg_comps = filter(lambda a: a != 'No Match', neg_comps) # Filter out no matches
-    neg_elements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=neg_comps) # Get elements from compounds
-    neg_ratios = processElementalData.process_elemental_data(neg_elements) # Turn elements into ratios
+  if polarity == 'pos' or polarity == 'neg':
+    identified = []
+    index = int(polarity == 'pos') # int(True) == 1
+    # this for call could be optimized with multiprocessing
+    for mz in vkInputMzs[index]: # pos in index 1, neg in index 0
+      identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
+    identified = filter(lambda a: a != 'No Match', identified) # Filter out no matches
+    identifiedElements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=identified) # Get elements from compounds
+    identifiedRatios = processElementalData.process_elemental_data(identifiedElements) # Turn elements into ratios
     if vkOutput: 
-      dataOutput(neg_ratios, polarity)
-    for vkType in vkPlotTypes:
-      vkPlotter(neg_ratios, vkType)
+      saveRatios(identifiedRatios, polarity)
+    for type in vkPlotTypes:
+      plotRatios(identifiedRatios, type)
 
 # write vk ratios as csv file
-def dataOutput(ratios, polarity):
+def saveRatios(ratios, polarity):
   try:
     filename = 'example-ratios-' + str(polarity) + 'neg.csv'  # forcing file name. FLAG
     with open(filename, 'w') as f: 
@@ -127,9 +115,9 @@ def dataOutput(ratios, polarity):
   except ValueError:
     print('"%s" could not be saved.' % vkLoad)
 
-# load vk ratio csv file(s)
+# load VK ratio csv file
 # FLAG: add multiple file support
-def loadRatios(vkLoad, vkPlotTypes):
+def loadRatios(vkLoad):
   try:
     # read in ratios
     with open(vkLoad, 'r') as f:
@@ -141,16 +129,17 @@ def loadRatios(vkLoad, vkPlotTypes):
     ratios[0] = map(lambda x: float(x), ratios[0])
     ratios[1] = map(lambda x: float(x), ratios[1])
     ratios[3] = map(lambda x: float(x), ratios[3])
-    for vkType in vkPlotTypes:
-      vkPlotter(ratios, vkType)
+    for type in vkPlotTypes:
+      plotRatios(ratios, type)
   except ValueError:
     print('The %s data file could not be loaded.' % vkLoad)
 
-def vkPlotter(ratios, type):
+# 
+def plotRatios(ratios, type):
   plotVanK(ratiosList=ratios, typeOfPlot=type)
 
 if vkLoad != '':
-  loadRatios(vkLoad, vkPlotTypes)
+  loadRatios(vkLoad)
 else:
   buildRatios(vkPolarity, dataParser(vkInput, vkThreshold))
 
