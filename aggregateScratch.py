@@ -8,6 +8,9 @@ from process_mzs_mzML import process_mzs as ML_process
 from MzXML import MzXML
 from process_mzs import process_mzs as XML_process
 from flexPlot import plotVanK
+import multiprocessing
+from multiprocessing import Pool
+from functools import partial
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
@@ -45,11 +48,6 @@ vkPlotTypes = getattr(args, 'plottype')
 
 # read multiprocessing argument
 vkMultiprocessing = getattr(args, "multiprocessing")
-# setup for multiprocessing
-if vkMultiprocessing:
-  import multiprocessing
-  vkCores = multiprocessing.cpu_count()
-  print(vkCores)
 
 def dataParser(vkInput, vkThreshold):
   # load input files
@@ -85,19 +83,25 @@ def dataParser(vkInput, vkThreshold):
 # the third  element represents if a nitrogen is in the strcutre    #FLAG remove element, have plotter check last element != 0
 # the fourth element represents ratio of nitrogens
 def buildRatios(polarity, vkInputMzs):
-  # get lookup table.
   lt = bmrb.getLookupTable('bmrb-db2.csv')
+  # get lookup table.
   # set up. elements could be changed but would need to do some editing elsewhere.
   elements = ['C', 'H', 'O', 'N']
   if polarity == 'both':
     buildRatios('pos', vkInputMzs) 
     buildRatios('neg', vkInputMzs) 
   if polarity == 'pos' or polarity == 'neg':
-    identified = []
     index = int(polarity == 'pos') # int(True) == 1
-    # this for call could be optimized with multiprocessing
-    for mz in vkInputMzs[index]: # pos in index 1, neg in index 0
-      identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
+    if vkMultiprocessing:
+      pool = Pool()
+      multiprocessMzsArgs = partial(multiprocessMzs, polarity, lt, vkThreshold)
+      identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
+      pool.close()
+      pool.join()
+    else:
+      identified = []
+      for mz in vkInputMzs[index]: # pos2 in index 1, neg in index 0
+        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
     identified = filter(lambda a: a != 'No Match', identified) # Filter out no matches
     identifiedElements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=identified) # Get elements from compounds
     identifiedRatios = processElementalData.process_elemental_data(identifiedElements) # Turn elements into ratios
@@ -105,6 +109,9 @@ def buildRatios(polarity, vkInputMzs):
       saveRatios(identifiedRatios, polarity)
     for type in vkPlotTypes:
       plotRatios(identifiedRatios, type)
+
+def multiprocessMzs(polarity, lt, vkThreshold, inputMz): # recieves a single Mz
+  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=vkThreshold)
 
 # write vk ratios as csv file
 def saveRatios(ratios, polarity):
@@ -135,7 +142,6 @@ def loadRatios(vkLoad):
   except ValueError:
     print('The %s data file could not be loaded.' % vkLoad)
 
-# 
 def plotRatios(ratios, type):
   plotVanK(ratiosList=ratios, typeOfPlot=type)
 
