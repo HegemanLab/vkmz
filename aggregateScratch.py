@@ -1,8 +1,9 @@
+import os
+import time
 import extractNeededElementalData
 import processElementalData
 import bmrbLookup as bmrb
 import argparse
-import os
 from process_mzs_mzML import process_mzs as ML_process
 from MzXML import MzXML
 from process_mzs import process_mzs as XML_process
@@ -108,7 +109,7 @@ def buildRatios(polarity, vkInputMzs):
 # write vk ratios as csv file
 def saveRatios(ratios, polarity):
   try:
-    filename = 'example-ratios-' + str(polarity) + 'neg.csv'  # forcing file name. FLAG
+    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S-") + str(polarity) + '.csv'
     with open(filename, 'w') as f: 
       for ratio in ratios:
         f.writelines(str(ratio).strip('[]') + '\n')
