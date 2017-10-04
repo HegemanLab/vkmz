@@ -96,7 +96,6 @@ def buildRatios(polarity, vkInputMzs):
     if vkMultiprocessing:
       try:
         pool = Pool()
-        print('starting parse')
         multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
         identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
       except Exception as e:
@@ -117,7 +116,6 @@ def buildRatios(polarity, vkInputMzs):
       plotRatios(identifiedRatios, type)
 
 def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
-  print('in multi')
   return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
 
 # write vk ratios as csv file
