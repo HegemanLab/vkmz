@@ -82,8 +82,8 @@ def dataParser(vkInput, vkThreshold):
 # the second element represents ratio of carbons                    #FLAG VERIRFY
 # the third  element represents if a nitrogen is in the strcutre    #FLAG remove element, have plotter check last element != 0
 # the fourth element represents ratio of nitrogens
+lt = bmrb.getLookupTable('bmrb-db2.csv')
 def buildRatios(polarity, vkInputMzs):
-  lt = bmrb.getLookupTable('bmrb-db2.csv')
   # get lookup table.
   # set up. elements could be changed but would need to do some editing elsewhere.
   elements = ['C', 'H', 'O', 'N']
@@ -92,16 +92,22 @@ def buildRatios(polarity, vkInputMzs):
     buildRatios('neg', vkInputMzs) 
   if polarity == 'pos' or polarity == 'neg':
     index = int(polarity == 'pos') # int(True) == 1
+    error = 5
     if vkMultiprocessing:
-      pool = Pool()
-      multiprocessMzsArgs = partial(multiprocessMzs, polarity, lt, vkThreshold)
-      identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
-      pool.close()
-      pool.join()
+      try:
+        pool = Pool()
+        print('starting parse')
+        multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
+        identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
+      except Exception as e:
+        print(str(e))
+      finally:
+        pool.close()
+        pool.join()
     else:
       identified = []
       for mz in vkInputMzs[index]: # pos2 in index 1, neg in index 0
-        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
+        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=error)) # adjust mass and search in lookup table. Store result in list.
     identified = filter(lambda a: a != 'No Match', identified) # Filter out no matches
     identifiedElements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=identified) # Get elements from compounds
     identifiedRatios = processElementalData.process_elemental_data(identifiedElements) # Turn elements into ratios
@@ -110,8 +116,9 @@ def buildRatios(polarity, vkInputMzs):
     for type in vkPlotTypes:
       plotRatios(identifiedRatios, type)
 
-def multiprocessMzs(polarity, lt, vkThreshold, inputMz): # recieves a single Mz
-  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=vkThreshold)
+def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
+  print('in multi')
+  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
 
 # write vk ratios as csv file
 def saveRatios(ratios, polarity):
@@ -143,7 +150,49 @@ def loadRatios(vkLoad):
     print('The %s data file could not be loaded.' % vkLoad)
 
 def plotRatios(ratios, type):
-  plotVanK(ratiosList=ratios, typeOfPlot=type)
+  import pandas as pd
+  import plotly
+  from plotly.graph_objs import Scatter,Scatter3d,Layout,Figure
+  if type == 'scatter':
+    trace1 = Scatter(x=ratios[1], y=ratios[0], mode = 'markers')
+    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
+         xaxis= dict(
+           title= 'Oxygen to Carbon Ratio',
+           zeroline= False,
+           gridcolor='rgb(183,183,183)',
+           showline=True
+         ),
+         yaxis=dict(
+           title= 'Hydrogen to Carbon Ratio',
+           gridcolor='rgb(183,183,183)',
+           zeroline=False,
+           showline=True
+         ))
+    plotly.offline.plot({"data": [trace1], "layout": layout}, filename='vk-scatter.html', image='jpeg') 
+  elif type == '3d':
+    trace1 = Scatter3d(x=ratios[1], y=ratios[3], z=ratios[0], mode = 'markers')
+    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
+         scene = dict(
+         xaxis= dict(
+           title= 'Oxygen to Carbon Ratio',
+           zeroline= False,
+           gridcolor='rgb(183,183,183)',
+           showline=True
+         ),
+         zaxis=dict(
+           title= 'Hydrogen to Carbon Ratio',
+           zeroline= False,
+           gridcolor='rgb(183,183,183)',
+           showline=True
+         ),
+         yaxis= dict(
+           title= 'Nitrogen to Carbon Ratio',
+           zeroline= False,
+           gridcolor='rgb(183,183,183)',
+           showline=True
+         ),), 
+         margin=dict(r=0, b=0, l=0, t=0))
+    plotly.offline.plot({"data": [trace1], "layout": layout},filename='vk-3d.html',image='jpeg') 
 
 if vkLoad != '':
   loadRatios(vkLoad)
