@@ -13,35 +13,17 @@ from multiprocessing import Pool
 from functools import partial
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--load',      '-l', nargs='?', default='',     
-               help='Load a previously generated ratio table. Set file path. Disabled by default.')
-parser.add_argument('--database',  '-d', nargs='*', default='bmrb.csv',   
-               help='Select database(s).')
-parser.add_argument('--input',     '-i', nargs='*', default='',     
-               help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
-parser.add_argument('--output',    '-o', action='store_true',       
-               help='Call variable to ouput a ratio file.')
-parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], 
-               help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
-parser.add_argument('--threshold', '-t', nargs='?', default='10',   type=int, 
-               help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
-parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], 
-               help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
-parser.add_argument('--multiprocessing', '-m', action='store_true', 
-               help='Call variable to use multiprocessing. One process per core.')
+parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
+parser.add_argument('--input',     '-i', nargs='*', default='',     help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
+parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
+parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
+parser.add_argument('--threshold', '-t', nargs='?', default='10',   type=int, help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
+parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
 # read load argument
 vkLoad = getattr(args, "load")
-
-# read load argument
-vkDatabase = getattr(args, "database")
-lt = []
-print(type(lt))
-for database in vkDatabase:
-  lt = bmrb.getLookupTable('databases/' + database)
-
-print(type(lt))
 
 # read input argument(s)
 vkInput = getattr(args, "input")
@@ -102,6 +84,7 @@ def dataParser(vkInput, vkThreshold):
 # the fourth element represents ratio of nitrogens
 def buildRatios(polarity, vkInputMzs):
   # get lookup table.
+  lt = bmrb.getLookupTable('bmrb-db2.csv')
   # set up. elements could be changed but would need to do some editing elsewhere.
   elements = ['C', 'H', 'O', 'N']
   if polarity == 'both':
@@ -109,21 +92,20 @@ def buildRatios(polarity, vkInputMzs):
     buildRatios('neg', vkInputMzs) 
   if polarity == 'pos' or polarity == 'neg':
     index = int(polarity == 'pos') # int(True) == 1
-    error = 5
     if vkMultiprocessing:
       try:
         pool = Pool()
-        multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
+        multiprocessMzsArgs = partial(multiprocessMzs, polarity, vkThreshold)
         identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
       except Exception as e:
-        print(str(e))
+        print('%e error in partent pool.' % e)
       finally:
         pool.close()
         pool.join()
     else:
       identified = []
       for mz in vkInputMzs[index]: # pos2 in index 1, neg in index 0
-        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=error)) # adjust mass and search in lookup table. Store result in list.
+        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=vkThreshold)) # adjust mass and search in lookup table. Store result in list.
     identified = filter(lambda a: a != 'No Match', identified) # Filter out no matches
     identifiedElements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=identified) # Get elements from compounds
     identifiedRatios = processElementalData.process_elemental_data(identifiedElements) # Turn elements into ratios
@@ -132,8 +114,8 @@ def buildRatios(polarity, vkInputMzs):
     for type in vkPlotTypes:
       plotRatios(identifiedRatios, type)
 
-def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
-  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
+def multiprocessMzs(polarity, vkThreshold, inputMz): # recieves a single Mz
+  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=vkThreshold)
 
 # write vk ratios as csv file
 def saveRatios(ratios, polarity):
@@ -167,47 +149,24 @@ def loadRatios(vkLoad):
 def plotRatios(ratios, type):
   import pandas as pd
   import plotly
-  from plotly.graph_objs import Scatter,Scatter3d,Layout,Figure
-  if type == 'scatter':
-    trace1 = Scatter(x=ratios[1], y=ratios[0], mode = 'markers')
-    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
-         xaxis= dict(
-           title= 'Oxygen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         yaxis=dict(
-           title= 'Hydrogen to Carbon Ratio',
-           gridcolor='rgb(183,183,183)',
-           zeroline=False,
-           showline=True
-         ))
-    plotly.offline.plot({"data": [trace1], "layout": layout}, filename='vk-scatter.html', image='jpeg') 
-  elif type == '3d':
-    trace1 = Scatter3d(x=ratios[1], y=ratios[3], z=ratios[0], mode = 'markers')
-    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
-         scene = dict(
-         xaxis= dict(
-           title= 'Oxygen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         zaxis=dict(
-           title= 'Hydrogen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         yaxis= dict(
-           title= 'Nitrogen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),), 
-         margin=dict(r=0, b=0, l=0, t=0))
-    plotly.offline.plot({"data": [trace1], "layout": layout},filename='vk-3d.html',image='jpeg') 
+  from plotly.graph_objs import Scatter,Layout
+  trace1 = Scatter(x=ratios[1], y=ratios[0], mode = 'markers')
+  plotly.offline.plot({
+    "data": [trace1], 
+     "layout": Layout(title="<b>Van Krevelin Diagram</b>", 
+       xaxis= dict(
+         title= '<b>Carbons to Oxygen Ratio</b>',
+         zeroline= False,
+         gridcolor='rgb(183,183,183)',
+         showline=True
+       ),
+       yaxis=dict(
+         title= '<b>Hydrogens to Carbon Ratio</b>',
+         gridcolor='rgb(183,183,183)',
+         zeroline=False,
+         showline=True
+       ))
+  },filename='graph.html',image='jpeg') 
 
 if vkLoad != '':
   loadRatios(vkLoad)
