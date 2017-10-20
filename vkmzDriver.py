@@ -4,31 +4,19 @@ import extractNeededElementalData
 import processElementalData
 import bmrbLookup as bmrb
 import argparse
-from process_mzs_mzML import process_mzs as ML_process
-from MzXML import MzXML
-from process_mzs import process_mzs as XML_process
-from flexPlot import plotVanK
 import multiprocessing
 from multiprocessing import Pool
+from flexPlot import plotVanK
 from functools import partial
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--load',      '-l', nargs='?', default='',     
-               help='Load a previously generated ratio table. Set file path. Disabled by default.')
-parser.add_argument('--database',  '-d', nargs='*', default='bmrb.csv',   
-               help='Select database(s).')
-parser.add_argument('--input',     '-i', nargs='*', default='',     
-               help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
-parser.add_argument('--output',    '-o', action='store_true',       
-               help='Call variable to ouput a ratio file.')
-parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], 
-               help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
-parser.add_argument('--threshold', '-t', nargs='?', default='10',   type=int, 
-               help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
-parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], 
-               help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
-parser.add_argument('--multiprocessing', '-m', action='store_true', 
-               help='Call variable to use multiprocessing. One process per core.')
+parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
+parser.add_argument('--database',  '-d', nargs='*', default='bmrb.csv',   help='Select database(s).')
+parser.add_argument('--input',     '-i', nargs='?', default='',     type=str, help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
+parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
+parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
+parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
 # read load argument
@@ -36,15 +24,28 @@ vkLoad = getattr(args, "load")
 
 # read load argument
 vkDatabase = getattr(args, "database")
-lt = []
-print(type(lt))
-for database in vkDatabase:
-  lt = bmrb.getLookupTable('databases/' + database)
-
-print(type(lt))
+#lt = []
+#print(type(lt))
+#for database in vkDatabase:
+#  lt = bmrb.getLookupTable('databases/' + database)
+lt = bmrb.getLookupTable('databases/' + vkDatabase)
 
 # read input argument(s)
-vkInput = getattr(args, "input")
+vkInputMzs = getattr(args, "input")
+try:
+  with open(vkInputMzs, 'r') as f:
+    vkInputMzs = [tuple(map(float, i.split(','))) for i in f]
+    #vkInputMzs = f.readlines()
+    #vkInputMzs = f.read()
+except ValueError:
+  print('The %s data file could not be loaded.' % vkInputMzs)
+
+print(type(vkInputMzs))
+print(type(vkInputMzs))
+print(type(vkInputMzs))
+print(type(vkInputMzs))
+print(type(vkInputMzs))
+print(vkInputMzs)
 
 # read output argument
 vkOutput = getattr(args, "output")
@@ -52,45 +53,11 @@ vkOutput = getattr(args, "output")
 # read polarity argument
 vkPolarity = getattr(args, 'polarity')
 
-# read threshold argument
-# FLAG: a dynamic threshold function has been made, implement
-vkThreshold = getattr(args, "threshold")
-if 0 <= vkThreshold <= 100:
-  vkThreshold = vkThreshold * 0.01
-else:
-  raise ValueError("The given threshold, %i, is out of bounds." % (vkThreshold))
-  exit()
-
 # read plottype argument
 vkPlotTypes = getattr(args, 'plottype')
 
 # read multiprocessing argument
 vkMultiprocessing = getattr(args, "multiprocessing")
-
-def dataParser(vkInput, vkThreshold):
-  # load input files
-  vkInputFiles = []
-  for vkFile in vkInput:
-    if vkFile.lower().endswith(('.mzml', '.mzxml')):        # verify files extension of --input
-      vkInputFiles.append(vkFile)
-    else:
-      raise ValueError('Input file "%s" is not a mzML or mzXML file.' % (vkFile))
-      exit()
-  # parse input files
-  vkInputMzs = [[],[]]
-  for vkFile in vkInputFiles:
-    if vkFile.lower().endswith('.mzxml'):
-      mzXML = MzXML()
-      mzXML.parse_file(vkFile)
-      vkInputMzsTemp = XML_process(mzXML, threshold=vkThreshold)
-      vkInputMzs[0] = vkInputMzs[0] + vkInputMzsTemp[0]
-      vkInputMzs[1] = vkInputMzs[1] + vkInputMzsTemp[1]
-    elif vkFile.lower().endswith('.mzxml'):   #FLAG, test this filetype
-      vkInputMzs = ML_process(f, threshold=vkThreshold)
-  # Removes all duplicates from both neg and pos lists
-  vkInputMzs[0] = list(set(vkInputMzs[0]))
-  vkInputMzs[1] = list(set(vkInputMzs[1]))
-  return vkInputMzs
 
 # vk ratio dataset builder for each polarity
 # dataset is list with four elements.
@@ -212,5 +179,5 @@ def plotRatios(ratios, type):
 if vkLoad != '':
   loadRatios(vkLoad)
 else:
-  buildRatios(vkPolarity, dataParser(vkInput, vkThreshold))
+  buildRatios(vkPolarity, vkInputMzs)
 

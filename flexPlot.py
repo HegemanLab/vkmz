@@ -1,9 +1,9 @@
 # Function to plot correct version of VanKrevelen based on input.
 
 from VanKrevelen import plotVanKrevelen
-from VanKrevelenHeatmap import plotHeatmap
-from VanKrevelenSideBySide import plotSideBySide
-from VanKrevelenYourMap import plotYourMap
+#from VanKrevelenHeatmap import plotHeatmap
+#from VanKrevelenSideBySide import plotSideBySide
+#from VanKrevelenYourMap import plotYourMap
 
 
 # This function simply routes the input to the correct plotting function
