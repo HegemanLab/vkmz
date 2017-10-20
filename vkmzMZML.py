@@ -269,9 +269,10 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
     filtered_pos_mz = list(set(keepers_pos_mz))
     # Combines list where negatives are in the 0 position and positives in the 1
     combo_list = [filtered_neg_mz, filtered_pos_mz]
-    return combo_list
+    return combo_list.
 
 # parse input files
+# foobar testing code
 def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
   vkInputMzs = [[],[]]
   for file in vkMZMLInput:
@@ -279,19 +280,26 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
       mzXML = MzXML()
       mzXML.parse_file(file)
       vkInputMzsTemp = process_mzs(mzXML, threshold=vkMZMLThreshold)
-      vkInputMzs[0] = vkInputMzs[0] + vkInputMzsTemp[0]
-      vkInputMzs[1] = vkInputMzs[1] + vkInputMzsTemp[1]
+      vkInputMzs[0] += vkInputMzsTemp[0]
+      vkInputMzs[1] += vkInputMzsTemp[1]
     elif file.lower().endswith('.mzml'):   #FLAG, test this filetype
       vkInputMzs = process_mzs(file, threshold=vkMZMLThreshold)
     # Removes all duplicates from both neg and pos lists
     vkInputMzs[0] = list(set(vkInputMzs[0]))
     vkInputMzs[1] = list(set(vkInputMzs[1]))
+    # list compresion to convert list elements to tuples
+    posValues = [(x,'pos',None,None) for x in vkInputMzs[0]]
+    negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
+    # sort tuples by mass value
+    vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
     try:
-      filename = file + time.strftime("-%Y%m%d%H%M%S") + '.csv'
-      with open(filename, 'w') as f: 
-        #f.writelines(str(vkInputMzs).strip('[]'))
-        f.writelines(str(vkInputMzs))
-        print(vkInputMzs)
+      import csv
+      #filename = file + time.strftime("-%Y%m%d%H%M%S") + '.csv'
+      with open(file+'.csv', 'w') as out: 
+        csv_out=csv.writer(out)
+        csv_out.writerow(['mass','polarity','retention time','intensity'])
+        for row in vkInputMzs:
+          csv_out.writerow(row)
     except ValueError:
       return
 
