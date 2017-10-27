@@ -238,19 +238,19 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
     # Loops through positive list and negative list and adds mz values to the keeper list when the intensity is
     # above a threshold
     for scan in mzXML_obj.MS1_list:
-        thresh = max(scan.intensity_list) * threshold
+        max_peak = max(scan.intensity_list)
+        thresh = max_peak * threshold
         i = 0
         # Look through each peak in each scan
         for peak in scan.intensity_list:
             # if the intensity is great enough
             if peak > thresh:
                 # Determine the polarity
+                peak_percent = (peak - thresh) / (max_peak - thresh)
                 if scan.polarity == '-':
-                    #keepers_neg_mz.append(scan.mz_list[i]) #original
-                    keepers_neg_mz.append((scan.mz_list[i], peak))
+                    keepers_neg_mz.append((scan.mz_list[i], peak_percent))
                 elif scan.polarity == '+':
-                    #keepers_pos_mz.append(scan.mz_list[i])
-                    keepers_pos_mz.append((scan.mz_list[i], peak))
+                    keepers_pos_mz.append((scan.mz_list[i], peak_percent))
             i += 1
     # Second list of scans found in some mzXML objects
     for scan in mzXML_obj.MS2_list:
@@ -262,7 +262,6 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
             if peak > thresh:
                 # Determine the polarity
                 if scan.polarity == '-':
-                    #keepers_neg_mz.append(scan.mz_list[i])
                     keepers_neg_mz.append((scan.mz_list[i], peak))
                 elif scan.polarity == '+':
                     keepers_pos_mz.append((scan.mz_list[i], peak))
@@ -291,6 +290,8 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
     #   this may have been done in process_mzs
     vkInputMzs[0] = list(set(vkInputMzs[0]))
     vkInputMzs[1] = list(set(vkInputMzs[1]))
+    # create tuple of mz, polarity, intensity and retention time
+    #   for each element
     # list compresion to convert list elements to tuples
     #posValues = [(x,'pos',None,None) for x in vkInputMzs[0]]
     posValues = []
