@@ -246,11 +246,10 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
             # if the intensity is great enough
             if peak > thresh:
                 # Determine the polarity
-                peak_percent = (peak - thresh) / (max_peak - thresh)
                 if scan.polarity == '-':
-                    keepers_neg_mz.append((scan.mz_list[i], peak_percent))
+                    keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append((scan.mz_list[i], peak_percent))
+                    keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
             i += 1
     # Second list of scans found in some mzXML objects
     for scan in mzXML_obj.MS2_list:
@@ -262,11 +261,13 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
             if peak > thresh:
                 # Determine the polarity
                 if scan.polarity == '-':
-                    keepers_neg_mz.append((scan.mz_list[i], peak))
+                    keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append((scan.mz_list[i], peak))
+                    keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
             i += 1
     # Removes duplicates
+    # MAE: Many MZs that are only slightly different are left..
+    #   tuple causes part of this, but mz range also needed.
     filtered_neg_mz = list(set(keepers_neg_mz))
     filtered_pos_mz = list(set(keepers_pos_mz))
     # Combines list where negatives are in the 0 position and positives in the 1
@@ -292,15 +293,13 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
     vkInputMzs[1] = list(set(vkInputMzs[1]))
     # create tuple of mz, polarity, intensity and retention time
     #   for each element
-    # list compresion to convert list elements to tuples
-    #posValues = [(x,'pos',None,None) for x in vkInputMzs[0]]
     posValues = []
     for element in vkInputMzs[0]:
-       posValues.append((element[0],'pos',element[1],None))
+       posValues.append((element[0],'pos',element[1],element[2]))
     #negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
     negValues = []
     for element in vkInputMzs[1]:
-       posValues.append((element[0],'neg',element[1],None))
+       posValues.append((element[0],'neg',element[1],element[2]))
     # sort tuples by mass value
     vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
     try:
