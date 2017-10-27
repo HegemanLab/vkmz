@@ -246,9 +246,11 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
             if peak > thresh:
                 # Determine the polarity
                 if scan.polarity == '-':
-                    keepers_neg_mz.append(scan.mz_list[i])
+                    #keepers_neg_mz.append(scan.mz_list[i]) #original
+                    keepers_neg_mz.append((scan.mz_list[i], peak))
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append(scan.mz_list[i])
+                    #keepers_pos_mz.append(scan.mz_list[i])
+                    keepers_pos_mz.append((scan.mz_list[i], peak))
             i += 1
     # Second list of scans found in some mzXML objects
     for scan in mzXML_obj.MS2_list:
@@ -260,16 +262,17 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
             if peak > thresh:
                 # Determine the polarity
                 if scan.polarity == '-':
-                    keepers_neg_mz.append(scan.mz_list[i])
+                    #keepers_neg_mz.append(scan.mz_list[i])
+                    keepers_neg_mz.append((scan.mz_list[i], peak))
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append(scan.mz_list[i])
+                    keepers_pos_mz.append((scan.mz_list[i], peak))
             i += 1
     # Removes duplicates
     filtered_neg_mz = list(set(keepers_neg_mz))
     filtered_pos_mz = list(set(keepers_pos_mz))
     # Combines list where negatives are in the 0 position and positives in the 1
     combo_list = [filtered_neg_mz, filtered_pos_mz]
-    return combo_list.
+    return combo_list
 
 # parse input files
 # foobar testing code
@@ -280,16 +283,23 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
       mzXML = MzXML()
       mzXML.parse_file(file)
       vkInputMzsTemp = process_mzs(mzXML, threshold=vkMZMLThreshold)
-      vkInputMzs[0] += vkInputMzsTemp[0]
+      vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
       vkInputMzs[1] += vkInputMzsTemp[1]
     elif file.lower().endswith('.mzml'):   #FLAG, test this filetype
       vkInputMzs = process_mzs(file, threshold=vkMZMLThreshold)
     # Removes all duplicates from both neg and pos lists
+    #   this may have been done in process_mzs
     vkInputMzs[0] = list(set(vkInputMzs[0]))
     vkInputMzs[1] = list(set(vkInputMzs[1]))
     # list compresion to convert list elements to tuples
-    posValues = [(x,'pos',None,None) for x in vkInputMzs[0]]
-    negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
+    #posValues = [(x,'pos',None,None) for x in vkInputMzs[0]]
+    posValues = []
+    for element in vkInputMzs[0]:
+       posValues.append((element[0],'pos',element[1],None))
+    #negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
+    negValues = []
+    for element in vkInputMzs[1]:
+       posValues.append((element[0],'neg',element[1],None))
     # sort tuples by mass value
     vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
     try:
