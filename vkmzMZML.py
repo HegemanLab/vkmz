@@ -1,18 +1,21 @@
-import sys
-import base64  # Imports a binary converter package
-import struct
-import gzip  # For file handling
+#import sys
+#import base64  # Imports a binary converter package
+#import struct
+#import gzip  # For file handling
 import xml.parsers.expat
 from MSScan import MS1Scan, MS2Scan
-import time
-import extractNeededElementalData
-import processElementalData
-import bmrbLookup as bmrb
 import argparse
 import pymzml
 
-# this code is mostly unmaintained. It is better to feed vkmzDriver from a seperate mzml/mzxml parser such as xcms
-# the data strucutre will likely change in future vkmz releases
+# this code is used for test data generation
+# it should not be used to assess real data
+
+# mzML parsing is broken
+
+# code layout:
+# the top block contains argument parsign code
+# the middle block comes from a mzML parsing tool
+# the bottom block comes from the vkmz 1.0 driver
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',     '-i', nargs='*', required=True,          help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
@@ -238,32 +241,58 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
     # Loops through positive list and negative list and adds mz values to the keeper list when the intensity is
     # above a threshold
     for scan in mzXML_obj.MS1_list:
+        # creating a max peak per spectra. per run may be better
         max_peak = max(scan.intensity_list)
-        thresh = max_peak * threshold
+        thresh = threshold * max_peak
+        mz_threshold = 0.001  # set this to your MS' percision
         i = 0
         # Look through each peak in each scan
         for peak in scan.intensity_list:
-            # if the intensity is great enough
             if peak > thresh:
-                # Determine the polarity
+                # determine polarity
                 if scan.polarity == '-':
-                    keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                    try:
+                        # filter mzs that match the last one
+                        if abs(scan.mz_list[i] - keepers_neg_mz[-1][0]) > mz_threshold:
+                            keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                        # allow repeat mzs if peak intensity is larger
+                        elif peak > keepers_neg_mz[-1][1]:
+                            keepers_neg_mz.append((scan.mz_list[-1], peak, scan.retention_time))
+                        # novel peaks with same mz allowed since spectra is rt ordered
+                    # first element needs to be created
+                    except IndexError:
+                        keepers_neg_mz = [(scan.mz_list[i], peak, scan.retention_time)]
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                    try:
+                        if abs(scan.mz_list[i] - keepers_pos_mz[-1][0]) > mz_threshold:
+                            keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                        elif peak > keepers_neg_mz[-1][1]:
+                            keepers_pos_mz.append((scan.mz_list[-1], peak, scan.retention_time))
+                    except IndexError:
+                        keepers_pos_mz = [(scan.mz_list[i], peak, scan.retention_time)]
             i += 1
     # Second list of scans found in some mzXML objects
     for scan in mzXML_obj.MS2_list:
         thresh = max(scan.intensity_list) * threshold
         i = 0
-        # Look through each peak in each scan
         for peak in scan.intensity_list:
-            # if the intensity is great enough
             if peak > thresh:
-                # Determine the polarity
                 if scan.polarity == '-':
-                    keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                    try:
+                        if abs(scan.mz_list[i] - keepers_neg_mz[-1][0]) > mz_thresh:
+                            keepers_neg_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                        elif peak > keepers_neg_mz[-1][1]:
+                            keepers_neg_mz.append((scan.mz_list[-1], peak, scan.retention_time))
+                    except IndexError:
+                        keepers_neg_mz = [(scan.mz_list[i], peak, scan.retention_time)]
                 elif scan.polarity == '+':
-                    keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                    try:
+                        if abs(scan.mz_list[i] - keepers_pos_mz[-1][0]) > mz_threshold:
+                            keepers_pos_mz.append((scan.mz_list[i], peak, scan.retention_time))
+                        elif peak > keepers_neg_mz[-1][1]:
+                            keepers_pos_mz.append((scan.mz_list[-1], peak, scan.retention_time))
+                    except IndexError:
+                        keepers_pos_mz = [(scan.mz_list[i], peak, scan.retention_time)]
             i += 1
     # Removes duplicates
     # MAE: Many MZs that are only slightly different are left..
@@ -304,7 +333,6 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
     vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
     try:
       import csv
-      #filename = file + time.strftime("-%Y%m%d%H%M%S") + '.csv'
       with open(file+'.csv', 'w') as out: 
         csv_out=csv.writer(out)
         csv_out.writerow(['mass','polarity','retention time','intensity'])
