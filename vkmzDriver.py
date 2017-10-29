@@ -1,3 +1,4 @@
+import numpy as np
 import re
 import os
 import time
@@ -85,7 +86,7 @@ def buildRatios(vkInputMzs):
     for centroid in vkInputMzs:
       identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]), lt, tolerance=error)
       if identity != 'No Match':
-        identity_dict = {}
+        identity_dict = {'C':0,'H':0,'O':0,'N':0} # necessary keys for 3d
         for element in identity:
           regex = re.compile(element+'([0-9]*)')
           value = regex.findall(identity)
@@ -135,50 +136,80 @@ def saveRatios(ratios, polarity):
 #  except ValueError:
 #    print('The %s data file could not be loaded.' % vkLoad)
 
-def plotRatios(ratios, type):
+def plotRatios(identified, type):
   import pandas as pd
-  import plotly
-  from plotly.graph_objs import Scatter,Scatter3d,Layout,Figure
-  if type == 'scatter':
-    trace1 = Scatter(x=ratios[1], y=ratios[0], mode = 'markers')
-    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
-         xaxis= dict(
-           title= 'Oxygen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         yaxis=dict(
-           title= 'Hydrogen to Carbon Ratio',
-           gridcolor='rgb(183,183,183)',
-           zeroline=False,
-           showline=True
-         ))
-    plotly.offline.plot({"data": [trace1], "layout": layout}, filename='vk-scatter.html', image='jpeg') 
-  elif type == '3d':
-    trace1 = Scatter3d(x=ratios[1], y=ratios[3], z=ratios[0], mode = 'markers')
-    layout = Layout(title="<b>Van Krevelin Diagram</b>", 
-         scene = dict(
-         xaxis= dict(
-           title= 'Oxygen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         zaxis=dict(
-           title= 'Hydrogen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),
-         yaxis= dict(
-           title= 'Nitrogen to Carbon Ratio',
-           zeroline= False,
-           gridcolor='rgb(183,183,183)',
-           showline=True
-         ),), 
-         margin=dict(r=0, b=0, l=0, t=0))
-    plotly.offline.plot({"data": [trace1], "layout": layout},filename='vk-3d.html',image='jpeg') 
+  import plotly as py
+  import plotly.graph_objs as go
+  #if type == 'scatter':
+  #  x_axis = []
+  #  for known_id in identified:
+  #      x_axis.append(known_id[5][0]
+  #  trace1 = Scatter(x=ratios[1], y=ratios[0], mode = 'markers')
+  #  layout = Layout(title="<b>Van Krevelin Diagram</b>", 
+  #       xaxis= dict(
+  #         title= 'Oxygen to Carbon Ratio',
+  #         zeroline= False,
+  #         gridcolor='rgb(183,183,183)',
+  #         showline=True
+  #       ),
+  #       yaxis=dict(
+  #         title= 'Hydrogen to Carbon Ratio',
+  #         gridcolor='rgb(183,183,183)',
+  #         zeroline=False,
+  #         showline=True
+  #       ))
+  #  plotly.offline.plot({"data": [trace1], "layout": layout}, filename='vk-scatter.html', image='jpeg') 
+  if type == '3d':
+    from plotly import __version__
+    #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+    import plotly.offline as py
+    import plotly.graph_objs as go
+    import numpy as np
+    traces = []
+    trace_count = 0
+    for feature in identified:
+      feature_formula = feature[4][0]
+      if feature_formula['O'] == 0:
+        x = 0
+      else:
+        x = float(feature_formula["C"]/feature_formula["O"])
+      if feature_formula['N'] == 0:
+        y = 0
+      else:
+        y = float(feature_formula["C"]/feature_formula["N"])
+      if feature_formula['N'] == 0:
+        z = 0
+      else:
+        z = float(feature_formula["C"]/feature_formula["H"])
+      x = [x]
+      y = [y]
+      z = [z]
+      feature_trace = go.Scatter3d(
+        x = x,
+        y = y,
+        z = z,
+        mode='markers',
+        marker=dict(
+          size=12,
+          line=dict(
+          color='rgba(217, 217, 217, 0.14)',
+            width=0.5
+          ),
+          opacity=0.8
+        )
+      )
+      traces.append(feature_trace)
+    print(traces)
+    layout = go.Layout(
+      margin=dict(
+        l=0,
+        r=0,
+        b=0,
+        t=0
+      )
+    )
+    fig = go.Figure(data=traces, layout=layout)
+    py.plot(fig, filename='simple-3d-scatter.html')
 
 buildRatios(vkInputMzs)
 
