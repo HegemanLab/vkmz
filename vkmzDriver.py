@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import extractNeededElementalData
@@ -8,11 +9,12 @@ import multiprocessing
 from multiprocessing import Pool
 from flexPlot import plotVanK
 from functools import partial
+import csv
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
+#parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
 parser.add_argument('--database',  '-d', nargs='*', default='bmrb.csv',   help='Select database(s).')
-parser.add_argument('--input',     '-i', nargs='?', default='',     type=str, help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
+parser.add_argument('--input',     '-i', nargs='?', type=str, required=True, help='Enter data source. Data file must be a comma seperated list containing four elements: mz,polarity,intensity,rt.')
 parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
 parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
 parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
@@ -20,7 +22,7 @@ parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call v
 args = parser.parse_args()
 
 # read load argument
-vkLoad = getattr(args, "load")
+#vkLoad = getattr(args, "load")
 
 # read load argument
 vkDatabase = getattr(args, "database")
@@ -31,21 +33,17 @@ vkDatabase = getattr(args, "database")
 lt = bmrb.getLookupTable('databases/' + vkDatabase)
 
 # read input argument(s)
-vkInputMzs = getattr(args, "input")
+vkInput = getattr(args, "input")
+vkInputMzs = []
 try:
-  with open(vkInputMzs, 'r') as f:
-    vkInputMzs = [tuple(map(float, i.split(','))) for i in f]
-    #vkInputMzs = f.readlines()
-    #vkInputMzs = f.read()
+  with open(vkInput, 'rb') as csvfile:
+    foo = csv.reader(csvfile)
+    for row in foo:
+      # each row of csvfile becomes a tuple element inside a list
+      # placeholder elements are added to each tuple
+      vkInputMzs.append([float(row[0]),row[1],float(row[2]),float(row[3]),[],float])
 except ValueError:
-  print('The %s data file could not be loaded.' % vkInputMzs)
-
-print(type(vkInputMzs))
-print(type(vkInputMzs))
-print(type(vkInputMzs))
-print(type(vkInputMzs))
-print(type(vkInputMzs))
-print(vkInputMzs)
+  print('The %s data file could not be loaded.' % vkInput)
 
 # read output argument
 vkOutput = getattr(args, "output")
@@ -67,37 +65,43 @@ vkMultiprocessing = getattr(args, "multiprocessing")
 # the second element represents ratio of carbons                    #FLAG VERIRFY
 # the third  element represents if a nitrogen is in the strcutre    #FLAG remove element, have plotter check last element != 0
 # the fourth element represents ratio of nitrogens
-def buildRatios(polarity, vkInputMzs):
+def buildRatios(vkInputMzs):
   # get lookup table.
   # set up. elements could be changed but would need to do some editing elsewhere.
   elements = ['C', 'H', 'O', 'N']
-  if polarity == 'both':
-    buildRatios('pos', vkInputMzs) 
-    buildRatios('neg', vkInputMzs) 
-  if polarity == 'pos' or polarity == 'neg':
-    index = int(polarity == 'pos') # int(True) == 1
-    error = 5
-    if vkMultiprocessing:
-      try:
-        pool = Pool()
-        multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
-        identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
-      except Exception as e:
-        print(str(e))
-      finally:
-        pool.close()
-        pool.join()
-    else:
-      identified = []
-      for mz in vkInputMzs[index]: # pos2 in index 1, neg in index 0
-        identified.append(bmrb.getFormulaFromMass(bmrb.adjust(mz, str(polarity)), lt, tolerance=error)) # adjust mass and search in lookup table. Store result in list.
-    identified = filter(lambda a: a != 'No Match', identified) # Filter out no matches
-    identifiedElements = extractNeededElementalData.find_elements_values(elements_to_find=elements, compounds=identified) # Get elements from compounds
-    identifiedRatios = processElementalData.process_elemental_data(identifiedElements) # Turn elements into ratios
-    if vkOutput: 
-      saveRatios(identifiedRatios, polarity)
-    for type in vkPlotTypes:
-      plotRatios(identifiedRatios, type)
+  error = 5
+  if vkMultiprocessing:
+    try:
+      pool = Pool()
+      multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
+      identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
+    except Exception as e:
+      print(str(e))
+    finally:
+      pool.close()
+      pool.join()
+  else:
+    identified = []
+    for centroid in vkInputMzs:
+      identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]), lt, tolerance=error)
+      if identity != 'No Match':
+        identity_dict = {}
+        for element in identity:
+          regex = re.compile(element+'([0-9]*)')
+          value = regex.findall(identity)
+          if element.isalpha():
+            if value == ['']:
+                value = ['1']
+            result = int(''.join(value))
+            identity_dict[element] = result
+        centroid[4] = [identity_dict]
+        identified.append(centroid)
+        # this would be a good place to add unsaturation (2+2(carbons)+2(nitrogens)-hydrogens)/2
+  print(identified)
+  if vkOutput: 
+    saveRatios(identifiedRatios, polarity)
+  for type in vkPlotTypes:
+    plotRatios(identified, type)
 
 def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
   return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
@@ -110,26 +114,26 @@ def saveRatios(ratios, polarity):
       for ratio in ratios:
         f.writelines(str(ratio).strip('[]') + '\n')
   except ValueError:
-    print('"%s" could not be saved.' % vkLoad)
+    print('"%s" could not be saved.' % filename)
 
-# load VK ratio csv file
-# FLAG: add multiple file support
-def loadRatios(vkLoad):
-  try:
-    # read in ratios
-    with open(vkLoad, 'r') as f:
-      ratios = f.readlines()
-    # split ratios into proper value
-    for i in range(0, len(ratios)):
-      ratios[i] = ratios[i].split(', ')
-    # Cast to correct type
-    ratios[0] = map(lambda x: float(x), ratios[0])
-    ratios[1] = map(lambda x: float(x), ratios[1])
-    ratios[3] = map(lambda x: float(x), ratios[3])
-    for type in vkPlotTypes:
-      plotRatios(ratios, type)
-  except ValueError:
-    print('The %s data file could not be loaded.' % vkLoad)
+## load VK ratio csv file
+## FLAG: add multiple file support
+#def loadRatios(vkLoad):
+#  try:
+#    # read in ratios
+#    with open(vkLoad, 'r') as f:
+#      ratios = f.readlines()
+#    # split ratios into proper value
+#    for i in range(0, len(ratios)):
+#      ratios[i] = ratios[i].split(', ')
+#    # Cast to correct type
+#    ratios[0] = map(lambda x: float(x), ratios[0])
+#    ratios[1] = map(lambda x: float(x), ratios[1])
+#    ratios[3] = map(lambda x: float(x), ratios[3])
+#    for type in vkPlotTypes:
+#      plotRatios(ratios, type)
+#  except ValueError:
+#    print('The %s data file could not be loaded.' % vkLoad)
 
 def plotRatios(ratios, type):
   import pandas as pd
@@ -176,8 +180,5 @@ def plotRatios(ratios, type):
          margin=dict(r=0, b=0, l=0, t=0))
     plotly.offline.plot({"data": [trace1], "layout": layout},filename='vk-3d.html',image='jpeg') 
 
-if vkLoad != '':
-  loadRatios(vkLoad)
-else:
-  buildRatios(vkPolarity, vkInputMzs)
+buildRatios(vkInputMzs)
 
