@@ -14,7 +14,7 @@ import csv
 
 parser = argparse.ArgumentParser()
 #parser.add_argument('--load',      '-l', nargs='?', default='',     help='Load a previously generated ratio table. Set file path. Disabled by default.')
-parser.add_argument('--database',  '-d', nargs='*', default='bmrb.csv',   help='Select database(s).')
+parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv',   help='Select database(s).')
 parser.add_argument('--input',     '-i', nargs='?', type=str, required=True, help='Enter data source. Data file must be a comma seperated list containing four elements: mz,polarity,intensity,rt.')
 parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
 parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
@@ -167,46 +167,163 @@ def plotRatios(identified, type):
     import numpy as np
     traces = []
     trace_count = 0
+    lowest_peak = 10.0**10
+    highest_peak = 0.0
+    highest_rt = identified[-1][3]
+    print(highest_rt)
+    feature_rts =[]
+    feature_peaks =[]
+    x=[]
+    y=[]
+    z=[]
+    feature_names = []
     for feature in identified:
+      feature_peak = feature[2]
+      if feature_peak > highest_peak:
+        highest_peak = feature_peak
+      elif feature_peak < lowest_peak:
+        lowest_peak = feature_peak
+    for feature in identified:
+      print(feature)
+      #feature_rts.append(feature[3]/highest_rt*10)
+      feature_rts.append(feature[3]/60) # turn into minutes
+      feature_peak = feature[2]
+      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
       feature_formula = feature[4][0]
+      feature_name = ''
+      for i in feature_formula:
+         feature_name+=i+str(feature_formula[i])
+      feature_names.append(feature_name)
+      # Ratio Builder
       if feature_formula['O'] == 0:
-        x = 0
+        x.append(0)
       else:
-        x = float(feature_formula["C"]/feature_formula["O"])
+        x.append(float(feature_formula["C"])/feature_formula["O"])
       if feature_formula['N'] == 0:
-        y = 0
+        y.append(0)
       else:
-        y = float(feature_formula["C"]/feature_formula["N"])
-      if feature_formula['N'] == 0:
-        z = 0
+        y.append(float(feature_formula["C"])/feature_formula["N"])
+      if feature_formula['H'] == 0:
+        z.append(0) #what?
       else:
-        z = float(feature_formula["C"]/feature_formula["H"])
-      x = [x]
-      y = [y]
-      z = [z]
-      feature_trace = go.Scatter3d(
-        x = x,
-        y = y,
-        z = z,
-        mode='markers',
-        marker=dict(
-          size=12,
-          line=dict(
-          color='rgba(217, 217, 217, 0.14)',
-            width=0.5
-          ),
-          opacity=0.8
-        )
+        z.append(float(feature_formula["H"])/feature_formula["C"])
+      # intensity builder
+    feature_trace = go.Scatter3d(
+      x = x,
+      y = y,
+      z = z,
+      mode='markers',
+      text=feature_names,
+      marker=dict(
+        size=feature_peaks,
+        color=feature_rts,
+        colorscale='Viridis',
+        colorbar=dict(title='Retention Time (m)'),
+        line=dict(width=0.5),
+        opacity=0.8
       )
-      traces.append(feature_trace)
+    )
+    traces.append(feature_trace)
     print(traces)
     layout = go.Layout(
-      margin=dict(
-        l=0,
-        r=0,
-        b=0,
-        t=0
+      title="Van Krevelen Diagram", 
+      scene = dict(
+        xaxis= dict(
+          title= 'Carbon to Oxygen Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+        zaxis=dict(
+          title= 'Hydrogen to Carbon Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+        yaxis= dict(
+          title= 'Carbon to Nitrogen Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+      ), 
+      margin=dict(r=0, b=0, l=0, t=100)
+    )
+    fig = go.Figure(data=traces, layout=layout)
+    py.plot(fig, filename='simple-3d-scatter.html')
+  if type == 'scatter':
+    from plotly import __version__
+    #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+    import plotly.offline as py
+    import plotly.graph_objs as go
+    import numpy as np
+    traces = []
+    trace_count = 0
+    lowest_peak = 10.0**10
+    highest_peak = 0.0
+    highest_rt = identified[-1][3]
+    feature_rts =[]
+    feature_peaks =[]
+    x=[]
+    y=[]
+    feature_names = []
+    for feature in identified:
+      feature_peak = feature[2]
+      if feature_peak > highest_peak:
+        highest_peak = feature_peak
+      elif feature_peak < lowest_peak:
+        lowest_peak = feature_peak
+    for feature in identified:
+      print(feature)
+      feature_rts.append(feature[3]/60) # turn into minutes
+      feature_peak = feature[2]
+      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
+      feature_formula = feature[4][0]
+      feature_name = ''
+      for i in feature_formula:
+         feature_name+=i+str(feature_formula[i])
+      feature_names.append(feature_name)
+      # Ratio Builder
+      if feature_formula['O'] == 0:
+        x.append(0)
+      else:
+        x.append(float(feature_formula["C"])/feature_formula["O"])
+      if feature_formula['H'] == 0:
+        y.append(0)
+      else:
+        y.append(float(feature_formula["H"])/feature_formula["C"])
+      # intensity builder
+    feature_trace = go.Scatter(
+      x = x,
+      y = y,
+      mode='markers',
+      text=feature_names,
+      marker=dict(
+        size=feature_peaks,
+        color=feature_rts,
+        colorscale='Viridis',
+        colorbar=dict(title='Retention Time (m)'),
+        line=dict(width=0.5),
+        opacity=0.8
       )
+    )
+    traces.append(feature_trace)
+    print(traces)
+    layout = go.Layout(
+      title="Van Krevelen Diagram", 
+      xaxis= dict(
+        title= 'Carbon to Oxygen Ratio',
+        zeroline= False,
+        gridcolor='rgb(183,183,183)',
+        showline=True
+      ),
+      yaxis= dict(
+        title= 'Hydrogen to Carbon Ratio',
+        zeroline= False,
+        gridcolor='rgb(183,183,183)',
+        showline=True
+      ),
+      margin=dict(r=0, b=100, l=100, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
     py.plot(fig, filename='simple-3d-scatter.html')
