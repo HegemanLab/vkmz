@@ -1,13 +1,10 @@
-#import sys
-#import base64  # Imports a binary converter package
-#import struct
-#import gzip  # For file handling
+import sys
+import base64  # Imports a binary converter package
+import struct
 import xml.parsers.expat
-from MSScan import MS1Scan, MS2Scan
 import argparse
-import pymzml
 
-# this code is used for test data generation
+# this code is used to generate test data
 # it should not be used to assess real data
 
 # mzML parsing is broken
@@ -40,6 +37,45 @@ else:
   raise ValueError("The given threshold, %i, is out of bounds." % (vkMZMLThreshold))
   exit()
 
+'''
+Helper class for dealing with mzXML files and handling the data. Particularly useful for decoding the
+peak lists.  Found from: https://code.google.com/p/massspec-toolbox/source/browse/#svn/trunk/mzxml
+and minimal updates made.
+'''
+
+# Class for a single MS scan, not the complete set of scans.
+class MSScan:
+    def __init__(self):
+        self.id = 0
+        self.peak_count = 0
+        self.filter_line = ''
+        self.retention_time = 0.0
+        self.low_mz = 0.0
+        self.high_mz = 0.0
+        self.base_peak_mz = 0.0
+        self.base_peak_intensity = 0.0
+        self.total_ion_current = 0.0
+        self.list_size = 0
+        self.encoded_mz = ''
+        self.encoded_intensity = ''
+        self.mz_list = []
+        self.intensity_list = []
+
+
+# Used as negative scan lists
+class MS1Scan(MSScan):
+    def __init__(self):
+        pass
+
+
+# Used as positive scan lists
+class MS2Scan(MSScan):
+    def __init__(self):
+        pass
+        self.ms1_id = 0
+        self.precursor_mz = 0.0
+        self.precursor_intensity = 0.0
+        self.precursorCharge = 0
 '''
 Class for dealing with mzXML files and handling the data. Particularly useful for decoding the
 peak lists.  Found from: https://code.google.com/p/massspec-toolbox/source/browse/#svn/trunk/mzxml
@@ -342,4 +378,3 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
       return
 
 dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput)
-
