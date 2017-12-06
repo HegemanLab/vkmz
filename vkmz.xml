@@ -1,0 +1,67 @@
+<tool id="w4mvkms" name="Van Krevlen Diagram for Mass Spectrometry" version="alpha-0.1">
+
+  <description>Van Krevelen Diagram for Mass Spectrometry</description>
+  
+  <requirements>
+    <!-- <requirement type="package">example</requirement> -->
+  </requirements>
+  
+  <stdio>
+      <!-- WHAT IS THIS FOR? -->
+	  <exit_code range="1:" level="fatal" />
+  </stdio>
+
+  <command><![CDATA[
+    python vkmzDriver.py
+    -i "$input"
+    -t "$threshold"
+  ]]></command>
+
+  <inputs>
+    <param name="-i" label="Data input" type="data" format="tabular" help="help example" />
+  </inputs>
+
+  <outputs>
+    <!--
+		 *info
+    -->
+    <data name="data" label="${tool.name}_${variableMetadata_in.name}_detail" format="pdf" />
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="-i" value="example.mzXML.csv" />
+      <param name="-t" value="30" />
+    </test>
+  </tests>
+
+  <help><![CDATA[
+**Run PLS-DA Contrasts of Univariate Results**
+----------------------------------------------
+
+**Authors** - Stephen Brockman (University of Minnesota, ---@umn.edu)
+**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+
+
+Help placeholder goes here.
+
+Trademarks
+----------
+
+Placeholder
+
+Release notes
+-------------
+
+alpha-0.1
+
+- developer learning galaxy wrapping
+- vkms tool is incomplete
+  ]]></help>
+
+  <citations>
+    <citation type="doi">123.456/example.123</citation>
+    <!-- Example Title -->
+  </citations>
+
+</tool>
