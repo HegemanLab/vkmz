@@ -371,7 +371,7 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
       import csv
       with open(file+'.csv', 'w') as out: 
         csv_out=csv.writer(out)
-        csv_out.writerow(['mass','polarity','retention time','intensity'])
+       #csv_out.writerow(['mass','polarity','retention time','intensity'])
         for row in vkInputMzs:
           csv_out.writerow(row)
     except ValueError:

@@ -8,7 +8,7 @@ import bmrbLookup as bmrb
 import argparse
 import multiprocessing
 from multiprocessing import Pool
-from flexPlot import plotVanK
+#from flexPlot import plotVanK
 from functools import partial
 import csv
 
@@ -17,8 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv',   help='Select database(s).')
 parser.add_argument('--input',     '-i', nargs='?', type=str, required=True, help='Enter data source. Data file must be a comma seperated list containing four elements: mz,polarity,intensity,rt.')
 parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
-parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
-parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--plottype', '-p', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
 parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
@@ -49,9 +48,6 @@ except ValueError:
 # read output argument
 vkOutput = getattr(args, "output")
 
-# read polarity argument
-vkPolarity = getattr(args, 'polarity')
-
 # read plottype argument
 vkPlotTypes = getattr(args, 'plottype')
 
@@ -74,7 +70,7 @@ def buildRatios(vkInputMzs):
   if vkMultiprocessing:
     try:
       pool = Pool()
-      multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
+      multiprocessMzsArgs = partial(multiprocessMzs, error)
       identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
     except Exception as e:
       print(str(e))
@@ -88,6 +84,7 @@ def buildRatios(vkInputMzs):
       if identity != 'No Match':
         identity_dict = {'C':0,'H':0,'O':0,'N':0} # necessary keys for 3d
         for element in identity:
+          print(element)
           regex = re.compile(element+'([0-9]*)')
           value = regex.findall(identity)
           if element.isalpha():
@@ -99,23 +96,23 @@ def buildRatios(vkInputMzs):
         identified.append(centroid)
         # this would be a good place to add unsaturation (2+2(carbons)+2(nitrogens)-hydrogens)/2
   print(identified)
-  if vkOutput: 
-    saveRatios(identifiedRatios, polarity)
+#  if vkOutput: 
+#    saveRatios(identifiedRatios)
   for type in vkPlotTypes:
     plotRatios(identified, type)
 
-def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
-  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
+def multiprocessMzs(error, inputMz): # recieves a single Mz
+  return bmrb.getFormulaFromMass( bmrb.adjust( inputMz, lt, tolerance=error ) )
 
 # write vk ratios as csv file
-def saveRatios(ratios, polarity):
-  try:
-    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S-") + str(polarity) + '.csv'
-    with open(filename, 'w') as f: 
-      for ratio in ratios:
-        f.writelines(str(ratio).strip('[]') + '\n')
-  except ValueError:
-    print('"%s" could not be saved.' % filename)
+#def saveRatios(ratios):
+#  try:
+#    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S-") + '.csv'
+#    with open(filename, 'w') as f: 
+#      for ratio in ratios:
+#        f.writelines(str(ratio).strip('[]') + '\n')
+#  except ValueError:
+#    print('"%s" could not be saved.' % filename)
 
 ## load VK ratio csv file
 ## FLAG: add multiple file support
@@ -329,4 +326,3 @@ def plotRatios(identified, type):
     py.plot(fig, filename='simple-3d-scatter.html')
 
 buildRatios(vkInputMzs)
-
