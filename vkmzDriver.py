@@ -108,10 +108,12 @@ def multiprocessMzs(vkError, inputMz): # recieves a single Mz
 # write vk ratios as csv file
 def saveRatios(ratios):
   try:
-    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S") + '.csv'
+    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S") + '.tsv'
     with open(filename, 'w') as f: 
+      f.writelines(str("mz\tpolarity\tintensity\tretention time\telement dictionary\tH:C\tC:O\tC:N") + '\n')
       for ratio in ratios:
-        f.writelines(str(ratio).strip('[]') + '\n')
+        elements = ratio[4][0]
+        f.writelines(str(ratio[0])+'\t'+str(ratio[1])+'\t'+str(ratio[2])+'\t'+str(ratio[3])+'\t'+str(elements)+'\t'+str(float(elements['H'])/float(elements['C']))+'\t'+str(float(elements['O'])/float(elements['C']))+'\t'+str(float(elements['N'])/float(elements['C']))+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
