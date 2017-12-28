@@ -1,4 +1,4 @@
-## vkmz version 0.001
+## vkmz version 0.002
 
 This code is in the process of being written. Original code from [VanKrevelenLocal](https://github.com/HegemanLab/VanKrevelenLocal). Code is based on the original ideas of Stephen Brockman and Eric Roden.
 
