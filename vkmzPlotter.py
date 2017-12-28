@@ -19,7 +19,7 @@ try:
     next(tsv) # skip first row
     tsvData = csv.reader(tsv, delimiter='\t')
     for row in tsvData:
-      identified.append([float(row[0]),row[1],float(row[2]),float(row[3]),float(row[5]),float(row[6]),float(row[7])])
+      identified.append([float(row[0]),row[1],float(row[2]),float(row[3]),row[4],float(row[5]),float(row[6]),float(row[7])])
 except ValueError:
   print('The %s data file could not be loaded.' % vkInput)
 
@@ -29,45 +29,43 @@ vkPlotType = getattr(args, 'plottype')
 def plotRatios(identified, type):
   traces = []
   trace_count = 0
-  lowest_peak = 10.0**10
-  highest_peak = 0.0
-  highest_rt = identified[-1][3]
+  lowest_peak = 10.0**10 # arbitrarily large
+  highest_peak = 0.0     # arbitrarily small
   feature_rts =[]
-  feature_peaks = []
-  #feature_names = []
+  highest_rt = identified[-1][3]
+  feature_formulas = []
+  feature_size = []
   x=[]
   y=[]
+  # 3d data is given to all plots for added plot.ly functionality
   z=[]
-  feature_names = []
+  # find lowest and highest peak
   for feature in identified:
     feature_peak = feature[2]
     if feature_peak > highest_peak:
       highest_peak = feature_peak
     elif feature_peak < lowest_peak:
       lowest_peak = feature_peak
+    # code assumes that first peak is not lowest peak 
+  # assign metadata to each feature
   for feature in identified:
-    # changes retention time from seconds to minutes
-    feature_rts.append(feature[3]/60)
     feature_peak = feature[2]
-    feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-    #feature_formula = feature[4][0]
-    #feature_name = ''
-    #for i in feature_formula:
-    #   feature_name+=i+str(feature_formula[i])
-    #feature_names.append(feature_name)
-    x.append(feature[5]) # Oxygen / Carbon
-    y.append(feature[4]) # Hydrogen / Carbon
-    # 3d data is given to all plots for added plot.ly functionality
-    z.append(feature[6]) # Nitrogen / Carbon
+    # changes retention time from seconds to minutes
+    feature_size.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
+    feature_rts.append(feature[3]/60)
+    feature_formulas.append(feature[4])
+    x.append(feature[6]) # Oxygen / Carbon
+    y.append(feature[5]) # Hydrogen / Carbon
+    z.append(feature[7]) # Nitrogen / Carbon
   if type == '3d':
     feature_trace = go.Scatter3d(
       x = x,
       y = y,
       z = z,
       mode='markers',
-      text=feature_names,
+      text=feature_formulas,
       marker=dict(
-        size=feature_peaks,
+        size=feature_size,
         color=feature_rts,
         colorscale='Viridis',
         colorbar=dict(title='Retention Time (m)'),
@@ -109,7 +107,7 @@ def plotRatios(identified, type):
       mode='markers',
       text=feature_names,
       marker=dict(
-        size=feature_peaks,
+        size=feature_size,
         color=feature_rts,
         colorscale='Viridis',
         colorbar=dict(title='Retention Time (m)'),
