@@ -8,7 +8,7 @@ import bmrbLookup as bmrb
 import argparse
 import multiprocessing
 from multiprocessing import Pool
-from flexPlot import plotVanK
+#from flexPlot import plotVanK
 from functools import partial
 import csv
 
@@ -17,8 +17,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv',   help='Select database(s).')
 parser.add_argument('--input',     '-i', nargs='?', type=str, required=True, help='Enter data source. Data file must be a comma seperated list containing four elements: mz,polarity,intensity,rt.')
 parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
-parser.add_argument('--polarity',  '-p', nargs='?', default='both', type=str, choices=['both', 'pos', 'neg'], help='Set to "pos", "neg", or "both". Default is "both". Only one plot type can be set.')
-parser.add_argument('--plottype', '-pt', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--error',     '-e', nargs='?', type=int, default=5, help='Error in PPM for identification.')
+parser.add_argument('--plottype', '-p', nargs='*', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
 parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
@@ -49,8 +49,8 @@ except ValueError:
 # read output argument
 vkOutput = getattr(args, "output")
 
-# read polarity argument
-vkPolarity = getattr(args, 'polarity')
+# read PPM error argument
+vkError = getattr(args, "error")
 
 # read plottype argument
 vkPlotTypes = getattr(args, 'plottype')
@@ -70,11 +70,10 @@ def buildRatios(vkInputMzs):
   # get lookup table.
   # set up. elements could be changed but would need to do some editing elsewhere.
   elements = ['C', 'H', 'O', 'N']
-  error = 5
   if vkMultiprocessing:
     try:
       pool = Pool()
-      multiprocessMzsArgs = partial(multiprocessMzs, polarity, error)
+      multiprocessMzsArgs = partial(multiprocessMzs, vkError)
       identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
     except Exception as e:
       print(str(e))
@@ -84,7 +83,7 @@ def buildRatios(vkInputMzs):
   else:
     identified = []
     for centroid in vkInputMzs:
-      identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]), lt, tolerance=error)
+      identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]), lt, vkError)
       if identity != 'No Match':
         identity_dict = {'C':0,'H':0,'O':0,'N':0} # necessary keys for 3d
         for element in identity:
@@ -98,22 +97,23 @@ def buildRatios(vkInputMzs):
         centroid[4] = [identity_dict]
         identified.append(centroid)
         # this would be a good place to add unsaturation (2+2(carbons)+2(nitrogens)-hydrogens)/2
-  print(identified)
   if vkOutput: 
-    saveRatios(identifiedRatios, polarity)
+    saveRatios(identified)
   for type in vkPlotTypes:
     plotRatios(identified, type)
 
-def multiprocessMzs(polarity, error, inputMz): # recieves a single Mz
-  return bmrb.getFormulaFromMass(bmrb.adjust(inputMz, str(polarity)), lt, tolerance=error)
+def multiprocessMzs(vkError, inputMz): # recieves a single Mz
+  return bmrb.getFormulaFromMass( bmrb.adjust( inputMz, lt, vkError ) )
 
 # write vk ratios as csv file
-def saveRatios(ratios, polarity):
+def saveRatios(ratios):
   try:
-    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S-") + str(polarity) + '.csv'
+    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S") + '.tsv'
     with open(filename, 'w') as f: 
+      f.writelines(str("mz\tpolarity\tintensity\tretention time\telement dictionary\tH:C\tC:O\tC:N") + '\n')
       for ratio in ratios:
-        f.writelines(str(ratio).strip('[]') + '\n')
+        elements = ratio[4][0]
+        f.writelines(str(ratio[0])+'\t'+str(ratio[1])+'\t'+str(ratio[2])+'\t'+str(ratio[3])+'\t'+str(elements)+'\t'+str(float(elements['H'])/float(elements['C']))+'\t'+str(float(elements['O'])/float(elements['C']))+'\t'+str(float(elements['N'])/float(elements['C']))+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
@@ -170,7 +170,6 @@ def plotRatios(identified, type):
     lowest_peak = 10.0**10
     highest_peak = 0.0
     highest_rt = identified[-1][3]
-    print(highest_rt)
     feature_rts =[]
     feature_peaks =[]
     x=[]
@@ -184,7 +183,6 @@ def plotRatios(identified, type):
       elif feature_peak < lowest_peak:
         lowest_peak = feature_peak
     for feature in identified:
-      print(feature)
       #feature_rts.append(feature[3]/highest_rt*10)
       feature_rts.append(feature[3]/60) # turn into minutes
       feature_peak = feature[2]
@@ -224,7 +222,6 @@ def plotRatios(identified, type):
       )
     )
     traces.append(feature_trace)
-    print(traces)
     layout = go.Layout(
       title="Van Krevelen Diagram", 
       scene = dict(
@@ -274,7 +271,6 @@ def plotRatios(identified, type):
       elif feature_peak < lowest_peak:
         lowest_peak = feature_peak
     for feature in identified:
-      print(feature)
       feature_rts.append(feature[3]/60) # turn into minutes
       feature_peak = feature[2]
       feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
@@ -308,7 +304,6 @@ def plotRatios(identified, type):
       )
     )
     traces.append(feature_trace)
-    print(traces)
     layout = go.Layout(
       title="Van Krevelen Diagram", 
       xaxis= dict(
