@@ -1,6 +1,7 @@
 import argparse
 import csv
 import numpy as np
+import math
 import pandas as pd
 from plotly import __version__
 import plotly.offline as py
@@ -8,7 +9,9 @@ import plotly.graph_objs as go
  
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',    '-i', nargs='?', default='', required=True, help='Load a previously generated ratio table. Set file path. Disabled by default.')
-parser.add_argument('--plottype', '-p', nargs='?', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--plottype', '-p', nargs='?', default=['scatter-2d'], choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Manually set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
+parser.add_argument('--sizealgo', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
 args = parser.parse_args()
 
 # read input argument(s)
@@ -23,8 +26,13 @@ try:
 except ValueError:
   print('The %s data file could not be loaded.' % vkInput)
 
-# read plottype argument
 vkPlotType = getattr(args, 'plottype')
+if vkPlotType == '2d': vkPlotType = 'scatter-2d'
+if vkPlotType == '3d': vkPlotType = 'scatter-3d'
+
+vkSize = getattr(args, 'size')
+
+vkSizeAlgo = getattr(args, 'sizealgo')
 
 def plotRatios(identified, type):
   traces = []
@@ -51,13 +59,19 @@ def plotRatios(identified, type):
   for feature in identified:
     feature_peak = feature[2]
     # changes retention time from seconds to minutes
-    feature_size.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
     feature_rts.append(feature[3]/60)
+    # feature_size algorithm is not complete
+    if vkSizeAlgo == 0:
+      feature_size.append(vkSize)
+    elif vkSizeAlgo == 1:
+      feature_size.append(vkSize+4*vkSize*feature_peak/(highest_peak-lowest_peak))
+    else: 
+      feature_size.append(vkSize+2*math.log(vkSize*feature_peak/(highest_peak-lowest_peak)))
     feature_formulas.append(feature[4])
     x.append(feature[6]) # Oxygen / Carbon
     y.append(feature[5]) # Hydrogen / Carbon
     z.append(feature[7]) # Nitrogen / Carbon
-  if type == '3d':
+  if type == 'scatter-3d':
     feature_trace = go.Scatter3d(
       x = x,
       y = y,
@@ -100,12 +114,12 @@ def plotRatios(identified, type):
     )
     fig = go.Figure(data=traces, layout=layout)
     py.plot(fig, filename='simple-3d-scatter.html')
-  if type == 'scatter':
+  if type == 'scatter-2d':
     feature_trace = go.Scatter(
       x = x,
       y = y,
       mode='markers',
-      text=feature_names,
+      text=feature_formulas,
       marker=dict(
         size=feature_size,
         color=feature_rts,
