@@ -12,11 +12,11 @@ from functools import partial
 import csv
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv',   help='Select database(s).')
-parser.add_argument('--input',     '-i', nargs='?', type=str, required=True, help='Enter data source. Data file must be a comma seperated list containing four elements: mz,polarity,intensity,rt.')
-parser.add_argument('--output',    '-o', action='store_true',       help='Call variable to ouput a ratio file.')
-parser.add_argument('--error',     '-e', nargs='?', type=int, default=5, help='Error in PPM for identification.')
-parser.add_argument('--multiprocessing', '-m', action='store_true', help='Call variable to use multiprocessing. One process per core.')
+parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv', help='Select database(s).')
+parser.add_argument('--input',     '-i', nargs='?', type=str, required=True,  help='Data file must be a csv with the columns mz, polarity, intensity, & rt.')
+parser.add_argument('--output',    '-o', nargs='?', type=str, default='',     help='Specify name of output file.')
+parser.add_argument('--error',     '-e', nargs='?', type=int, default=5,      help='Error in PPM for identification.')
+parser.add_argument('--multiprocessing', '-m', action='store_true',           help='Call to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
 vkDatabase = getattr(args, "database")
@@ -38,10 +38,9 @@ try:
 except ValueError:
   print('The %s data file could not be loaded.' % vkInput)
 
-# read output argument
 vkOutput = getattr(args, "output")
+print vkOutput
 
-# read PPM error argument
 vkError = getattr(args, "error")
 
 # read multiprocessing argument
@@ -78,22 +77,24 @@ def buildRatios(vkInputMzs):
         centroid[5] = identity
         identified.append(centroid)
         # this would be a good place to add unsaturation (2+2(carbons)+2(nitrogens)-hydrogens)/2
-  if vkOutput: 
-    saveRatios(identified)
+  return identified
 
 def multiprocessMzs(vkError, inputMz): # recieves a single Mz
   return bmrb.getFormulaFromMass( bmrb.adjust( inputMz, lt, vkError ) )
 
-# write vk ratios as csv file
-def saveRatios(ratios):
+# write vk identified as csv file
+def saveRatios(identified):
+  if vkOutput != '':
+    filename = vkOutput+'-'+time.strftime("%Y%m%d%H%M%S")+'.tsv'
+  else:
+    filename = 'identified-'+time.strftime("%Y%m%d%H%M%S")+'.tsv'
   try:
-    filename = 'ratios-' + time.strftime("%Y%m%d%H%M%S") + '.tsv'
     with open(filename, 'w') as f: 
       f.writelines(str("mz\tpolarity\tintensity\tretention time\tidentified structure\tH:C\tC:O\tC:N") + '\n')
-      for ratio in ratios:
+      for ratio in identified:
         elements = ratio[4][0]
         f.writelines(str(ratio[0])+'\t'+str(ratio[1])+'\t'+str(ratio[2])+'\t'+str(ratio[3])+'\t'+str(ratio[5])+'\t'+str(float(elements['H'])/float(elements['C']))+'\t'+str(float(elements['O'])/float(elements['C']))+'\t'+str(float(elements['N'])/float(elements['C']))+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
-buildRatios(vkInputMzs)
+saveRatios(buildRatios(vkInputMzs))
