@@ -53,8 +53,11 @@ def plotRatios(identified, type):
       feature_rts.append(feature[3]/60) # turn into minutes
       feature_peak = feature[2]
       feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
+      # feature[5] is   Oxygen / Carbon
       x.append(feature[5])
+      # feature[4] is Hydrogen / Carbon
       y.append(feature[4])
+      # feature[6] is Nitrogen / Carbon
       z.append(feature[6])
     feature_trace = go.Scatter3d(
       x = x,
@@ -110,7 +113,8 @@ def plotRatios(identified, type):
     highest_peak = 0.0
     highest_rt = identified[-1][3]
     feature_rts =[]
-    feature_peaks =[]
+    feature_peaks = []
+    #feature_names = []
     x=[]
     y=[]
     feature_names = []
@@ -121,23 +125,21 @@ def plotRatios(identified, type):
       elif feature_peak < lowest_peak:
         lowest_peak = feature_peak
     for feature in identified:
-      feature_rts.append(feature[3]/60) # turn into minutes
+      # changes retention time from seconds to minutes
+      feature_rts.append(feature[3]/60)
       feature_peak = feature[2]
       feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-      feature_formula = feature[4][0]
-      feature_name = ''
-      for i in feature_formula:
-         feature_name+=i+str(feature_formula[i])
-      feature_names.append(feature_name)
-      # Ratio Builder
-      if feature_formula['O'] == 0:
-        x.append(0)
-      else:
-        x.append(float(feature_formula["C"])/feature_formula["O"])
-      if feature_formula['H'] == 0:
-        y.append(0)
-      else:
-        y.append(float(feature_formula["H"])/feature_formula["C"])
+      #feature_formula = feature[4][0]
+      #feature_name = ''
+      #for i in feature_formula:
+      #   feature_name+=i+str(feature_formula[i])
+      #feature_names.append(feature_name)
+      # feature[5] is   Oxygen / Carbon
+      x.append(feature[5])
+      # feature[4] is Hydrogen / Carbon
+      y.append(feature[4])
+      # feature[6] is Nitrogen / Carbon
+      #z.append(feature[6])
       # intensity builder
     feature_trace = go.Scatter(
       x = x,
