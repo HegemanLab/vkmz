@@ -1,7 +1,11 @@
-import numpy as np
 import argparse
 import csv
-
+import numpy as np
+import pandas as pd
+from plotly import __version__
+import plotly.offline as py
+import plotly.graph_objs as go
+ 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',    '-i', nargs='?', default='', required=True, help='Load a previously generated ratio table. Set file path. Disabled by default.')
 parser.add_argument('--plottype', '-p', nargs='?', default=['scatter'], choices=['scatter', 'heatmap', '3d'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
@@ -23,13 +27,6 @@ except ValueError:
 vkPlotType = getattr(args, 'plottype')
 
 def plotRatios(identified, type):
-  import pandas as pd
-  import numpy as np
-  import plotly as py
-  import plotly.graph_objs as go
-  from plotly import __version__
-  import plotly.offline as py
-  import plotly.graph_objs as go
   traces = []
   trace_count = 0
   lowest_peak = 10.0**10
