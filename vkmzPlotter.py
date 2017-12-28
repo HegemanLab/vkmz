@@ -24,41 +24,45 @@ vkPlotType = getattr(args, 'plottype')
 
 def plotRatios(identified, type):
   import pandas as pd
+  import numpy as np
   import plotly as py
   import plotly.graph_objs as go
+  from plotly import __version__
+  import plotly.offline as py
+  import plotly.graph_objs as go
+  traces = []
+  trace_count = 0
+  lowest_peak = 10.0**10
+  highest_peak = 0.0
+  highest_rt = identified[-1][3]
+  feature_rts =[]
+  feature_peaks = []
+  #feature_names = []
+  x=[]
+  y=[]
+  z=[]
+  feature_names = []
+  for feature in identified:
+    feature_peak = feature[2]
+    if feature_peak > highest_peak:
+      highest_peak = feature_peak
+    elif feature_peak < lowest_peak:
+      lowest_peak = feature_peak
+  for feature in identified:
+    # changes retention time from seconds to minutes
+    feature_rts.append(feature[3]/60)
+    feature_peak = feature[2]
+    feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
+    #feature_formula = feature[4][0]
+    #feature_name = ''
+    #for i in feature_formula:
+    #   feature_name+=i+str(feature_formula[i])
+    #feature_names.append(feature_name)
+    x.append(feature[5]) # Oxygen / Carbon
+    y.append(feature[4]) # Hydrogen / Carbon
+    # 3d data is given to all plots for added plot.ly functionality
+    z.append(feature[6]) # Nitrogen / Carbon
   if type == '3d':
-    from plotly import __version__
-    import plotly.offline as py
-    import plotly.graph_objs as go
-    import numpy as np
-    traces = []
-    trace_count = 0
-    lowest_peak = 10.0**10
-    highest_peak = 0.0
-    highest_rt = identified[-1][3]
-    feature_rts =[]
-    feature_peaks =[]
-    x=[]
-    y=[]
-    z=[]
-    feature_names = []
-    for feature in identified:
-      feature_peak = feature[2]
-      if feature_peak > highest_peak:
-        highest_peak = feature_peak
-      elif feature_peak < lowest_peak:
-        lowest_peak = feature_peak
-    for feature in identified:
-      #feature_rts.append(feature[3]/highest_rt*10)
-      feature_rts.append(feature[3]/60) # turn into minutes
-      feature_peak = feature[2]
-      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-      # feature[5] is   Oxygen / Carbon
-      x.append(feature[5])
-      # feature[4] is Hydrogen / Carbon
-      y.append(feature[4])
-      # feature[6] is Nitrogen / Carbon
-      z.append(feature[6])
     feature_trace = go.Scatter3d(
       x = x,
       y = y,
@@ -102,45 +106,6 @@ def plotRatios(identified, type):
     fig = go.Figure(data=traces, layout=layout)
     py.plot(fig, filename='simple-3d-scatter.html')
   if type == 'scatter':
-    from plotly import __version__
-    #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-    import plotly.offline as py
-    import plotly.graph_objs as go
-    import numpy as np
-    traces = []
-    trace_count = 0
-    lowest_peak = 10.0**10
-    highest_peak = 0.0
-    highest_rt = identified[-1][3]
-    feature_rts =[]
-    feature_peaks = []
-    #feature_names = []
-    x=[]
-    y=[]
-    feature_names = []
-    for feature in identified:
-      feature_peak = feature[2]
-      if feature_peak > highest_peak:
-        highest_peak = feature_peak
-      elif feature_peak < lowest_peak:
-        lowest_peak = feature_peak
-    for feature in identified:
-      # changes retention time from seconds to minutes
-      feature_rts.append(feature[3]/60)
-      feature_peak = feature[2]
-      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-      #feature_formula = feature[4][0]
-      #feature_name = ''
-      #for i in feature_formula:
-      #   feature_name+=i+str(feature_formula[i])
-      #feature_names.append(feature_name)
-      # feature[5] is   Oxygen / Carbon
-      x.append(feature[5])
-      # feature[4] is Hydrogen / Carbon
-      y.append(feature[4])
-      # feature[6] is Nitrogen / Carbon
-      #z.append(feature[6])
-      # intensity builder
     feature_trace = go.Scatter(
       x = x,
       y = y,
