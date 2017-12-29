@@ -9,7 +9,7 @@ import plotly.graph_objs as go
  
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',    '-i', nargs='?', default='', required=True, help='Load a previously generated ratio table. Set file path. Disabled by default.')
-parser.add_argument('--plottype', '-p', nargs='?', default=['scatter-2d'], choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "scatter", "heatmap", or "3d". Default is "scatter".')
+parser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "2d" or "3d". Default is "2d".')
 parser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Manually set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
 parser.add_argument('--sizealgo', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
 args = parser.parse_args()
@@ -29,6 +29,7 @@ except ValueError:
 vkPlotType = getattr(args, 'plottype')
 if vkPlotType == '2d': vkPlotType = 'scatter-2d'
 if vkPlotType == '3d': vkPlotType = 'scatter-3d'
+print vkPlotType
 
 vkSize = getattr(args, 'size')
 
@@ -113,7 +114,7 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=0, l=0, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename='simple-3d-scatter.html')
+    py.plot(fig, filename='vkmz-3d-scatter.html')
   if type == 'scatter-2d':
     feature_trace = go.Scatter(
       x = x,
@@ -147,6 +148,6 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=100, l=100, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename='simple-3d-scatter.html')
+    py.plot(fig, filename='vkmz-2d-scatter.html')
 
 plotRatios(identified, vkPlotType)
