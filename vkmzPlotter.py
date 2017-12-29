@@ -1,64 +1,86 @@
+import argparse
+import csv
 import numpy as np
+import math
+import pandas as pd
+from plotly import __version__
+import plotly.offline as py
+import plotly.graph_objs as go
+ 
+parser = argparse.ArgumentParser()
+parser.add_argument('--input',    '-i', nargs='?', default='', required=True, help='Load a previously generated ratio table. Set file path. Disabled by default.')
+parser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "2d" or "3d". Default is "2d".')
+parser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Manually set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
+parser.add_argument('--sizealgo', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
+args = parser.parse_args()
+
+# read input argument(s)
+vkInput = getattr(args, "input")
+identified = []
+try:
+  with open(vkInput, 'r') as tsv:
+    next(tsv) # skip first row
+    tsvData = csv.reader(tsv, delimiter='\t')
+    for row in tsvData:
+      identified.append([float(row[0]),row[1],float(row[2]),float(row[3]),row[4],float(row[5]),float(row[6]),float(row[7])])
+except ValueError:
+  print('The %s data file could not be loaded.' % vkInput)
+
+vkPlotType = getattr(args, 'plottype')
+if vkPlotType == '2d': vkPlotType = 'scatter-2d'
+if vkPlotType == '3d': vkPlotType = 'scatter-3d'
+print vkPlotType
+
+vkSize = getattr(args, 'size')
+
+vkSizeAlgo = getattr(args, 'sizealgo')
 
 def plotRatios(identified, type):
-  import pandas as pd
-  import plotly as py
-  import plotly.graph_objs as go
-  if type == '3d':
-    from plotly import __version__
-    #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-    import plotly.offline as py
-    import plotly.graph_objs as go
-    import numpy as np
-    traces = []
-    trace_count = 0
-    lowest_peak = 10.0**10  # ???
-    highest_peak = 0.0      # ???
-    highest_rt = identified[-1][3]  # rt is ordered
-    print(highest_rt)
-    feature_rts =[]
-    feature_peaks =[]
-    x=[]
-    y=[]
-    z=[]
-    feature_names = []
-    for feature in identified:
-      feature_peak = feature[2]
-      if feature_peak > highest_peak:
-        highest_peak = feature_peak
-      elif feature_peak < lowest_peak:
-        lowest_peak = feature_peak
-    for feature in identified:
-      feature_rts.append(feature[3]/60) # turn into minutes
-      feature_peak = feature[2]
-      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-      feature_formula = feature[4][0]
-      feature_name = ''
-      for i in feature_formula:
-         feature_name+=i+str(feature_formula[i])
-      feature_names.append(feature_name)
-      # Ratio Builder
-      if feature_formula['O'] == 0:
-        x.append(0)
-      else:
-        x.append(float(feature_formula["C"])/feature_formula["O"])
-      if feature_formula['N'] == 0:
-        y.append(0)
-      else:
-        y.append(float(feature_formula["C"])/feature_formula["N"])
-      if feature_formula['H'] == 0:
-        z.append(0) #what?
-      else:
-        z.append(float(feature_formula["H"])/feature_formula["C"])
-      # intensity builder
+  traces = []
+  trace_count = 0
+  lowest_peak = 10.0**10
+  highest_peak = 0.0
+  feature_rts =[]
+  highest_rt = 0
+  feature_formulas = []
+  feature_size = []
+  x=[]
+  y=[]
+  # 3d data is given to all plots for added plot.ly functionality
+  z=[]
+  for feature in identified:
+    feature_peak = feature[2]
+    if feature_peak > highest_peak:
+      highest_peak = feature_peak
+    elif feature_peak < lowest_peak:
+      lowest_peak = feature_peak
+    if highest_rt < feature[3]:
+      higher_rt = feature[3]
+  # assign metadata to each feature
+  for feature in identified:
+    feature_peak = feature[2]
+    # changes retention time from seconds to minutes
+    feature_rts.append(feature[3]/60)
+    # feature_size algorithm is not complete
+    if vkSizeAlgo == 0:
+      feature_size.append(vkSize)
+    elif vkSizeAlgo == 1:
+      feature_size.append(vkSize+4*vkSize*feature_peak/(highest_peak-lowest_peak))
+    else: 
+      feature_size.append(vkSize+2*math.log(vkSize*feature_peak/(highest_peak-lowest_peak)))
+    feature_formulas.append(feature[4])
+    x.append(feature[6]) # Oxygen / Carbon
+    y.append(feature[5]) # Hydrogen / Carbon
+    z.append(feature[7]) # Nitrogen / Carbon
+  if type == 'scatter-3d':
     feature_trace = go.Scatter3d(
       x = x,
       y = y,
       z = z,
       mode='markers',
-      text=feature_names,
+      text=feature_formulas,
       marker=dict(
-        size=feature_peaks,
+        size=feature_size,
         color=feature_rts,
         colorscale='Viridis',
         colorbar=dict(title='Retention Time (m)'),
@@ -67,7 +89,6 @@ def plotRatios(identified, type):
       )
     )
     traces.append(feature_trace)
-    print(traces)
     layout = go.Layout(
       title="Van Krevelen Diagram", 
       scene = dict(
@@ -77,13 +98,13 @@ def plotRatios(identified, type):
           gridcolor='rgb(183,183,183)',
           showline=True
         ),
-        zaxis=dict(
+        yaxis= dict(
           title= 'Hydrogen to Carbon Ratio',
           zeroline= False,
           gridcolor='rgb(183,183,183)',
           showline=True
         ),
-        yaxis= dict(
+        zaxis=dict(
           title= 'Carbon to Nitrogen Ratio',
           zeroline= False,
           gridcolor='rgb(183,183,183)',
@@ -93,56 +114,15 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=0, l=0, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename='simple-3d-scatter.html')
-  if type == 'scatter':
-    from plotly import __version__
-    #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-    import plotly.offline as py
-    import plotly.graph_objs as go
-    import numpy as np
-    traces = []
-    trace_count = 0
-    lowest_peak = 10.0**10
-    highest_peak = 0.0
-    highest_rt = identified[-1][3]
-    feature_rts =[]
-    feature_peaks =[]
-    x=[]
-    y=[]
-    feature_names = []
-    for feature in identified:
-      feature_peak = feature[2]
-      if feature_peak > highest_peak:
-        highest_peak = feature_peak
-      elif feature_peak < lowest_peak:
-        lowest_peak = feature_peak
-    for feature in identified:
-      print(feature)
-      feature_rts.append(feature[3]/60) # turn into minutes
-      feature_peak = feature[2]
-      feature_peaks.append(10+20*(feature_peak/(highest_peak-lowest_peak)))
-      feature_formula = feature[4][0]
-      feature_name = ''
-      for i in feature_formula:
-         feature_name+=i+str(feature_formula[i])
-      feature_names.append(feature_name)
-      # Ratio Builder
-      if feature_formula['O'] == 0:
-        x.append(0)
-      else:
-        x.append(float(feature_formula["C"])/feature_formula["O"])
-      if feature_formula['H'] == 0:
-        y.append(0)
-      else:
-        y.append(float(feature_formula["H"])/feature_formula["C"])
-      # intensity builder
+    py.plot(fig, filename='vkmz-3d-scatter.html')
+  if type == 'scatter-2d':
     feature_trace = go.Scatter(
       x = x,
       y = y,
       mode='markers',
-      text=feature_names,
+      text=feature_formulas,
       marker=dict(
-        size=feature_peaks,
+        size=feature_size,
         color=feature_rts,
         colorscale='Viridis',
         colorbar=dict(title='Retention Time (m)'),
@@ -151,7 +131,6 @@ def plotRatios(identified, type):
       )
     )
     traces.append(feature_trace)
-    print(traces)
     layout = go.Layout(
       title="Van Krevelen Diagram", 
       xaxis= dict(
@@ -169,4 +148,6 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=100, l=100, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename='simple-3d-scatter.html')
+    py.plot(fig, filename='vkmz-2d-scatter.html')
+
+plotRatios(identified, vkPlotType)

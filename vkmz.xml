@@ -11,33 +11,37 @@
 	  <exit_code range="1:" level="fatal" />
   </stdio>
 
-  <command><![CDATA[
+  <command detect_errors"aggressive"><![CDATA[
     python vkmzDriver.py
-    -i "$input"
-    -t "$threshold"
+    -d '$database'
+    -i '$input'
+    -p '$plot_type'
   ]]></command>
 
   <inputs>
     <param name="-i" label="Data input" type="data" format="tabular" help="help example" />
+    <param name="-d" label="Database selection" type="data" format="tabular" help="help example" />
+    <param name="-p" label="Plot Type" type="select" help="help example">
+      <option value="scatter" selected="true">2D Scattergraph</option>
+      <option value="3d">3D Scattergraph</option>
+    </param>
   </inputs>
 
   <outputs>
     <!--
-		 *info
     -->
-    <data name="data" label="${tool.name}_${variableMetadata_in.name}_detail" format="pdf" />
   </outputs>
 
   <tests>
     <test>
-      <param name="-i" value="example.mzXML.csv" />
-      <param name="-t" value="30" />
+      <param name="-i" value="test-data/example.mzXML.csv" />
+      <output name="ouput_data">
+        <not_has_text text="foobar">
+      </output>
     </test>
   </tests>
 
   <help><![CDATA[
-**Run PLS-DA Contrasts of Univariate Results**
-----------------------------------------------
 
 **Authors** - Stephen Brockman (University of Minnesota, ---@umn.edu)
 **Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)

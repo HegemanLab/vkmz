@@ -16,7 +16,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',     '-i', nargs='*', required=True,          help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
-parser.add_argument('--output',    '-o', action='store_true',               help='Call variable to ouput a ratio file.')
 parser.add_argument('--threshold', '-t', nargs='?', default='10', type=int, help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
 args = parser.parse_args()
 
@@ -27,8 +26,6 @@ for file in vkMZMLInput:
   if file.lower().endswith(('.mzml', '.mzxml')) == False:
     raise ValueError('Input file "%s" is not a mzML or mzXML file.' % (file))
     exit()
-
-vkMZMLOutput = getattr(args, "output")
 
 vkMZMLThreshold = getattr(args, "threshold")
 if 0 <= vkMZMLThreshold <= 100:
@@ -341,7 +338,7 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
 
 # parse input files
 # foobar testing code
-def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
+def dataParser(vkMZMLInput, vkMZMLThreshold):
   vkInputMzs = [[],[]]
   for file in vkMZMLInput:
     if file.lower().endswith('.mzxml'):
@@ -377,4 +374,4 @@ def dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput):
     except ValueError:
       return
 
-dataParser(vkMZMLInput, vkMZMLThreshold, vkMZMLOutput)
+dataParser(vkMZMLInput, vkMZMLThreshold)
