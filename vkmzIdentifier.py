@@ -30,37 +30,34 @@ vkInput = getattr(args, "input")
 vkInputMzs = []
 try:
   with open(vkInput, 'rb') as csvfile:
-    foo = csv.reader(csvfile)
-    for row in foo:
-      # each row of csvfile becomes a tuple element inside a list
-      # placeholder elements are added to each tuple
+    csvdata = csv.reader(csvfile)
+    for row in csvdata:
       vkInputMzs.append([float(row[0]),row[1],float(row[2]),float(row[3]),[],str])
 except ValueError:
   print('The %s data file could not be loaded.' % vkInput)
 
 vkOutput = getattr(args, "output")
-print vkOutput
 
 vkError = getattr(args, "error")
 
-# read multiprocessing argument
 vkMultiprocessing = getattr(args, "multiprocessing")
 
 def buildRatios(vkInputMzs):
   # elements to plot
   elements = ['C', 'H', 'O', 'N']
+  identified = []
   if vkMultiprocessing:
     try:
       pool = Pool()
       multiprocessMzsArgs = partial(multiprocessMzs, vkError)
-      identified = pool.map(multiprocessMzsArgs, vkInputMzs[index])
+      identified = pool.map(multiprocessMzsArgs, vkInputMzs)
+      identified = [x for x in identified if x is not None]
     except Exception as e:
       print(str(e))
     finally:
       pool.close()
       pool.join()
   else:
-    identified = []
     for centroid in vkInputMzs:
       identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]), lt, vkError)
       if identity != 'No Match':
@@ -79,10 +76,24 @@ def buildRatios(vkInputMzs):
         # this would be a good place to add unsaturation (2+2(carbons)+2(nitrogens)-hydrogens)/2
   return identified
 
-def multiprocessMzs(vkError, inputMz): # recieves a single Mz
-  return bmrb.getFormulaFromMass( bmrb.adjust( inputMz, lt, vkError ) )
+def multiprocessMzs(vkError, centroid): # recieves a single Mz
+  identity = bmrb.getFormulaFromMass(bmrb.adjust(centroid[0], centroid[1]),lt,vkError)
+  if identity != 'No Match':
+    identity_dict = {'C':0,'H':0,'O':0,'N':0} # necessary keys for 3d
+    for element in identity:
+      regex = re.compile(element+'([0-9]*)')
+      value = regex.findall(identity)
+      if element.isalpha():
+        if value == ['']:
+          value = ['1']
+        result = int(''.join(value))
+        identity_dict[element] = result
+    centroid[4] = [identity_dict]
+    centroid[5] = identity
+    return centroid
 
-# write vk identified as csv file
+# write vk identified as tsv file
+# this file can be read by vkmzPlotter.py
 def saveRatios(identified):
   if vkOutput != '':
     filename = vkOutput+'-'+time.strftime("%Y%m%d%H%M%S")+'.tsv'
