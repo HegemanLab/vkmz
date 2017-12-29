@@ -37,24 +37,24 @@ vkSizeAlgo = getattr(args, 'sizealgo')
 def plotRatios(identified, type):
   traces = []
   trace_count = 0
-  lowest_peak = 10.0**10 # arbitrarily large
-  highest_peak = 0.0     # arbitrarily small
+  lowest_peak = 10.0**10
+  highest_peak = 0.0
   feature_rts =[]
-  highest_rt = identified[-1][3]
+  highest_rt = 0
   feature_formulas = []
   feature_size = []
   x=[]
   y=[]
   # 3d data is given to all plots for added plot.ly functionality
   z=[]
-  # find lowest and highest peak
   for feature in identified:
     feature_peak = feature[2]
     if feature_peak > highest_peak:
       highest_peak = feature_peak
     elif feature_peak < lowest_peak:
       lowest_peak = feature_peak
-    # code assumes that first peak is not lowest peak 
+    if highest_rt < feature[3]:
+      higher_rt = feature[3]
   # assign metadata to each feature
   for feature in identified:
     feature_peak = feature[2]
