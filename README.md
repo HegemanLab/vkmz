@@ -1,35 +1,34 @@
-# vkmz version 0.003
+# vkmz version 0.004
 
 vkmz can take centroided mzXML files and create Van Krevelen diagrams using the plot.ly library.
 
 This code is in the process of being written. Original code comes from [VanKrevelenLocal](https://github.com/HegemanLab/VanKrevelenLocal). Code is based on the original ideas of Stephen Brockman and Eric Roden.
 
-
 ## Converting mzXML files for vkmz
 
-Currently vkmz uses a program named `vkmzMZXML` to convert a `mzXML` into a `CSV` file.
+Currently vkmz uses a program named `vkmzMZXML` to convert a `mzXML` into a `TSV` file.
 
 To convert a file run something like:
 ```
 python vkmzMZML.py -i test-data/example.mzXML -t 15
 ```
-This will create a new CSV file in the directory of the mzXML file.
+This will create a new TSV file in the directory of the mzXML file.
 
 In this example two arguments are used:
   * The input argument `-i` specified a path to an mzXML file.
   * Threshold (`-t`) was set to 15.
     * This means that features with an intensity less than 15% of the maximum intensity will be filtered out.
 
-## Identify features in CSV file
+## Identify features in TSV file
 
-The CSV file can be used to search for formula identification:
+The TSV file can be used to search for formula identification:
 ```
-python vkmzIdentifier.py -i test-data/example.mzXML.csv
+python vkmzIdentifier.py -i test-data/example.mzXML.tsv
 ```
 
 This will generate a TSV file that can be read in a spread sheet program or generate graphs with vkmzPlotter.
 
-The output file will be saved in the folder that vkmzDriver is run from with a filename similar to `identified-20171222140540.csv`.
+The output file will be saved in the folder that vkmzDriver is run from with a filename similar to `identified-20171222140540.tsv`.
 
 > Note that the lookup may not identify the true formula. The seen mass to charge ratio is compared to a list of chemicals with a known mass to charge to ratio. The first chemical with a known mass to charge ratio within a range from a seen mass is taken as the formula.
 
@@ -39,7 +38,7 @@ The output file will be saved in the folder that vkmzDriver is run from with a f
 
 The default error is 5 PPM. To set it to, say, 10 use:
 ```
-python vkmzIdentifier.py -i test-data/example.mzXML.csv --error 10
+python vkmzIdentifier.py -i test-data/example.mzXML.tsv --error 10
 ```
 
 #### Multiprocessing
@@ -48,18 +47,18 @@ vkmz' multiprocessing feauture divides the search time for masses in the lookup 
 
 To turn on multiprocessig add the `-m` argument:
 ```
-python vkmzIdentifier.py -i test-data/example.mzXML.csv -m
+python vkmzIdentifier.py -i test-data/example.mzXML.tsv -m
 ```
 
-#### Output CSV File Naming
+#### Output TSV File Naming
 
 A more descriptive name can be specified with the `-o` argument:
 ```
-python vkmzIdentifier.py -i test-data/example.mzXML.csv -o corylus
+python vkmzIdentifier.py -i test-data/example.mzXML.tsv -o corylus
 ```
-This would create a filename similar to `corylus-20171222140540.csv`.
+This would create a filename similar to `corylus-20171222140540.tsv`.
 
-## Plotting CSV File
+## Plotting Identified TSV File
 ```
 python vkmzPlotter.py -i test-data/ratios-20171228162504.tsv
 ``` 

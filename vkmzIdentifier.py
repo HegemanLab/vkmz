@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import re
 import os
 import time
@@ -29,9 +30,10 @@ lt = bmrb.getLookupTable('databases/' + vkDatabase)
 vkInput = getattr(args, "input")
 vkInputMzs = []
 try:
-  with open(vkInput, 'rb') as csvfile:
-    csvdata = csv.reader(csvfile)
-    for row in csvdata:
+  with open(vkInput, 'r') as tsv:
+    next(tsv) # skip first line
+    tsvData = csv.reader(tsv, delimiter='\t')
+    for row in tsvData:
       vkInputMzs.append([float(row[0]),row[1],float(row[2]),float(row[3]),[],str])
 except ValueError:
   print('The %s data file could not be loaded.' % vkInput)

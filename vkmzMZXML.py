@@ -1,4 +1,5 @@
 import sys
+import csv
 import base64  # Imports a binary converter package
 import struct
 import xml.parsers.expat
@@ -365,12 +366,10 @@ def dataParser(vkMZMLInput, vkMZMLThreshold):
     # sort tuples by mass value
     vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
     try:
-      import csv
-      with open(file+'.csv', 'w') as out: 
-        csv_out=csv.writer(out)
-       #csv_out.writerow(['mass','polarity','retention time','intensity'])
+      with open(file+'.tsv', 'w') as f: 
+        f.writelines(str("mass\tpolarity\tintensity\tretention time\n"))
         for row in vkInputMzs:
-          csv_out.writerow(row)
+          f.writelines(str(row[0])+'\t'+str(row[1])+'\t'+str(row[2])+'\t'+str(row[3])+'\n')
     except ValueError:
       return
 
