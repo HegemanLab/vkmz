@@ -13,19 +13,15 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
+    cd $__tool_directory__;
     python vkmzIdentifier.py
-    -d '$database'
-    -i '$identifier_in'
-    -p '$plot_type'
+    -i '$identifier_in';
+    echo "cp identified*.tsv  '$identifier_out'";
+    cp identified*.tsv  '$identifier_out'
   ]]></command>
 
   <inputs>
     <param name="identifier_in" label="Data input" type="data" format="tabular" help="help example" />
-    <param name="-d" label="Database selection" type="data" format="tabular" help="help example" />
-    <param name="-p" label="Plot Type" type="select" help="help example">
-      <option value="scatter" selected="true">2D Scattergraph</option>
-      <option value="3d">3D Scattergraph</option>
-    </param>
   </inputs>
 
   <outputs>
@@ -34,7 +30,7 @@
 
   <tests>
     <test>
-      <param name="-i" value="test-data/example.mzXML.tsv" />
+      <param name="identifier_in" value="example.mzXML.tsv" />
       <output name="identifier_out">
 	<assert_contents>
           <not_has_text text="foobar" />
