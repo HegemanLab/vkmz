@@ -3,23 +3,24 @@
   <description>Van Krevelen Diagram for Mass Spectrometry</description>
   
   <requirements>
-    <!-- <requirement type="package">example</requirement> -->
+    <requirement type="package">pandas</requirement>
+    <requirement type="package">numpy</requirement>
+    <requirement type="package">plotly</requirement>
   </requirements>
   
   <stdio>
-      <!-- WHAT IS THIS FOR? -->
-	  <exit_code range="1:" level="fatal" />
+    <exit_code range="1:" level="fatal" />
   </stdio>
 
-  <command detect_errors"aggressive"><![CDATA[
-    python vkmzDriver.py
+  <command detect_errors="aggressive"><![CDATA[
+    python vkmzIdentifier.py
     -d '$database'
-    -i '$input'
+    -i '$identifier_in'
     -p '$plot_type'
   ]]></command>
 
   <inputs>
-    <param name="-i" label="Data input" type="data" format="tabular" help="help example" />
+    <param name="identifier_in" label="Data input" type="data" format="tabular" help="help example" />
     <param name="-d" label="Database selection" type="data" format="tabular" help="help example" />
     <param name="-p" label="Plot Type" type="select" help="help example">
       <option value="scatter" selected="true">2D Scattergraph</option>
@@ -28,15 +29,16 @@
   </inputs>
 
   <outputs>
-    <!--
-    -->
+    <data name="identifier_out" label="${tool.name}_${identifier_in.name}" format="tabular"  />
   </outputs>
 
   <tests>
     <test>
-      <param name="-i" value="test-data/example.mzXML.csv" />
-      <output name="ouput_data">
-        <not_has_text text="foobar">
+      <param name="-i" value="test-data/example.mzXML.tsv" />
+      <output name="identifier_out">
+	<assert_contents>
+          <not_has_text text="foobar" />
+        </assert_contents>
       </output>
     </test>
   </tests>
