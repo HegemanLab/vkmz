@@ -1,4 +1,4 @@
-# vkmz version 0.004
+# vkmz version 0.005
 
 vkmz can take centroided mzXML files and create Van Krevelen diagrams using the plot.ly library.
 
@@ -10,12 +10,13 @@ Currently vkmz uses a program named `vkmzMZXML` to convert a `mzXML` into a `TSV
 
 To convert a file run something like:
 ```
-python vkmzMZML.py -i test-data/example.mzXML -t 15
+python vkmzMZML.py -i test-data/example.mzXML -o test-data/example.mzXML.tsv -t 15
 ```
 This will create a new TSV file in the directory of the mzXML file.
 
 In this example two arguments are used:
   * The input argument `-i` specified a path to an mzXML file.
+  * The output argument `-o` specifies the output file name.
   * Threshold (`-t`) was set to 15.
     * This means that features with an intensity less than 15% of the maximum intensity will be filtered out.
 
@@ -23,7 +24,7 @@ In this example two arguments are used:
 
 The TSV file can be used to search for formula identification:
 ```
-python vkmzIdentifier.py -i test-data/example.mzXML.tsv
+python vkmzIdentifier.py -i test-data/example.mzXML.tsv -o test-data/example.mzXML.identified.tsv
 ```
 
 This will generate a TSV file that can be read in a spread sheet program or generate graphs with vkmzPlotter.
@@ -56,7 +57,7 @@ A more descriptive name can be specified with the `-o` argument:
 ```
 python vkmzIdentifier.py -i test-data/example.mzXML.tsv -o corylus
 ```
-This would create a filename similar to `corylus-20171222140540.tsv`.
+This would create a filename similar to `corylus.tsv`.
 
 ## Plotting Identified TSV File
 ```
@@ -77,7 +78,7 @@ Base size can be adjusted with `-s [number]` and size algorithm can be selected 
 
 For instance, to use 15 as the base size and to use algorithm 2 use:
 ```
-python vkmzPlotter.py -i test-data/ratios-20171228162504.tsv -p 3d -s 15 -a 2
+python vkmzPlotter.py -i test-data/ratios.tsv -p 3d -s 15 -a 2
 ``` 
 
 There are currently three size algorithms. All of them use base_size (`-s`) as a variable:
