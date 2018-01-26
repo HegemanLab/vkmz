@@ -16,23 +16,23 @@ import argparse
 # the bottom block comes from the vkmz 1.0 driver
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--input',     '-i', nargs='*', required=True,          help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
+parser.add_argument('--input',     '-i', nargs='?', required=True,          help='Enter full mzXML/mzML file paths. For multiple files seperate files with a space.')
+parser.add_argument('--output',    '-o', nargs='?', required=True,          help='Specify output filename.')
 parser.add_argument('--threshold', '-t', nargs='?', default='10', type=int, help='Set threshold as a percent integer from 0 to 100. eg. 15 for 15%%.')
 args = parser.parse_args()
 
-# this scripts can concatenate multiple files into one
-# if you want an output file for each input file run this script for each input individually
-vkMZMLInput = getattr(args, "input")
-for file in vkMZMLInput:
-  if file.lower().endswith(('.mzml', '.mzxml')) == False:
-    raise ValueError('Input file "%s" is not a mzML or mzXML file.' % (file))
-    exit()
+vkInput = getattr(args, "input")
+if vkInput.lower().endswith(('.mzml', '.mzxml')) == False:
+  raise ValueError('Input file "%s" is not a mzML or mzXML file.' % (file))
+  exit()
 
-vkMZMLThreshold = getattr(args, "threshold")
-if 0 <= vkMZMLThreshold <= 100:
-  vkMZMLThreshold = vkMZMLThreshold * 0.01
+vkOutput = getattr(args, "output")
+
+vkThreshold = getattr(args, "threshold")
+if 0 <= vkThreshold <= 100:
+  vkThreshold = vkThreshold * 0.01
 else:
-  raise ValueError("The given threshold, %i, is out of bounds." % (vkMZMLThreshold))
+  raise ValueError("The given threshold, %i, is out of bounds." % (vkThreshold))
   exit()
 
 '''
@@ -339,38 +339,38 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
 
 # parse input files
 # foobar testing code
-def dataParser(vkMZMLInput, vkMZMLThreshold):
+def dataParser(vkInput, vkThreshold):
   vkInputMzs = [[],[]]
-  for file in vkMZMLInput:
-    if file.lower().endswith('.mzxml'):
-      mzXML = MzXML()
-      mzXML.parse_file(file)
-      vkInputMzsTemp = process_mzs(mzXML, threshold=vkMZMLThreshold)
-      vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
-      vkInputMzs[1] += vkInputMzsTemp[1]
-    elif file.lower().endswith('.mzml'):   #FLAG, test this filetype
-      vkInputMzs = process_mzs(file, threshold=vkMZMLThreshold)
-    # Removes all duplicates from both neg and pos lists
-    #   this may have been done in process_mzs
-    vkInputMzs[0] = list(set(vkInputMzs[0]))
-    vkInputMzs[1] = list(set(vkInputMzs[1]))
-    # create tuple of mz, polarity, intensity and retention time
-    #   for each element
-    posValues = []
-    for element in vkInputMzs[0]:
-       posValues.append((element[0],'pos',element[1],element[2]))
-    #negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
-    negValues = []
-    for element in vkInputMzs[1]:
-       posValues.append((element[0],'neg',element[1],element[2]))
-    # sort tuples by mass value
-    vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
-    try:
-      with open(file+'.tsv', 'w') as f: 
-        f.writelines(str("mass\tpolarity\tintensity\tretention time\n"))
-        for row in vkInputMzs:
-          f.writelines(str(row[0])+'\t'+str(row[1])+'\t'+str(row[2])+'\t'+str(row[3])+'\n')
-    except ValueError:
-      return
+  if vkInput.lower().endswith('.mzxml'):
+    mzXML = MzXML()
+    mzXML.parse_file(vkInput)
+    vkInputMzsTemp = process_mzs(mzXML, threshold=vkThreshold)
+    vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
+    vkInputMzs[1] += vkInputMzsTemp[1]
+  elif vkInput.lower().endswith('.mzml'):   #FLAG, test this filetype
+    vkInputMzs = process_mzs(vkInput, threshold=vkThreshold)
+  # Removes all duplicates from both neg and pos lists
+  #   this may have been done in process_mzs
+  #    CHECK!
+  vkInputMzs[0] = list(set(vkInputMzs[0]))
+  vkInputMzs[1] = list(set(vkInputMzs[1]))
+  # create tuple of mz, polarity, intensity and retention time
+  #   for each element
+  posValues = []
+  for element in vkInputMzs[0]:
+     posValues.append((element[0],'pos',element[1],element[2]))
+  #negValues = [(x,'neg',None,None) for x in vkInputMzs[1]]
+  negValues = []
+  for element in vkInputMzs[1]:
+     posValues.append((element[0],'neg',element[1],element[2]))
+  # sort tuples by mass value
+  vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
+  try:
+    with open(vkOutput+'.tsv', 'w') as f: 
+      f.writelines(str("mass\tpolarity\tintensity\tretention time\n"))
+      for row in vkInputMzs:
+        f.writelines(str(row[0])+'\t'+str(row[1])+'\t'+str(row[2])+'\t'+str(row[3])+'\n')
+  except ValueError:
+    return
 
-dataParser(vkMZMLInput, vkMZMLThreshold)
+dataParser(vkInput, vkThreshold)
