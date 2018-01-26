@@ -1,6 +1,6 @@
-<tool id="w4mvkms" name="Van Krevlen Diagram for Mass Spectrometry" version="alpha-0.1">
+<tool id="vkmz" name="vkmz" version="alpha-0.1">
 
-  <description>Van Krevelen Diagram for Mass Spectrometry</description>
+  <description>A Van Krevelen Diagram tool for LC-MS data on Galaxy.</description>
   
   <requirements>
     <requirement type="package">pandas</requirement>
@@ -41,9 +41,8 @@
 
   <help><![CDATA[
 
-**Authors** - Stephen Brockman (University of Minnesota, ---@umn.edu)
+**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
 **Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
-
 
 Help placeholder goes here.
 
@@ -55,10 +54,9 @@ Placeholder
 Release notes
 -------------
 
-alpha-0.1
+alpha-0.2
 
-- developer learning galaxy wrapping
-- vkms tool is incomplete
+- tool incomplete
   ]]></help>
 
   <citations>
