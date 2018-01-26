@@ -13,18 +13,14 @@ from functools import partial
 import csv
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--database',  '-d', nargs='*', default='bmrb-light.csv', help='Select database(s).')
+parser.add_argument('--database',  '-d', nargs='?', default='bmrb-light.csv', help='Select database(s).')
 parser.add_argument('--input',     '-i', nargs='?', type=str, required=True,  help='Data file must be a csv with the columns mz, polarity, intensity, & rt.')
-parser.add_argument('--output',    '-o', nargs='?', type=str, default='',     help='Specify name of output file.')
+parser.add_argument('--output',    '-o', nargs='?', type=str, required=True,  help='Specify name of output file.')
 parser.add_argument('--error',     '-e', nargs='?', type=int, default=5,      help='Error in PPM for identification.')
 parser.add_argument('--multiprocessing', '-m', action='store_true',           help='Call to use multiprocessing. One process per core.')
 args = parser.parse_args()
 
 vkDatabase = getattr(args, "database")
-#lt = []
-#print(type(lt))
-#for database in vkDatabase:
-#  lt = bmrb.getLookupTable('databases/' + database)
 lt = bmrb.getLookupTable('databases/' + vkDatabase)
 
 vkInput = getattr(args, "input")
@@ -97,10 +93,7 @@ def multiprocessMzs(vkError, centroid): # recieves a single Mz
 # write vk identified as tsv file
 # this file can be read by vkmzPlotter.py
 def saveRatios(identified):
-  if vkOutput != '':
-    filename = vkOutput+'-'+time.strftime("%Y%m%d%H%M%S")+'.tsv'
-  else:
-    filename = 'identified-'+time.strftime("%Y%m%d%H%M%S")+'.tsv'
+  filename = vkOutput+'.tsv'
   try:
     with open(filename, 'w') as f: 
       f.writelines(str("mz\tpolarity\tintensity\tretention time\tidentified structure\tH:C\tC:O\tC:N") + '\n')
