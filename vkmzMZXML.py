@@ -1,3 +1,4 @@
+print("Is this thing on!")
 import sys
 import csv
 import base64  # Imports a binary converter package
@@ -22,9 +23,6 @@ parser.add_argument('--threshold', '-t', nargs='?', default='10', type=int, help
 args = parser.parse_args()
 
 vkInput = getattr(args, "input")
-if vkInput.lower().endswith(('.mzml', '.mzxml')) == False:
-  raise ValueError('Input file "%s" is not a mzML or mzXML file.' % (file))
-  exit()
 
 vkOutput = getattr(args, "output")
 
@@ -193,20 +191,18 @@ class MzXML():
                 self.MS2_list[-1].intensity_list = intensity_list
 
     def parse_file(self, filename_xml):
-        sys.stderr.write("Reading %s ... " % filename_xml)
+        print("in parse")
         f_xml = open(filename_xml, 'r')
-        if filename_xml.endswith('.gz'):
-            f_xml = gzip.open(filename_xml, 'rb')
         content_list = []
         for line in f_xml:
             content_list.append(line)
+        print("content_list built")
         f_xml.close()
         expat = xml.parsers.expat.ParserCreate()
         expat.StartElementHandler = self._start_element
         expat.EndElementHandler = self._end_element
         expat.CharacterDataHandler = self._char_data
         expat.Parse("".join(content_list))
-        sys.stderr.write("Done\n")
 
 '''
 Takes an mzML object which contains a list of intensities, a
@@ -341,17 +337,15 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
 # foobar testing code
 def dataParser(vkInput, vkThreshold):
   vkInputMzs = [[],[]]
-  if vkInput.lower().endswith('.mzxml'):
-    mzXML = MzXML()
-    mzXML.parse_file(vkInput)
-    vkInputMzsTemp = process_mzs(mzXML, threshold=vkThreshold)
-    vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
-    vkInputMzs[1] += vkInputMzsTemp[1]
-  elif vkInput.lower().endswith('.mzml'):   #FLAG, test this filetype
-    vkInputMzs = process_mzs(vkInput, threshold=vkThreshold)
+  mzXML = MzXML()
+  print("foo")
+  mzXML.parse_file(vkInput)
+  print("bar")
+  vkInputMzsTemp = process_mzs(mzXML, threshold=vkThreshold)
+  vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
+  vkInputMzs[1] += vkInputMzsTemp[1]
   # Removes all duplicates from both neg and pos lists
   #   this may have been done in process_mzs
-  #    CHECK!
   vkInputMzs[0] = list(set(vkInputMzs[0]))
   vkInputMzs[1] = list(set(vkInputMzs[1]))
   # create tuple of mz, polarity, intensity and retention time
@@ -365,11 +359,14 @@ def dataParser(vkInput, vkThreshold):
      posValues.append((element[0],'neg',element[1],element[2]))
   # sort tuples by mass value
   vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
+  print("Pre try!")
   try:
-    with open(vkOutput+'.tsv', 'w') as f: 
+    with open(vkOutput, 'w') as f: 
       f.writelines(str("mass\tpolarity\tintensity\tretention time\n"))
+      print(vkInputMzs)
       for row in vkInputMzs:
         f.writelines(str(row[0])+'\t'+str(row[1])+'\t'+str(row[2])+'\t'+str(row[3])+'\n')
+    print("writing to: "+vkOutput)
   except ValueError:
     return
 

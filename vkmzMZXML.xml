@@ -1,0 +1,71 @@
+<tool id="vkmzMZXML" name="mzXML convert for vkmz" version="alpha-0.1">
+
+  <description>vkmz: a van Krevelen Diagram tool for MS data on Galaxy</description>
+  
+  <requirements>
+    <requirement type="package" version="2.7">python</requirement>
+    <requirement type="package">pandas</requirement>
+    <requirement type="package">numpy</requirement>
+  </requirements>
+  
+  <stdio>
+    <exit_code range="1:" level="fatal" />
+  </stdio>
+
+  <command detect_errors="aggressive"><![CDATA[
+    cd '$__tool_directory__';
+    python vkmzMZXML.py
+    -i '$input'
+    -o '$output'
+    -t '$threshold';
+    cp $input vkmzMZXML-foo-in.tsv;
+    cp $output vkmzMZXML-foo-out.tsv
+  ]]></command>
+
+  <inputs>
+    <param name="input" label="Data input file" type="data" format="tabular" help="help example" />
+    <param name="threshold" label="intensity threshold percentage" type="integer" value="20" min="0" max="100" help="help example" />
+  </inputs>
+
+  <outputs>
+    <data name="output" label="${tool.name}_${input.name}" format="tabular"  />
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input" value="example.mzXML" />
+      <param name="threshold" value="99" />
+      <output name="output">
+	<assert_contents>
+          <has_text text="52407.2695312"/>
+        </assert_contents>
+      </output>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+
+**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
+**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+
+Help placeholder goes here.
+
+Trademarks
+----------
+
+Placeholder
+
+Release notes
+-------------
+
+alpha-0.2
+
+- tool incomplete
+  ]]></help>
+
+  <citations>
+    <citation type="doi">123.456/example.123</citation>
+    <!-- Example Title -->
+  </citations>
+
+</tool>
