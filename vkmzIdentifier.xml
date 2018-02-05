@@ -1,0 +1,76 @@
+<tool id="vkmz" name="vkmz" version="alpha-0.1">
+
+  <description>A Van Krevelen Diagram tool for LC-MS data on Galaxy.</description>
+  
+  <requirements>
+    <requirement type="package" version="2.7">python</requirement>
+    <requirement type="package">pandas</requirement>
+    <requirement type="package">numpy</requirement>
+  </requirements>
+  
+  <stdio>
+    <exit_code range="1:" level="fatal" />
+  </stdio>
+
+  <command detect_errors="aggressive"><![CDATA[
+    cd '$__tool_directory__';
+    python '$__tool_directory__/vkmzIdentifier.py'
+    -i '$input'
+    -o '$output'
+    -d '$database'
+    -m '$multiprocessing';
+    cp '$output' fooooooo.txt
+  ]]></command>
+
+  <inputs>
+    <param name="input" label="Data input file" type="data" format="tabular" help="help example" />
+    <param name="database" label="Lookup table to find mz matches" type="data" format="tabular" help="help example" />
+    <param name="multiprocessing" label="Multiprocessing" type="select" display="radiobutton" help="help example">
+      <option value="False">Off</option>
+      <option value="True">On</option>
+    </param>
+  </inputs>
+
+  <outputs>
+    <data name="output" label="${tool.name}_${input.name}" format="tabular"  />
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input" value="example.mzXML.tsv" />
+      <param name="database" value="/home/rstudio/vkmz/databases/bmrb-light.csv" />
+      <param name="multiprocessing" value="True" />
+      <output name="output">
+	<assert_contents>
+          <has_text text="191.034225464" />
+        </assert_contents>
+      </output>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+
+**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
+**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+
+Help placeholder goes here.
+
+Trademarks
+----------
+
+Placeholder
+
+Release notes
+-------------
+
+alpha-0.2
+
+- tool incomplete
+  ]]></help>
+
+  <citations>
+    <citation type="doi">123.456/example.123</citation>
+    <!-- Example Title -->
+  </citations>
+
+</tool>
