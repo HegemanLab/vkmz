@@ -7,6 +7,8 @@ from plotly import __version__
 import plotly.offline as py
 import plotly.graph_objs as go
  
+print("In plotter")
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',    '-i', nargs='?', required=True, help='Load a tabular file with ratio information.')
 parser.add_argument('--output',   '-o', nargs='?', required=True, help='Load a tabular file with ratio information.')
@@ -117,7 +119,7 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=0, l=0, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename=vkOutput+'.html')
+    py.plot(fig, filename=vkOutput, auto_open=False)
   if type == 'scatter-2d':
     feature_trace = go.Scatter(
       x = x,
@@ -151,6 +153,7 @@ def plotRatios(identified, type):
       margin=dict(r=0, b=100, l=100, t=100)
     )
     fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename=vkOutput+'.html')
+    py.plot(fig, filename=vkOutput, auto_open=False)
+    print("saving to "+vkOutput)
 
 plotRatios(identified, vkPlotType)
