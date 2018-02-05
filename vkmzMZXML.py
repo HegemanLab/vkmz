@@ -141,7 +141,6 @@ class MzXML():
             elif (self.msLevel == 0):
                 tmp_ms = MS2Scan()
             else:
-                print("What is it?", attrs)
                 sys.exit(1)
             # Assigns attributes to their logical properties
             tmp_ms.id = int(attrs['num'])
@@ -191,12 +190,10 @@ class MzXML():
                 self.MS2_list[-1].intensity_list = intensity_list
 
     def parse_file(self, filename_xml):
-        print("in parse")
         f_xml = open(filename_xml, 'r')
         content_list = []
         for line in f_xml:
             content_list.append(line)
-        print("content_list built")
         f_xml.close()
         expat = xml.parsers.expat.ParserCreate()
         expat.StartElementHandler = self._start_element
@@ -338,9 +335,7 @@ def process_mzs(mzXML_obj, threshold=.1):  # What fraction of the max intensity 
 def dataParser(vkInput, vkThreshold):
   vkInputMzs = [[],[]]
   mzXML = MzXML()
-  print("foo")
   mzXML.parse_file(vkInput)
-  print("bar")
   vkInputMzsTemp = process_mzs(mzXML, threshold=vkThreshold)
   vkInputMzs[0] += vkInputMzsTemp[0] # this code looks redundant
   vkInputMzs[1] += vkInputMzsTemp[1]
@@ -359,14 +354,11 @@ def dataParser(vkInput, vkThreshold):
      posValues.append((element[0],'neg',element[1],element[2]))
   # sort tuples by mass value
   vkInputMzs = sorted(posValues+negValues, key=(lambda x: x[0]))
-  print("Pre try!")
   try:
     with open(vkOutput, 'w') as f: 
       f.writelines(str("mass\tpolarity\tintensity\tretention time\n"))
-      print(vkInputMzs)
       for row in vkInputMzs:
         f.writelines(str(row[0])+'\t'+str(row[1])+'\t'+str(row[2])+'\t'+str(row[3])+'\n')
-    print("writing to: "+vkOutput)
   except ValueError:
     return
 
