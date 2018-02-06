@@ -1,4 +1,3 @@
-print("Is this thing on!")
 import sys
 import csv
 import base64  # Imports a binary converter package

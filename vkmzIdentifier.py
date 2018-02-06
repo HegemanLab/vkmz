@@ -13,9 +13,9 @@ from functools import partial
 import csv
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--database',  '-d', nargs='?', default='databases/bmrb-light.csv', help='Select database(s).')
 parser.add_argument('--input',     '-i', nargs='?', type=str, required=True,  help='Data file must be a csv with the columns mz, polarity, intensity, & rt.')
 parser.add_argument('--output',    '-o', nargs='?', type=str, required=True,  help='Specify name of output file.')
+parser.add_argument('--database',  '-d', nargs='?', default='databases/bmrb-light.csv', help='Select database.')
 parser.add_argument('--error',     '-e', nargs='?', type=int, default=5,      help='Error in PPM for identification.')
 parser.add_argument('--multiprocessing', '-m', nargs='?', type=bool, default=False,      help='Call to use multiprocessing. One process per core.')
 args = parser.parse_args()

@@ -7,8 +7,6 @@ from plotly import __version__
 import plotly.offline as py
 import plotly.graph_objs as go
  
-print("In plotter")
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--input',    '-i', nargs='?', required=True, help='Load a tabular file with ratio information.')
 parser.add_argument('--output',   '-o', nargs='?', required=True, help='Load a tabular file with ratio information.')
@@ -34,7 +32,6 @@ vkOutput = getattr(args, "output")
 vkPlotType = getattr(args, 'plottype')
 if vkPlotType == '2d': vkPlotType = 'scatter-2d'
 if vkPlotType == '3d': vkPlotType = 'scatter-3d'
-print vkPlotType
 
 vkSize = getattr(args, 'size')
 
@@ -154,6 +151,5 @@ def plotRatios(identified, type):
     )
     fig = go.Figure(data=traces, layout=layout)
     py.plot(fig, filename=vkOutput, auto_open=False)
-    print("saving to "+vkOutput)
 
 plotRatios(identified, vkPlotType)

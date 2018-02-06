@@ -1,6 +1,6 @@
 <tool id="vkmzPlotter" name="vkmzPlotter" version="alpha-0.1">
 
-  <description>vkmz: a van Krevelen Diagram tool for MS data on Galaxy</description>
+  <description>Write atomic ratios to a plot.</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -23,13 +23,13 @@
   ]]></command>
 
   <inputs>
-    <param name="input" label="Data input file" type="data" format="tabular" help="help example" />
-    <param name="plottype" label="Plot Type" type="select" help="help example">
+    <param name="input" label="Input File" type="data" format="tabular" help="Tabular file from vkmzIdentifier with list of atomic ratios." />
+    <param name="plottype" label="Plot Type" type="select" help="Select type of plot to create.">
       <option value="2d">2D Scatter Plot</option>
       <option value="3d">3D Scatter Plot</option>
     </param>
-    <param name="size" label="Size" type="integer" value="5" min="0" />
-    <param name="algorithm" label="Size Algorithm" type="select">
+    <param name="size" label="Size" type="integer" value="5" min="0" help="Set size of mz dot." />
+    <param name="algorithm" label="Size Algorithm" type="select" help="Select algorithm to set dot size based on intensity.">
       <option value="0">Uniform Size</option>
       <option value="1">Log</option>
       <option value="2">Other</option>

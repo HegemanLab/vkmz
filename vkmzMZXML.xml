@@ -1,6 +1,6 @@
-<tool id="vkmzMZXML" name="mzXML convert for vkmz" version="alpha-0.1">
+<tool id="vkmzMZXML" name="vkmzMZXML" version="alpha-0.1">
 
-  <description>vkmz: a van Krevelen Diagram tool for MS data on Galaxy</description>
+  <description>convert mzXML to vkmzIdentifier format</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -13,18 +13,15 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
-    cd '$__tool_directory__';
-    python vkmzMZXML.py
+    python '$__tool_directory__'/vkmzMZXML.py
     -i '$input'
     -o '$output'
-    -t '$threshold';
-    cp $input vkmzMZXML-foo-in.tsv;
-    cp $output vkmzMZXML-foo-out.tsv
+    -t '$threshold'
   ]]></command>
 
   <inputs>
-    <param name="input" label="Data input file" type="data" format="tabular" help="help example" />
-    <param name="threshold" label="intensity threshold percentage" type="integer" value="20" min="0" max="100" help="help example" />
+    <param name="input" label="mzXML Input" type="data" format="mzxml" help="Input should be a centroided and uncompressed LC-MS mzXML file." />
+    <param name="threshold" label="Intensity Threshold" type="integer" value="20" min="0" max="100" help="Peaks with an intensity less than the Intensity Threshold percentage of the maxium peak are removed." />
   </inputs>
 
   <outputs>
@@ -53,14 +50,13 @@ Help placeholder goes here.
 Trademarks
 ----------
 
-Placeholder
-
 Release notes
 -------------
 
-alpha-0.2
+beta-0.01
 
-- tool incomplete
+vkmzMZXML is for development purposes. It will be deprecated and replaced with xcms.
+
   ]]></help>
 
   <citations>

@@ -1,6 +1,6 @@
-<tool id="vkmz" name="vkmz" version="alpha-0.1">
+<tool id="vkmzIdentifier" name="vkmzIdentifier" version="alpha-0.1">
 
-  <description>A Van Krevelen Diagram tool for LC-MS data on Galaxy.</description>
+  <description>Identify formulas from masses and determine atomic ratios.</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -14,18 +14,24 @@
 
   <command detect_errors="aggressive"><![CDATA[
     cd '$__tool_directory__';
-    python '$__tool_directory__/vkmzIdentifier.py'
+    python 'vkmzIdentifier.py'
     -i '$input'
     -o '$output'
     -d '$database'
-    -m '$multiprocessing';
-    cp '$output' fooooooo.txt
+    -e '$error'
+    -m '$multiprocessing'
   ]]></command>
 
   <inputs>
-    <param name="input" label="Data input file" type="data" format="tabular" help="help example" />
-    <param name="database" label="Lookup table to find mz matches" type="data" format="tabular" help="help example" />
-    <param name="multiprocessing" label="Multiprocessing" type="select" display="radiobutton" help="help example">
+    <param name="input" label="Data Input" type="data" format="tabular" help="Select input data." />
+    <param name="database" label="Database" type="select" help="Choose database for mass look up table.">
+      <option value="databases/bmrb-light.csv">Normal</option>
+      <option value="databases/bmrb-heavy_carbon.csv">Heavy Carbon</option>
+      <option value="databases/bmrb-heavy_nitrogen.csv">Heavy Nitrogen</option>
+      <option value="databases/bmrb-heavy.csv">Heavy Carbon and Nitrogen</option>
+    </param>
+    <param name="error" label="PPM Error" type="integer" value="5" min="0" help="Parts per million mass error. Set according to your mass spectrometer." />
+    <param name="multiprocessing" label="Multiprocessing" type="select" display="radiobutton" >
       <option value="False">Off</option>
       <option value="True">On</option>
     </param>
@@ -38,7 +44,7 @@
   <tests>
     <test>
       <param name="input" value="example.mzXML.tsv" />
-      <param name="database" value="/home/rstudio/vkmz/databases/bmrb-light.csv" />
+      <param name="database" value="databases/bmrb-light.csv" />
       <param name="multiprocessing" value="True" />
       <output name="output">
 	<assert_contents>
