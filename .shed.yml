@@ -1,8 +1,15 @@
 categories:
 - Metabolomics Visualization
-description: A van Krevelen Diagram tool for MS data
-long_description: 
-name: vkmz
+description: A van Krevelen Diagram tool for LC-MS data
+long_description: A van Krevelen Diagram tool for LC-MS data
 owner: eslerm
 remote_repository_url: https://github.com/HegemanLab/vkmz
 type: unrestricted
+auto_tool_repositories:
+  name_template" "{{ tool_id }}"
+  description_template: "{{ tool_name }}."
+suite:
+  name: "vkmz"
+  description: A van Krevelen Diagram tool for LC-MS data
+  long_description: A van Krevelen Diagram tool for LC-MS data
+type: repository_suite_definition
