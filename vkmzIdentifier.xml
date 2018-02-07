@@ -31,7 +31,7 @@
       <option value="databases/bmrb-heavy.csv">Heavy Carbon and Nitrogen</option>
     </param>
     <param name="error" label="PPM Error" type="integer" value="5" min="0" help="Parts per million mass error. Set according to your mass spectrometer." />
-    <param name="multiprocessing" label="Multiprocessing" type="select" display="radiobutton" >
+    <param name="multiprocessing" label="Multiprocessing" type="select" display="radio" >
       <option value="False">Off</option>
       <option value="True">On</option>
     </param>
