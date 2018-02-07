@@ -1,6 +1,6 @@
 <tool id="vkmzMZXML" name="vkmzMZXML" version="alpha-0.1">
 
-  <description>convert mzXML to vkmzIdentifier format</description>
+  <description>convert mzXML to vkmzID format</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -42,20 +42,14 @@
 
   <help><![CDATA[
 
-**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
-**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+**Authors** - Stephen Brockman (brock197@umn.edu)
 
-Help placeholder goes here.
-
-Trademarks
-----------
+**Authors** - Mark Esler (eslerm@umn.edu)
 
 Release notes
 -------------
 
 beta-0.01
-
-vkmzMZXML is for development purposes. It will be deprecated and replaced with xcms.
 
   ]]></help>
 

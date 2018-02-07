@@ -1,6 +1,6 @@
 <tool id="vkmzIdentifier" name="vkmzIdentifier" version="alpha-0.1">
 
-  <description>Identify formulas from masses and determine atomic ratios.</description>
+  <description>identify formulas and determine vk ratios</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -56,22 +56,15 @@
 
   <help><![CDATA[
 
-**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
-**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+**Authors** - Stephen Brockman (brock197@umn.edu)
 
-Help placeholder goes here.
-
-Trademarks
-----------
-
-Placeholder
+**Authors** - Mark Esler (eslerm@umn.edu)
 
 Release notes
 -------------
 
-alpha-0.2
+beta-0.01
 
-- tool incomplete
   ]]></help>
 
   <citations>

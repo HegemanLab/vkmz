@@ -1,6 +1,6 @@
 <tool id="vkmzPlotter" name="vkmzPlotter" version="alpha-0.1">
 
-  <description>Write atomic ratios to a plot.</description>
+  <description>write vk ratios to plot</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -24,12 +24,12 @@
 
   <inputs>
     <param name="input" label="Input File" type="data" format="tabular" help="Tabular file from vkmzIdentifier with list of atomic ratios." />
-    <param name="plottype" label="Plot Type" type="select" help="Select type of plot to create.">
+    <param name="plottype" label="Plot Type" type="select" help="Type of plot to create.">
       <option value="2d">2D Scatter Plot</option>
       <option value="3d">3D Scatter Plot</option>
     </param>
-    <param name="size" label="Size" type="integer" value="5" min="0" help="Set size of mz dot." />
-    <param name="algorithm" label="Size Algorithm" type="select" help="Select algorithm to set dot size based on intensity.">
+    <param name="size" label="Dot Size" type="integer" value="5" min="0" help="Base size of identified molecule's dot." />
+    <param name="algorithm" label="Size Algorithm" type="select" help="Select algorithm to set dot size based on intensity. Uses dot size as a parameter.">
       <option value="0">Uniform Size</option>
       <option value="1">Log</option>
       <option value="2">Other</option>
@@ -56,22 +56,15 @@
 
   <help><![CDATA[
 
-**Authors** - Stephen Brockman (University of Minnesota, brock197@umn.edu)
-**Authors** - Mark Esler (University of Minnesota, eslerm@umn.edu)
+**Authors** - Stephen Brockman (brock197@umn.edu)
 
-Help placeholder goes here.
-
-Trademarks
-----------
-
-Placeholder
+**Authors** - Mark Esler (eslerm@umn.edu)
 
 Release notes
 -------------
 
-alpha-0.2
+beta-0.01
 
-- tool incomplete
   ]]></help>
 
   <citations>
