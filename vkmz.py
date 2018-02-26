@@ -9,26 +9,38 @@ import multiprocessing
 from multiprocessing import Pool
 import csv
 
+import numpy as np
+import math
+import pandas as pd
+from plotly import __version__
+import plotly.offline as py
+import plotly.graph_objs as go
+ 
 parser = argparse.ArgumentParser()
-parser.add_argument('--input',     '-i', nargs='?', type=str, required=True,  help='Data file must be a csv with the columns mz, polarity, intensity, & rt.')
-parser.add_argument('--output',    '-o', nargs='?', type=str, required=True,  help='Specify name of output file.')
-parser.add_argument('--database',  '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
-parser.add_argument('--error',     '-e', nargs='?', type=int, default=5,      help='Error in PPM for identification.')
-parser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
+inputSubparser = parser.add_subparsers(help='Select input type:', dest='input-type')
+parse_tsv = inputSubparser.add_parser('tsv', help='Use tabular data as input.')
+parse_tsv.add_argument('--input', '-i', required=True, help='Path to tabular file. Must include columns: sample ID, mz, polarity, intensity, & retention time.')
+parse_tsv.add_argument('--no-plot', '-n', action='store_true', help='Disable plot generation.')
+parse_xcms = inputSubparser.add_parser('xcms', help='Use xcms data as input.')
+parse_xcms.add_argument('--data-matrix', '-xd', required=True, nargs='?', type=str, help='Path to xcms dataMatrix file.')
+parse_xcms.add_argument('--sample-metadata', '-xs', required=True, nargs='?', type=str, help='Path to xcms sampleMetadata file.')
+parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', type=str, help='Path to xcms variableMetadata file.')
+parse_xcms.add_argument('--no-plot', '-n', action='store_true', help='Disable plot generation.')
+parse_plot = inputSubparser.add_parser('plot', help='Only plot data.')
+parse_plot.add_argument('--input', '-i', required=True, nargs='?', type=str, help='Path to vkmz generated tabular file.')
+for inputSubparser in [parse_tsv, parse_xcms]:
+  inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
+  inputSubparser.add_argument('--error',    '-e', nargs='?', type=int, default=5,     help='PPM error for identification.')
+  inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
+  inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
+  inputSubparser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "2d" or "3d". Default is "2d".')
+  inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
+  inputSubparser.add_argument('--sizealgo', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
 args = parser.parse_args()
 
-# read arguments and define globals
-vkInputFile = getattr(args, "input")
-vkInput = []
-try:
-  with open(vkInputFile, 'r') as tsv:
-    next(tsv) # skip first line
-    tsvData = csv.reader(tsv, delimiter='\t')
-    for row in tsvData:
-      vkInput.append([float(row[0]),row[1],float(row[2]),float(row[3]),[]])
-except ValueError:
-  print('The %s data file could not be loaded.' % vkInput)
+vkInputType = getattr(args, "input-type")
 
+# read inputs, arguments and define globals
 vkError = getattr(args, "error")
 
 vkMultiprocessing = getattr(args, "multiprocessing")
@@ -49,6 +61,14 @@ vkMaxIndex = len(vkMass)-1
 
 vkOutput = getattr(args, "output")
 
+vkPlotType = getattr(args, 'plottype')
+if vkPlotType == '2d': vkPlotType = 'scatter-2d'
+if vkPlotType == '3d': vkPlotType = 'scatter-3d'
+
+vkSize = getattr(args, 'size')
+
+vkSizeAlgo = getattr(args, 'sizealgo')
+
 # control predictions
 def forecaster(vkInput):
   if vkMultiprocessing:
@@ -67,11 +87,11 @@ def forecaster(vkInput):
 
 # predict feature formulas and creates output list
 def featurePrediction(feature):
-  mass = adjust(feature[0], feature[1])
+  mass = adjust(feature[2], feature[1]) # mz & polarity
   prediction = predict(mass, 0, vkMaxIndex)
   if prediction != -1:
     predictions = predictNeighbors(mass, prediction)
-    feature[4] = predictions
+    feature[5] = predictions
     predictionClosest = predictions[0]
     formula = predictionClosest[1]
     formulaList = re.findall('[A-Z][a-z]?|[0-9]+', formula)
@@ -99,7 +119,8 @@ def adjust(mass, polarity):
     mass -= hm
   return mass
 
-# BST to match observed mass to known masses within error
+# Binary search to match observed mass to known mass within error
+# https://en.wikipedia.org/wiki/Binary_search_tree
 def predict(mass, left, right):
   mid = left + (right - left) / 2
   if left <= mid <= right and mid <= vkMaxIndex:
@@ -140,12 +161,209 @@ def predictNeighbors(mass, prediction):
 def saveForcast(vkOutputList):
   try:
     with open(vkOutput, 'w') as f: 
-      f.writelines(str("mz\tpolarity\tintensity\tretention time\tpredicted formulas\tH:C\tO:c\tN:C\tdelta") + '\n')
+      f.writelines(str("sample id\tpolarity\tmz\tretention time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
-        predictedFormula = feature[4][0][3]
-        predictedDelta = feature[4][0][2]
-        f.writelines(str(feature[0])+'\t'+str(feature[1])+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(float(predictedFormula['H'])/float(predictedFormula['C']))+'\t'+str(float(predictedFormula['O'])/float(predictedFormula['C']))+'\t'+str(float(predictedFormula['N'])/float(predictedFormula['C']))+'\t'+str(predictedDelta)+'\n')
+        predictedDelta = feature[5][0][2]
+        predictedFormula = feature[5][0][3]
+        hc = float(predictedFormula['H'])/float(predictedFormula['C'])
+        oc = float(predictedFormula['H'])/float(predictedFormula['C'])
+        nc = float(predictedFormula['H'])/float(predictedFormula['C'])
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(predictedDelta)+'\t'+str(hc)+'\t'+str(oc)+'\t'+str(nc)+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
-saveForcast(forecaster(vkInput))
+def plotRatios(identified, type):
+  traces = []
+  trace_count = 0
+  lowest_peak = 10.0**10
+  highest_peak = 0.0
+  feature_rts =[]
+  highest_rt = 0
+  feature_formulas = []
+  feature_size = []
+  x=[]
+  y=[]
+  # 3d data is given to all plots for added plot.ly functionality
+  z=[]
+  for feature in identified:
+    feature_peak = feature[2]
+    if feature_peak > highest_peak:
+      highest_peak = feature_peak
+    elif feature_peak < lowest_peak:
+      lowest_peak = feature_peak
+    if highest_rt < feature[3]:
+      higher_rt = feature[3]
+  # assign metadata to each feature
+  for feature in identified:
+    feature_peak = feature[2]
+    # changes retention time from seconds to minutes
+    feature_rts.append(feature[3]/60)
+    # feature_size algorithm is not complete
+    if vkSizeAlgo == 0:
+      feature_size.append(vkSize)
+    elif vkSizeAlgo == 1:
+      feature_size.append(vkSize+4*vkSize*feature_peak/(highest_peak-lowest_peak))
+    else: 
+      feature_size.append(vkSize+2*math.log(vkSize*feature_peak/(highest_peak-lowest_peak)))
+    feature_formulas.append(feature[4])
+    x.append(feature[6]) # Oxygen / Carbon
+    y.append(feature[5]) # Hydrogen / Carbon
+    z.append(feature[7]) # Nitrogen / Carbon
+  if type == 'scatter-3d':
+    feature_trace = go.Scatter3d(
+      x = x,
+      y = y,
+      z = z,
+      mode='markers',
+      text=feature_formulas,
+      marker=dict(
+        size=feature_size,
+        color=feature_rts,
+        colorscale='Viridis',
+        colorbar=dict(title='Retention Time (m)'),
+        line=dict(width=0.5),
+        opacity=0.8
+      )
+    )
+    traces.append(feature_trace)
+    layout = go.Layout(
+      title="Van Krevelen Diagram", 
+      scene = dict(
+        xaxis= dict(
+          title= 'Carbon to Oxygen Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+        yaxis= dict(
+          title= 'Hydrogen to Carbon Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+        zaxis=dict(
+          title= 'Carbon to Nitrogen Ratio',
+          zeroline= False,
+          gridcolor='rgb(183,183,183)',
+          showline=True
+        ),
+      ), 
+      margin=dict(r=0, b=0, l=0, t=100)
+    )
+    fig = go.Figure(data=traces, layout=layout)
+    py.plot(fig, filename=vkOutput, auto_open=False)
+  if type == 'scatter-2d':
+    feature_trace = go.Scatter(
+      x = x,
+      y = y,
+      mode='markers',
+      text=feature_formulas,
+      marker=dict(
+        size=feature_size,
+        color=feature_rts,
+        colorscale='Viridis',
+        colorbar=dict(title='Retention Time (m)'),
+        line=dict(width=0.5),
+        opacity=0.8
+      )
+    )
+    traces.append(feature_trace)
+    layout = go.Layout(
+      title="Van Krevelen Diagram", 
+      xaxis= dict(
+        title= 'Carbon to Oxygen Ratio',
+        zeroline= False,
+        gridcolor='rgb(183,183,183)',
+        showline=True
+      ),
+      yaxis= dict(
+        title= 'Hydrogen to Carbon Ratio',
+        zeroline= False,
+        gridcolor='rgb(183,183,183)',
+        showline=True
+      ),
+      margin=dict(r=0, b=100, l=100, t=100)
+    )
+    fig = go.Figure(data=traces, layout=layout)
+    py.plot(fig, filename=vkOutput, auto_open=False)
+
+
+# main
+if vkInputType == "tsv":
+  vkInput = []
+  tsvFile = getattr(args, "input")
+  try:
+    with open(tsvFile, 'r') as f:
+      next(f) # skip hearder line
+      tsvData = csv.reader(f, delimiter='\t')
+      for row in tsvData:
+        vkInput.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),[]])
+  except ValueError:
+    print('The %s data file could not be read.' % tsvFile)
+  vkmzData = forecaster(vkInput)
+  saveForcast(vkmzData)
+  plot = getattr(args, "no_plot")
+  if plot:
+    plotRatios(vkmzData, vkPlotType)
+elif vkInputType == "xcms":
+  vkInput = []
+  xcmsSampleMetadataFile = getattr(args, "sample_metadata")
+  try:
+    polarity = {}
+    with open(xcmsSampleMetadataFile, 'r') as f:
+      xcmsSampleMetadata = csv.reader(f, delimiter='\t')
+      for row in xcmsSampleMetadata:
+        polarity[row[0]] = row[2]
+  except ValueError:
+    print('The %s data file could not be read.' % xcmsSampleMetadataFile)
+  xcmsVariableMetadataFile = getattr(args, "variable_metadata")
+  try:
+    mz = {}
+    rt = {}
+    with open(xcmsVariableMetadataFile, 'r') as f:
+      xcmsVariableMetadata = csv.reader(f, delimiter='\t')
+      for row in xcmsVariableMetadata:
+        mz[row[0]] = row[2]
+        rt[row[0]] = row[3]
+  except ValueError:
+    print('The %s data file could not be read.' % xcmsVariableMetadataFile)
+  xcmsDataMatrixFile = getattr(args, "data_matrix")
+  try:
+    with open(xcmsDataMatrixFile, 'r') as f:
+      xcmsDataMatrix = csv.reader(f, delimiter='\t')
+      first_row = True
+      for row in xcmsDataMatrix:
+        if first_row:
+          sample_id = row
+          first_row = False
+        else: 
+          i = 0
+          while(i < len(row)):
+            if i == 0:
+              i+=1
+            else:
+              variable = row[0]
+              if variable != "NA":
+                intensity = row[i]
+                sample = sample_id[i]
+                vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
+            i+=1
+  except ValueError:
+    print('The %s data file could not be read.' % xcmsDataMatrixFile)
+  vkmzData = forecaster(vkInput)
+  saveForcast(vkmzData)
+  plot = getattr(args, "no_plot")
+  if plot:
+    plotRatios(vkmzData, vkPlotType)
+else:
+  vkmzData = []
+  tsvPlotvFile = getattr(args, "input")
+  try:
+    with open(tsvPlotFile, 'r') as f:
+      next(f) # skip header line
+      plotData = csv.reader(f, delimiter='\t')
+      for row in plotData:
+        vkmzData.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),list(row[4]),float(row[5]),float(row[6]),float(row[7]),float(row[8])])
+  except ValueError:
+    print('The %s data file could not be read.' % tsvFile)
+  plotRatios(vkmzData, vkPlotType)
