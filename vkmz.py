@@ -9,8 +9,8 @@ import multiprocessing
 from multiprocessing import Pool
 import csv
 
-import numpy as np
-import math
+#import numpy as np
+#import math
 import pandas as pd
 from plotly import __version__
 import plotly.offline as py
@@ -107,6 +107,11 @@ def featurePrediction(feature):
           i+=1
       i+=1
     predictionClosest.append(formulaDictionary)
+    hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
+    oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
+    nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
+    predictionClosestDelta = feature[5][0][2]
+    feature += [predictionClosestDelta, hc, oc, nc]
     return(feature)
 
 # adjust observed mass for polarity
@@ -163,130 +168,75 @@ def saveForcast(vkOutputList):
     with open(vkOutput, 'w') as f: 
       f.writelines(str("sample id\tpolarity\tmz\tretention time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
-        predictedDelta = feature[5][0][2]
-        predictedFormula = feature[5][0][3]
-        hc = float(predictedFormula['H'])/float(predictedFormula['C'])
-        oc = float(predictedFormula['H'])/float(predictedFormula['C'])
-        nc = float(predictedFormula['H'])/float(predictedFormula['C'])
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(predictedDelta)+'\t'+str(hc)+'\t'+str(oc)+'\t'+str(nc)+'\n')
+       f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
-def plotRatios(identified, type):
-  traces = []
-  trace_count = 0
-  lowest_peak = 10.0**10
-  highest_peak = 0.0
-  feature_rts =[]
-  highest_rt = 0
-  feature_formulas = []
-  feature_size = []
-  x=[]
-  y=[]
-  # 3d data is given to all plots for added plot.ly functionality
-  z=[]
-  for feature in identified:
-    feature_peak = feature[2]
-    if feature_peak > highest_peak:
-      highest_peak = feature_peak
-    elif feature_peak < lowest_peak:
-      lowest_peak = feature_peak
-    if highest_rt < feature[3]:
-      higher_rt = feature[3]
-  # assign metadata to each feature
-  for feature in identified:
-    feature_peak = feature[2]
-    # changes retention time from seconds to minutes
-    feature_rts.append(feature[3]/60)
-    # feature_size algorithm is not complete
-    if vkSizeAlgo == 0:
-      feature_size.append(vkSize)
-    elif vkSizeAlgo == 1:
-      feature_size.append(vkSize+4*vkSize*feature_peak/(highest_peak-lowest_peak))
-    else: 
-      feature_size.append(vkSize+2*math.log(vkSize*feature_peak/(highest_peak-lowest_peak)))
-    feature_formulas.append(feature[4])
-    x.append(feature[6]) # Oxygen / Carbon
-    y.append(feature[5]) # Hydrogen / Carbon
-    z.append(feature[7]) # Nitrogen / Carbon
-  if type == 'scatter-3d':
-    feature_trace = go.Scatter3d(
-      x = x,
-      y = y,
-      z = z,
-      mode='markers',
-      text=feature_formulas,
-      marker=dict(
-        size=feature_size,
-        color=feature_rts,
-        colorscale='Viridis',
-        colorbar=dict(title='Retention Time (m)'),
-        line=dict(width=0.5),
-        opacity=0.8
-      )
+def plotRatios(vkData):
+  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc']
+  df = pd.DataFrame.from_records(vkData, columns=labels)
+  sampleIDs = df.sampleID.unique()
+  data = []
+  menus = []
+  i = 0
+  for sampleID in sampleIDs:
+    dfSample = df.loc[df['sampleID'] == sampleID]
+    trace = go.Scatter(
+      x = dfSample.hc,
+      y = dfSample.oc,
+      #text = dfSample.predictions[0][2],
+      line = dict(width = 0.5),
+      mode = 'markers',
+      opacity = 0.8
     )
-    traces.append(feature_trace)
-    layout = go.Layout(
-      title="Van Krevelen Diagram", 
-      scene = dict(
-        xaxis= dict(
-          title= 'Carbon to Oxygen Ratio',
-          zeroline= False,
-          gridcolor='rgb(183,183,183)',
-          showline=True
-        ),
-        yaxis= dict(
-          title= 'Hydrogen to Carbon Ratio',
-          zeroline= False,
-          gridcolor='rgb(183,183,183)',
-          showline=True
-        ),
-        zaxis=dict(
-          title= 'Carbon to Nitrogen Ratio',
-          zeroline= False,
-          gridcolor='rgb(183,183,183)',
-          showline=True
-        ),
-      ), 
-      margin=dict(r=0, b=0, l=0, t=100)
+    data.append(trace)
+    vision = []
+    j = 0
+    while j < len(sampleIDs):
+      if j != i:
+        vision.append(False)
+      else:
+        vision.append(True)
+      j += 1
+    menu = dict(
+      label = sampleID,
+      method = 'update',
+      args = [
+        {'title': sampleID},
+        {'vision': vision}
+      ]
     )
-    fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename=vkOutput, auto_open=False)
-  if type == 'scatter-2d':
-    feature_trace = go.Scatter(
-      x = x,
-      y = y,
-      mode='markers',
-      text=feature_formulas,
-      marker=dict(
-        size=feature_size,
-        color=feature_rts,
-        colorscale='Viridis',
-        colorbar=dict(title='Retention Time (m)'),
-        line=dict(width=0.5),
-        opacity=0.8
-      )
+    menus.append(menu)
+    i += 1
+  updatemenus = list([
+    dict(
+      active = 0,
+      buttons = menus
     )
-    traces.append(feature_trace)
-    layout = go.Layout(
-      title="Van Krevelen Diagram", 
-      xaxis= dict(
-        title= 'Carbon to Oxygen Ratio',
-        zeroline= False,
-        gridcolor='rgb(183,183,183)',
-        showline=True
-      ),
-      yaxis= dict(
-        title= 'Hydrogen to Carbon Ratio',
-        zeroline= False,
-        gridcolor='rgb(183,183,183)',
-        showline=True
-      ),
-      margin=dict(r=0, b=100, l=100, t=100)
-    )
-    fig = go.Figure(data=traces, layout=layout)
-    py.plot(fig, filename=vkOutput, auto_open=False)
-
+  ])
+  print(menus[0])
+  layout = go.Layout(
+    title = "Van Krevelen Diagram",
+    showlegend = False,
+    xaxis = dict(
+      title = 'Oxygen to Carbon Ratio',
+      zeroline = False,
+      gridcolor = 'rgb(183,183,183)',
+      showline = True
+    ),
+    yaxis = dict(
+      title = 'Hydrogen to Carbon Ratio',
+      zeroline = False,
+      gridcolor = 'rgb(183,183,183)',
+      showline = True
+    ),
+    margin = dict(r=0, b=100, l=100, t=100),
+    updatemenus = updatemenus
+  )     
+  fig = go.Figure(data=data, layout=layout)
+  py.plot(fig, auto_open=False, show_link=False, filename='foo.html')
+  #py.plot(fig, auto_open=False, show_link=False, filename='foo.html', validate=False)
+ 
 
 # main
 if vkInputType == "tsv":
@@ -300,11 +250,11 @@ if vkInputType == "tsv":
         vkInput.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),[]])
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
-  vkmzData = forecaster(vkInput)
-  saveForcast(vkmzData)
-  plot = getattr(args, "no_plot")
-  if plot:
-    plotRatios(vkmzData, vkPlotType)
+  vkData = forecaster(vkInput)
+  saveForcast(vkData)
+  #plot = getattr(args, "no_plot")
+  #if plot:
+  plotRatios(vkData)
 elif vkInputType == "xcms":
   vkInput = []
   xcmsSampleMetadataFile = getattr(args, "sample_metadata")
@@ -350,20 +300,21 @@ elif vkInputType == "xcms":
             i+=1
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
-  vkmzData = forecaster(vkInput)
-  saveForcast(vkmzData)
-  plot = getattr(args, "no_plot")
-  if plot:
-    plotRatios(vkmzData, vkPlotType)
+  vkData = forecaster(vkInput)
+  saveForcast(vkData)
+  #plot = getattr(args, "no_plot")
+  #if plot:
+  plotRatios(vkData)
 else:
-  vkmzData = []
+  vkData = []
   tsvPlotvFile = getattr(args, "input")
   try:
     with open(tsvPlotFile, 'r') as f:
       next(f) # skip header line
       plotData = csv.reader(f, delimiter='\t')
       for row in plotData:
-        vkmzData.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),list(row[4]),float(row[5]),float(row[6]),float(row[7]),float(row[8])])
+        vkData.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),list(row[4]),float(row[5]),float(row[6]),float(row[7]),float(row[8])])
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
-  plotRatios(vkmzData, vkPlotType)
+  plotRatios(vkData)
+
