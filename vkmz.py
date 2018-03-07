@@ -195,9 +195,9 @@ def plotRatios(vkData):
   for sampleID in sampleIDs:
     dfSample = df.loc[df['sampleID'] == sampleID]
     trace = go.Scatter(
-      x = dfSample.hc,
-      y = dfSample.oc,
-      #text = dfSample.predictions[0][2],
+      x = dfSample.oc,
+      y = dfSample.hc,
+      text = dfSample.predictions.apply(lambda x: "Prediction: "+str(x[0][1])+"<br>mz: " +str(x[0][0])+"<br>Delta: "+str(x[0][2])),
       line = dict(width = 0.5),
       mode = 'markers',
       marker = dict(
@@ -238,18 +238,18 @@ def plotRatios(vkData):
     title = "Van Krevelen Diagram",
     showlegend = False,
     xaxis = dict(
-      title = 'Hydrogen to Carbon Ratio',
-      zeroline = False,
-      gridcolor = 'rgb(183,183,183)',
-      showline = True,
-      range = [0, max_hc]
-    ),
-    yaxis = dict(
       title = 'Oxygen to Carbon Ratio',
       zeroline = False,
       gridcolor = 'rgb(183,183,183)',
       showline = True,
       range = [0, max_oc]
+    ),
+    yaxis = dict(
+      title = 'Hydrogen to Carbon Ratio',
+      zeroline = False,
+      gridcolor = 'rgb(183,183,183)',
+      showline = True,
+      range = [0, max_hc]
     ),
     margin = dict(r=0, b=100, l=100, t=100),
     updatemenus = updatemenus
@@ -290,11 +290,22 @@ elif vkInputType == "xcms":
   try:
     mz = {}
     rt = {}
+    variable_index = {}
+    mz_index = int()
+    rt_index = int()
     with open(xcmsVariableMetadataFile, 'r') as f:
       xcmsVariableMetadata = csv.reader(f, delimiter='\t')
+      i = 0
       for row in xcmsVariableMetadata:
-        mz[row[0]] = row[2]
-        rt[row[0]] = row[3]
+        if i != 0:
+          mz[row[0]] = row[mz_index]
+          rt[row[0]] = row[rt_index]
+        else:
+          for column in row:
+            variable_index[column] = i
+            i += 1
+          mz_index = variable_index["mz"]
+          rt_index = variable_index["rt"]
   except ValueError:
     print('The %s data file could not be read.' % xcmsVariableMetadataFile)
   xcmsDataMatrixFile = getattr(args, "data_matrix")
@@ -313,7 +324,7 @@ elif vkInputType == "xcms":
               i+=1
             else:
               intensity = row[i]
-              if intensity != "NA":
+              if intensity != "NA" and intensity != "0":
                 variable = row[0]
                 sample = sample_id[i]
                 vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
@@ -322,8 +333,6 @@ elif vkInputType == "xcms":
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
   vkData = forecaster(vkInput)
   saveForcast(vkData)
-  #plot = getattr(args, "no_plot")
-  #if plot:
   plotRatios(vkData)
 else:
   vkData = []
