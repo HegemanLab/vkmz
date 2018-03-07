@@ -9,8 +9,8 @@ import multiprocessing
 from multiprocessing import Pool
 import csv
 
-#import numpy as np
-#import math
+import numpy as np
+import math
 import pandas as pd
 from plotly import __version__
 import plotly.offline as py
@@ -173,6 +173,19 @@ def saveForcast(vkOutputList):
     print('"%s" could not be saved.' % filename)
 
 def plotRatios(vkData):
+  max_rt = 0
+  max_hc = 0
+  max_oc = 0
+  max_nc = 0
+  for row in vkData:
+    if row[3] > max_rt:
+      max_rt = row[3]
+    if row[7] > max_hc:
+      max_hc = row[7]
+    if row[8] > max_oc:
+      max_oc = row[8]
+    if row[9] > max_nc:
+      max_nc = row[9]
   labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc']
   df = pd.DataFrame.from_records(vkData, columns=labels)
   sampleIDs = df.sampleID.unique()
@@ -187,6 +200,16 @@ def plotRatios(vkData):
       #text = dfSample.predictions[0][2],
       line = dict(width = 0.5),
       mode = 'markers',
+      marker = dict(
+        size = dfSample.mz.apply(lambda x: math.log(x, 1.5)/2),
+        color = dfSample.rt,
+        colorscale = 'Viridis',
+        cmin = 0,
+        cmax = max_rt,
+        colorbar=dict(title='Retention Time (s)'),
+        line = dict(width = 0.5),
+        showscale = True
+      ),
       opacity = 0.8
     )
     data.append(trace)
@@ -199,43 +222,40 @@ def plotRatios(vkData):
         vision.append(True)
       j += 1
     menu = dict(
-      label = sampleID,
       method = 'update',
-      args = [
-        {'title': sampleID},
-        {'vision': vision}
-      ]
+      label = sampleID,
+      args = [{'visible': vision}, {'title': sampleID}]
     )
     menus.append(menu)
     i += 1
   updatemenus = list([
     dict(
-      active = 0,
+      active = -1,
       buttons = menus
     )
   ])
-  print(menus[0])
   layout = go.Layout(
     title = "Van Krevelen Diagram",
     showlegend = False,
     xaxis = dict(
-      title = 'Oxygen to Carbon Ratio',
-      zeroline = False,
-      gridcolor = 'rgb(183,183,183)',
-      showline = True
-    ),
-    yaxis = dict(
       title = 'Hydrogen to Carbon Ratio',
       zeroline = False,
       gridcolor = 'rgb(183,183,183)',
-      showline = True
+      showline = True,
+      range = [0, max_hc]
+    ),
+    yaxis = dict(
+      title = 'Oxygen to Carbon Ratio',
+      zeroline = False,
+      gridcolor = 'rgb(183,183,183)',
+      showline = True,
+      range = [0, max_oc]
     ),
     margin = dict(r=0, b=100, l=100, t=100),
     updatemenus = updatemenus
   )     
   fig = go.Figure(data=data, layout=layout)
   py.plot(fig, auto_open=False, show_link=False, filename='foo.html')
-  #py.plot(fig, auto_open=False, show_link=False, filename='foo.html', validate=False)
  
 
 # main
@@ -292,9 +312,9 @@ elif vkInputType == "xcms":
             if i == 0:
               i+=1
             else:
-              variable = row[0]
-              if variable != "NA":
-                intensity = row[i]
+              intensity = row[i]
+              if intensity != "NA":
+                variable = row[0]
                 sample = sample_id[i]
                 vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
             i+=1
