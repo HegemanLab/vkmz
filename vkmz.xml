@@ -18,6 +18,7 @@
       --data-matrix $datamatrix
       --sample-metadata $samplemetadata
       --variable-metadata $variablemetadata
+      --database $database
       --output vkmz
       --directory $__tool_directory__/;
   ]]></command>
@@ -26,6 +27,12 @@
     <param name="datamatrix" label="XCMS Data Matrix" type="data" format="tabular" help="Select XCMS data matrix." />
     <param name="samplemetadata" label="XCMS Sample Metadata" type="data" format="tabular" help="Select XCMS sample metadata" />
     <param name="variablemetadata" label="XCMS Variable Metadata" type="data" format="tabular" help="Select XCMS variable metadata." />
+    <param name="database" label="Database" type="select" help="Choose database of known formula masses.">
+      <option value="databases/bmrb-light.tsv">Normal</option>
+      <option value="databases/bmrb-heavy_carbon.tsv">Heavy Carbon</option>
+      <option value="databases/bmrb-heavy_nitrogen.tsv">Heavy Nitrogen</option>
+      <option value="databases/bmrb-heavy.tsv">Heavy Carbon and Nitrogen</option>
+    </param>
   </inputs>
 
   <outputs>
@@ -38,6 +45,7 @@
       <param name="datamatrix" value="hazel-xd.tsv" />
       <param name="samplemetadata" value="hazel-xs.tsv" />
       <param name="variablemetadata" value="hazel-xv.tsv" />
+      <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output">
         <assert_contents>
           <has_text text="0.0740997586440244" />
