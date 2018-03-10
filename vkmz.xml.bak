@@ -1,0 +1,75 @@
+<tool id="vkmz" name="vkmz" version="alpha-0.1">
+
+  <description>predict formulas and generate VK diagram</description>
+  
+  <requirements>
+    <requirement type="package" version="2.7">python</requirement>
+    <requirement type="package">pandas</requirement>
+    <requirement type="package">plotly</requirement>
+  </requirements>
+  
+  <stdio>
+    <exit_code range="1:" level="fatal" />
+  </stdio>
+
+  <command detect_errors="aggressive"><![CDATA[
+    python '__tool_directory__/vkmz.py' xcms;
+    echo
+    --data-matrix        '$data-matrix'
+    --sample-metedata    '$sample-metadata'
+    --variable-metadata' '$variable-metadata'
+    --output             '$output'
+    --database           '$database'
+    --error              '$error'
+  ]]></command>
+
+  <inputs>
+    <param name="data-matrix" label="XCMS Data Matrix" type="data" format="tabular" help="Select XCMS data matrix." />
+    <param name="sample-metadata" label="XCMS Sample Metadata" type="data" format="tabular" help="Select XCMS sample metadata" />
+    <param name="variable-metadata" label="XCMS Variable Metadata" type="data" format="tabular" help="Select XCMS variable metadata." />
+    <param name="database" label="Database" type="select" help="Choose database for mass look up table.">
+      <option value="databases/bmrb-light.csv">Normal</option>
+      <option value="databases/bmrb-heavy_carbon.csv">Heavy Carbon</option>
+      <option value="databases/bmrb-heavy_nitrogen.csv">Heavy Nitrogen</option>
+      <option value="databases/bmrb-heavy.csv">Heavy Carbon and Nitrogen</option>
+    </param>
+    <param name="error" label="PPM Error" type="integer" value="5" min="0" help="Parts per million mass error. Set according to your mass spectrometer." />
+  </inputs>
+
+  <outputs>
+    <data name="output" label="${tool.name}_${input.name}" format="tabular"  />
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="data-matrix" value="hazel-xd.tsv" />
+      <param name="sample-metadata" value="hazel-xs.tsv" />
+      <param name="variable-metadata" value="hazel-xv.tsv" />
+      <param name="database" value="databases/bmrb-light.csv" />
+      <output name="output">
+        <assert_contents>
+          <has_text text="208.707858635" />
+        </assert_contents>
+      </output>
+    </test>
+  </tests>
+
+  <help><![CDATA[
+
+**Authors** - Stephen Brockman (brock197@umn.edu)
+
+**Authors** - Mark Esler (eslerm@umn.edu)
+
+Release notes
+-------------
+
+beta-0.01
+
+  ]]></help>
+
+  <citations>
+    <citation type="doi">123.456/example.123</citation>
+    <!-- Example Title -->
+  </citations>
+
+</tool>

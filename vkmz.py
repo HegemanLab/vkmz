@@ -259,6 +259,7 @@ def plotRatios(vkData):
  
 
 # main
+print("foo")
 if vkInputType == "tsv":
   vkInput = []
   tsvFile = getattr(args, "input")
