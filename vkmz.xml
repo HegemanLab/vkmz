@@ -13,13 +13,13 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
-    cd '$__tool_directory__';
-    python 'vkmz.py'
-    xcms
-    --data-matrix $datamatrix
-    --sample-metedata $samplemetadata
-    --variable-metadata $variablemetadata
-    --output vkmz
+    python $__tool_directory__/vkmz.py
+      xcms
+      --data-matrix $datamatrix
+      --sample-metadata $samplemetadata
+      --variable-metadata $variablemetadata
+      --output vkmz
+      --directory $__tool_directory__/;
   ]]></command>
 
   <inputs>
@@ -29,7 +29,8 @@
   </inputs>
 
   <outputs>
-    <data name="output" label="${tool.name}_${datamatrix.name}" format="tabular" />
+    <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${datamatrix.name}" />
+    <data format="tabular" name="outputhtml" from_work_dir="vkmz.html" label="${tool.name}_${datamatrix.name}_html" />
   </outputs>
 
   <tests>
@@ -39,7 +40,7 @@
       <param name="variablemetadata" value="hazel-xv.tsv" />
       <output name="output">
         <assert_contents>
-          <has_text text="208.70785" />
+          <has_text text="0.0740997586440244" />
         </assert_contents>
       </output>
     </test>

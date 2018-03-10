@@ -32,6 +32,7 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=int, default=5,     help='PPM error for identification.')
   inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
+  inputSubparser.add_argument('--directory','-di', nargs='?', type=str, help='Define directory of tool.')
   inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
   inputSubparser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "2d" or "3d". Default is "2d".')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
@@ -46,6 +47,10 @@ vkError = getattr(args, "error")
 vkMultiprocessing = getattr(args, "multiprocessing")
 
 vkDatabaseFile = getattr(args, "database")
+vkDirectory = getattr(args, "directory")
+if vkDirectory != None:
+ vkDatabaseFile = vkDirectory + vkDatabaseFile
+
 vkMass = []
 vkFormula = []
 try:
@@ -165,7 +170,7 @@ def predictNeighbors(mass, prediction):
 # write output file
 def saveForcast(vkOutputList):
   try:
-    with open(vkOutput, 'w') as f: 
+    with open(vkOutput+'.tsv', 'w') as f: 
       f.writelines(str("sample id\tpolarity\tmz\tretention time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+'\n')
@@ -255,11 +260,10 @@ def plotRatios(vkData):
     updatemenus = updatemenus
   )     
   fig = go.Figure(data=data, layout=layout)
-  py.plot(fig, auto_open=False, show_link=False, filename='foo.html')
+  py.plot(fig, auto_open=False, show_link=False, filename=vkOutput+'.html')
  
 
 # main
-print("foo")
 if vkInputType == "tsv":
   vkInput = []
   tsvFile = getattr(args, "input")
@@ -347,4 +351,4 @@ else:
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
   plotRatios(vkData)
-
+print("vkmz.py fin")
