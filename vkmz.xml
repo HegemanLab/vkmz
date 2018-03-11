@@ -66,13 +66,13 @@
 Release notes
 -------------
 
-beta-0.01
+Version 0.9
 
   ]]></help>
 
   <citations>
-    <citation type="doi">123.456/example.123</citation>
-    <!-- Example Title -->
+    <!--Van Krevelen diagram visualization of high resolution-mass spectrometry metabolomics data with OpenVanKrevelen-->
+    <citation type="doi">10.1007/s11306-018-1343-y</citation>
   </citations>
 
 </tool>

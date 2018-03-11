@@ -13,42 +13,42 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
-    python '__tool_directory__/vkmz.py' xcms;
-    echo
-    --data-matrix        '$data-matrix'
-    --sample-metedata    '$sample-metadata'
-    --variable-metadata' '$variable-metadata'
-    --output             '$output'
-    --database           '$database'
-    --error              '$error'
+    python $__tool_directory__/vkmz.py
+      xcms
+      --data-matrix $datamatrix
+      --sample-metadata $samplemetadata
+      --variable-metadata $variablemetadata
+      --output vkmz
+      --database $database
+      --directory $__tool_directory__/
   ]]></command>
 
   <inputs>
-    <param name="data-matrix" label="XCMS Data Matrix" type="data" format="tabular" help="Select XCMS data matrix." />
-    <param name="sample-metadata" label="XCMS Sample Metadata" type="data" format="tabular" help="Select XCMS sample metadata" />
-    <param name="variable-metadata" label="XCMS Variable Metadata" type="data" format="tabular" help="Select XCMS variable metadata." />
-    <param name="database" label="Database" type="select" help="Choose database for mass look up table.">
-      <option value="databases/bmrb-light.csv">Normal</option>
-      <option value="databases/bmrb-heavy_carbon.csv">Heavy Carbon</option>
-      <option value="databases/bmrb-heavy_nitrogen.csv">Heavy Nitrogen</option>
-      <option value="databases/bmrb-heavy.csv">Heavy Carbon and Nitrogen</option>
+    <param name="datamatrix" label="XCMS Data Matrix" type="data" format="tabular" help="Select XCMS data matrix." />
+    <param name="samplemetadata" label="XCMS Sample Metadata" type="data" format="tabular" help="Select XCMS sample metadata" />
+    <param name="variablemetadata" label="XCMS Variable Metadata" type="data" format="tabular" help="Select XCMS variable metadata." />
+    <param name="database" label="Database" type="select" help="Choose database of known formula masses.">
+      <option value="databases/bmrb-light.tsv">Normal</option>
+      <option value="databases/bmrb-heavy_carbon.tsv">Heavy Carbon</option>
+      <option value="databases/bmrb-heavy_nitrogen.tsv">Heavy Nitrogen</option>
+      <option value="databases/bmrb-heavy.tsv">Heavy Carbon and Nitrogen</option>
     </param>
-    <param name="error" label="PPM Error" type="integer" value="5" min="0" help="Parts per million mass error. Set according to your mass spectrometer." />
   </inputs>
 
   <outputs>
-    <data name="output" label="${tool.name}_${input.name}" format="tabular"  />
+    <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${datamatrix.name}" />
+    <data format="html" name="outputhtml" from_work_dir="vkmz.html" label="${tool.name}_${datamatrix.name}_html" />
   </outputs>
 
   <tests>
     <test>
-      <param name="data-matrix" value="hazel-xd.tsv" />
-      <param name="sample-metadata" value="hazel-xs.tsv" />
-      <param name="variable-metadata" value="hazel-xv.tsv" />
-      <param name="database" value="databases/bmrb-light.csv" />
+      <param name="datamatrix" value="hazel-xd.tsv" />
+      <param name="samplemetadata" value="hazel-xs.tsv" />
+      <param name="variablemetadata" value="hazel-xv.tsv" />
+      <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output">
         <assert_contents>
-          <has_text text="208.707858635" />
+          <has_text text="0.0740997586440244" />
         </assert_contents>
       </output>
     </test>
@@ -73,3 +73,4 @@ beta-0.01
   </citations>
 
 </tool>
+<param name="error" label="PPM Error" type="integer" value="5" min="0" help="Parts per million mass error. Set according to your mass spectrometer." />

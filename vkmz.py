@@ -50,6 +50,7 @@ vkDatabaseFile = getattr(args, "database")
 vkDirectory = getattr(args, "directory")
 if vkDirectory != None:
  vkDatabaseFile = vkDirectory + vkDatabaseFile
+ print(vkDatabaseFile)
 
 vkMass = []
 vkFormula = []
@@ -61,7 +62,7 @@ try:
       vkMass.append(mass)
       vkFormula.append(formula)
 except ValueError:
-  print('The %s database could not be loaded.' % vkDatabase)
+  print('The %s database could not be loaded.' % vkDatabaseFile)
 vkMaxIndex = len(vkMass)-1
 
 vkOutput = getattr(args, "output")
@@ -351,4 +352,4 @@ else:
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
   plotRatios(vkData)
-print("vkmz.py fin")
+
