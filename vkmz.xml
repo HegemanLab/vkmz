@@ -21,7 +21,8 @@
       --error $error
       --database $database
       --output vkmz
-      --directory $__tool_directory__/;
+      --size $size
+      --directory $__tool_directory__/
   ]]></command>
 
   <inputs>
@@ -35,11 +36,12 @@
       <option value="databases/bmrb-heavy_nitrogen.tsv">Heavy Nitrogen</option>
       <option value="databases/bmrb-heavy.tsv">Heavy Carbon and Nitrogen</option>
     </param>
+    <param name="size" label="Marker size" type="integer" value="5" min="0" help="Base size of marker." />
   </inputs>
 
   <outputs>
     <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${datamatrix.name}" />
-    <data format="tabular" name="outputhtml" from_work_dir="vkmz.html" label="${tool.name}_${datamatrix.name}_html" />
+    <data format="html" name="outputhtml" from_work_dir="vkmz.html" label="${tool.name}_${datamatrix.name}_html" />
   </outputs>
 
   <tests>
@@ -59,9 +61,8 @@
 
   <help><![CDATA[
 
-**Authors** - Stephen Brockman (brock197@umn.edu)
-
 **Authors** - Mark Esler (eslerm@umn.edu)
+**Authors** - Stephen Brockman (brock197@umn.edu)
 
 Release notes
 -------------
