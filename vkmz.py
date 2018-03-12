@@ -174,18 +174,25 @@ def saveForcast(vkOutputList):
     with open(vkOutput+'.tsv', 'w') as f: 
       f.writelines(str("sample id\tpolarity\tmz\tretention time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
-       f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+'\n')
+       f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
 def plotRatios(vkData):
   max_rt = 0
+  min_intensity = 10.0**10
+  max_intensity = 0.0
   max_hc = 0
   max_oc = 0
   max_nc = 0
   for row in vkData:
     if row[3] > max_rt:
       max_rt = row[3]
+    intensity = float(row[4])
+    if intensity < min_intensity:
+      min_intensity = intensity
+    if intensity > max_intensity:
+      max_intensity = intensity
     if row[7] > max_hc:
       max_hc = row[7]
     if row[8] > max_oc:
@@ -200,6 +207,10 @@ def plotRatios(vkData):
   i = 0
   for sampleID in sampleIDs:
     dfSample = df.loc[df['sampleID'] == sampleID]
+    if vkSizeAlgo == 0:
+      size = dfSample.intensity.apply(lambda x: vkSize)
+    else:
+      size = dfSample.intensity.apply(lambda x: vkSize+4*vkSize*float(x)/max_intensity)
     trace = go.Scatter(
       x = dfSample.oc,
       y = dfSample.hc,
@@ -207,7 +218,9 @@ def plotRatios(vkData):
       line = dict(width = 0.5),
       mode = 'markers',
       marker = dict(
-        size = dfSample.mz.apply(lambda x: math.log(x, 1.5)/2),
+        #size = dfSample.mz.apply(lambda x: math.log(x, 1.5)/2),
+        #size = dfSample.mz.apply(lambda x: vkSize+4*vkSize*x/(max_intensity-min_intensity),
+        size = size,
         color = dfSample.rt,
         colorscale = 'Viridis',
         cmin = 0,

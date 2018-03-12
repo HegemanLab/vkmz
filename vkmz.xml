@@ -22,6 +22,7 @@
       --database $database
       --output vkmz
       --size $size
+      --sizealgo $sizealgo
       --directory $__tool_directory__/
   ]]></command>
 
@@ -36,7 +37,11 @@
       <option value="databases/bmrb-heavy_nitrogen.tsv">Heavy Nitrogen</option>
       <option value="databases/bmrb-heavy.tsv">Heavy Carbon and Nitrogen</option>
     </param>
-    <param name="size" label="Marker size" type="integer" value="5" min="0" help="Base size of marker." />
+    <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Base size of marker." />
+    <param name="sizealgo" label="Marker size algorithm" type="select" help="Algorithm to determine size. Option 1 size of marker. Option 2 determines size based on feature intensity.">
+      <option value="0">Uniform Size</option>
+      <option value="1">Other</option>
+    </param>
   </inputs>
 
   <outputs>
