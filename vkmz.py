@@ -34,9 +34,9 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
   inputSubparser.add_argument('--directory','-di', nargs='?', type=str, help='Define directory of tool.')
   inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
-  inputSubparser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', '2d', 'scatter-3d', '3d', 'heatmap'], help='Set to "2d" or "3d". Default is "2d".')
+  inputSubparser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', 'scatter-3d'], help='Select plot type.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
-  inputSubparser.add_argument('--sizealgo', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
+  inputSubparser.add_argument('--size-algorithm', '-a', nargs='?', default=0, type=int, choices=[0,1,2],help='Size algorithm selector. Algo 0: size, Algo 1: size+2*log(size*peak/(highest_peak/lowest_peak, Algo 2: size+2*size*peak/(highest_peak-lowest_peak)')
 args = parser.parse_args()
 
 vkInputType = getattr(args, "input-type")
@@ -68,12 +68,10 @@ vkMaxIndex = len(vkMass)-1
 vkOutput = getattr(args, "output")
 
 vkPlotType = getattr(args, 'plottype')
-if vkPlotType == '2d': vkPlotType = 'scatter-2d'
-if vkPlotType == '3d': vkPlotType = 'scatter-3d'
 
 vkSize = getattr(args, 'size')
 
-vkSizeAlgo = getattr(args, 'sizealgo')
+vkSizeAlgo = getattr(args, 'size_algorithm')
 
 # control predictions
 def forecaster(vkInput):
