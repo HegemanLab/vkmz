@@ -94,9 +94,11 @@ def forecaster(vkInput):
 # predict feature formulas and creates output list
 def featurePrediction(feature):
   mass = adjust(feature[2], feature[1]) # mz & polarity
-  prediction = predict(mass, 0, vkMaxIndex)
+  uncertainty = mass * vkError / 1e6
+  print("For a mass of: "+str(mass)+"\tand error: "+str(vkError)+" the uncertainty is: "+str(uncertainty))
+  prediction = predict(mass, uncertainty, 0, vkMaxIndex)
   if prediction != -1:
-    predictions = predictNeighbors(mass, prediction)
+    predictions = predictNeighbors(mass, uncertainty, prediction)
     feature[5] = predictions
     predictionClosest = predictions[0]
     formula = predictionClosest[1]
@@ -132,26 +134,26 @@ def adjust(mass, polarity):
 
 # Binary search to match observed mass to known mass within error
 # https://en.wikipedia.org/wiki/Binary_search_tree
-def predict(mass, left, right):
+def predict(mass, uncertainty, left, right):
   mid = left + (right - left) / 2
   if left <= mid <= right and mid <= vkMaxIndex:
     delta = float(vkMass[mid]) - mass
-    if vkError >= abs(delta):
+    if uncertainty >= abs(delta):
       return mid
-    elif vkError < delta:
-      return predict(mass, left, mid-1)
+    elif uncertainty < delta:
+      return predict(mass, uncertainty, left, mid-1)
     else:
-      return predict(mass, mid+1, right)
+      return predict(mass, uncertainty, mid+1, right)
   return -1
   
 # find and sort known masses within error limit of observed mass
-def predictNeighbors(mass, prediction):
+def predictNeighbors(mass, uncertainty, prediction):
   i = 0
   neighbors = [[vkMass[prediction],vkFormula[prediction],(float(vkMass[prediction])-mass)],]
   while prediction+i+1 <= vkMaxIndex:
     neighbor = prediction+i+1
     delta = float(vkMass[neighbor])-mass
-    if vkError >= abs(delta):
+    if uncertainty >= abs(delta):
       neighbors.append([vkMass[neighbor],vkFormula[neighbor],delta])
       i += 1
     else:
@@ -160,7 +162,7 @@ def predictNeighbors(mass, prediction):
   while prediction+i-1 >= 0:
     neighbor = prediction+i-1
     delta = float(vkMass[neighbor])-mass
-    if vkError >= abs(delta):
+    if uncertainty >= abs(delta):
       neighbors.append([vkMass[neighbor],vkFormula[neighbor],(float(vkMass[neighbor])-mass)])
       i -= 1
     else:
