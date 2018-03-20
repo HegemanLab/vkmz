@@ -95,7 +95,6 @@ def forecaster(vkInput):
 def featurePrediction(feature):
   mass = adjust(feature[2], feature[1]) # mz & polarity
   uncertainty = mass * vkError / 1e6
-  print("For a mass of: "+str(mass)+"\tand error: "+str(vkError)+" the uncertainty is: "+str(uncertainty))
   prediction = predict(mass, uncertainty, 0, vkMaxIndex)
   if prediction != -1:
     predictions = predictNeighbors(mass, uncertainty, prediction)
