@@ -30,7 +30,7 @@ parse_plot = inputSubparser.add_parser('plot', help='Only plot data.')
 parse_plot.add_argument('--input', '-i', required=True, nargs='?', type=str, help='Path to vkmz generated tabular file.')
 for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
-  inputSubparser.add_argument('--error',    '-e', nargs='?', type=int, default=5,     help='PPM error for identification.')
+  inputSubparser.add_argument('--error',    '-e', nargs='?', type=int, required=True, help='PPM error for identification.')
   inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
   inputSubparser.add_argument('--directory','-di', nargs='?', type=str, help='Define directory of tool.')
   inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
