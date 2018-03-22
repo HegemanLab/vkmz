@@ -119,14 +119,14 @@ def featurePrediction(feature):
     feature += [predictionClosestDelta, hc, oc, nc]
     return(feature)
 
-# adjust observed mass for polarity
+# adjust observed mass to a neutral mass
 def adjust(mass, polarity):
   # value to adjust by
-  hm = 1.007276
+  proton = 1.007276
   if polarity == 'pos':
-    mass += hm
+    mass += proton
   elif polarity == 'neg':
-    mass -= hm
+    mass -= proton
   return mass
 
 # Binary search to match observed mass to known mass within error
