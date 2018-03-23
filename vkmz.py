@@ -58,7 +58,7 @@ try:
   with open(vkDatabaseFile, 'r') as tsv:
     next(tsv) # skip first row
     for row in tsv:
-      (mass, formula) = row.split()
+      mass, formula = row.split()
       vkMass.append(mass)
       vkFormula.append(formula)
 except ValueError:
@@ -217,8 +217,6 @@ def plotRatios(vkData):
       line = dict(width = 0.5),
       mode = 'markers',
       marker = dict(
-        #size = dfSample.mz.apply(lambda x: math.log(x, 1.5)/2),
-        #size = dfSample.mz.apply(lambda x: vkSize+4*vkSize*x/(max_intensity-min_intensity),
         size = size,
         color = dfSample.rt,
         colorscale = 'Viridis',
@@ -290,8 +288,6 @@ if vkInputType == "tsv":
     print('The %s data file could not be read.' % tsvFile)
   vkData = forecaster(vkInput)
   saveForcast(vkData)
-  #plot = getattr(args, "no_plot")
-  #if plot:
   plotRatios(vkData)
 elif vkInputType == "xcms":
   vkInput = []
@@ -342,10 +338,12 @@ elif vkInputType == "xcms":
               i+=1
             else:
               intensity = row[i]
-              if intensity != "NA" and intensity != "0":
+              if intensity != "NA" and intensity != "#DIV/0!" and intensity != "0":
                 variable = row[0]
                 sample = sample_id[i]
-                vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
+                # XCMS data may include empty columns
+                if sample != "":
+                  vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
             i+=1
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
