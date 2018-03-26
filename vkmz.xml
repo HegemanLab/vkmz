@@ -22,7 +22,7 @@
       --database $database
       --output vkmz
       --size $size
-      --sizealgo $sizealgo
+      --size-algorithm $sizealgorithm
       --directory $__tool_directory__/
   ]]></command>
 
@@ -38,7 +38,7 @@
       <option value="databases/bmrb-heavy.tsv">Heavy Carbon and Nitrogen</option>
     </param>
     <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Base size of marker." />
-    <param name="sizealgo" label="Marker size algorithm" type="select" help="Algorithm to determine size. Option 1 size of marker. Option 2 determines size based on feature intensity.">
+    <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Algorithm to determine size. Option 1 size of marker. Option 2 determines size based on feature intensity.">
       <option value="0">Uniform Size</option>
       <option value="1">Other</option>
     </param>
@@ -51,14 +51,14 @@
 
   <tests>
     <test>
-      <param name="datamatrix" value="hazel-xd.tsv" />
-      <param name="samplemetadata" value="hazel-xs.tsv" />
-      <param name="variablemetadata" value="hazel-xv.tsv" />
+      <param name="datamatrix" value="datamatrix.tabular" />
+      <param name="samplemetadata" value="sampleMetadata.tabular" />
+      <param name="variablemetadata" value="variableMetadata.tabular" />
       <param name="error" value="1" />
       <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output">
         <assert_contents>
-          <has_text text="0.0740997586440244" />
+          <has_text text="9.366969197799335e-05" />
         </assert_contents>
       </output>
     </test>
