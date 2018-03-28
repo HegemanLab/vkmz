@@ -50,7 +50,6 @@ vkDatabaseFile = getattr(args, "database")
 vkDirectory = getattr(args, "directory")
 if vkDirectory != None:
  vkDatabaseFile = vkDirectory + vkDatabaseFile
- print(vkDatabaseFile)
 
 vkMass = []
 vkFormula = []
