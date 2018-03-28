@@ -65,7 +65,8 @@
   </inputs>
 
   <outputs>
-    <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}" />
+    <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${mode.mode_selector}_tabular" />
+    <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}_html" />
   </outputs>
 
   <tests>
