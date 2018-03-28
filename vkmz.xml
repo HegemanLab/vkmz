@@ -13,29 +13,25 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
+    python $__tool_directory__/vkmz.py
     #if str( $mode.mode_selector ) == "xcms":
-      python $__tool_directory__/vkmz.py
-        xcms
-	--data-matrix $mode.datamatrix
-	--sample-metadata $mode.samplemetadata
-	--variable-metadata $mode.variablemetadata
-        --error $mode.error
-	--database $mode.database
-        --output vkmz
-	--size $mode.size
-	--size-algorithm $mode.sizealgorithm
-        --directory $__tool_directory__/
+      xcms
+      --data-matrix $mode.datamatrix
+      --sample-metadata $mode.samplemetadata
+      --variable-metadata $mode.variablemetadata
+      --error $mode.error
+      --database $mode.database
+      --output vkmz
     #elif str( $mode.mode_selector ) == "tsv":
-      python $__tool_directory__/vkmz.py
-        tsv
-	--input $mode.input
-        --error $mode.error
-	--database $mode.database
-        --output vkmz
-	--size $mode.size
-	--size-algorithm $mode.sizealgorithm
-        --directory $__tool_directory__/
+      tsv
+      --input $mode.input
+      --error $mode.error
+      --database $mode.database
+      --output vkmz
     #end if
+    --size $size
+    --size-algorithm $sizealgorithm
+    --directory $__tool_directory__/
   ]]></command>
 
   <inputs>
@@ -56,11 +52,6 @@
           <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
           <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
         </param>
-        <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Base size of marker." />
-        <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Algorithm to determine size. Option 1 size of marker. Option 2 determines size based on feature intensity.">
-          <option value="0">Uniform Size</option>
-          <option value="1">Other</option>
-        </param>
       </when>
       <when value="tsv">
         <param name="input" label="Tabular input" type="data" format="tabular" help="Select tabular input." />
@@ -71,16 +62,13 @@
           <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
           <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
         </param>
+      </when>
+    </conditional>
         <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Base size of marker." />
         <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Algorithm to determine size. Option 1 size of marker. Option 2 determines size based on feature intensity.">
           <option value="0">Uniform Size</option>
           <option value="1">Other</option>
         </param>
-      </when>
-      <when value="do_not_set">
-        <!-- do nothing -->
-      </when>
-    </conditional>
   </inputs>
 
   <outputs>
