@@ -24,10 +24,10 @@
       --input $mode.input
     #end if
     --output vkmz
-    --error $error
-    --database $database
-    --size $size
-    --size-algorithm $sizealgorithm
+    --error $prediction.error
+    --database $prediction.database
+    --size $diagram.size
+    --size-algorithm $diagram.sizealgorithm
     --directory $__tool_directory__/
   ]]></command>
 
@@ -46,18 +46,22 @@
         <param name="input" label="Tabular input" type="data" format="tabular" help="Select tabular data" />
       </when>
     </conditional>
-    <param name="error" label="PPM Error" type="integer" value="5" min="0" help="Set according to mass spectrometer's mass error in parts-per-million" />
-    <param name="database" label="Database" type="select" help="Select heuriestically generated database">
-      <option value="databases/bmrb-light.tsv">Monoisotopic</option>
-      <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
-      <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
-      <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
-    </param>
-    <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
-    <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Select algorithm to change marker sizes. 1.) Set all markers to the base size, 2.) Marker sizes are relative to feature's log intensity">
-      <option value="0">Uniform</option>
-      <option value="1">Relative Log Intensity</option>
-    </param>
+    <section name="prediction" title="Prediction Options" expanded="true">
+      <param name="error" label="Mass Error (PPM)" type="integer" value="3" min="0" help="Set according to mass spectrometer's mass error in parts-per-million" />
+      <param name="database" label="Database" type="select" help="Select heuriestically generated database">
+        <option value="databases/bmrb-light.tsv">Monoisotopic</option>
+        <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
+        <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
+        <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
+      </param>
+    </section>
+    <section name="diagram" title="Diagram Options" expanded="true">
+      <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
+      <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Select algorithm to change marker sizes. 1.) Set all markers to the base size, 2.) Marker sizes are relative to feature's log intensity">
+        <option value="0">Uniform</option>
+        <option value="1">Relative Log Intensity</option>
+      </param>
+    </section>
   </inputs>
 
   <outputs>
@@ -97,13 +101,12 @@
 
   <help><![CDATA[
 
-**Authors** - Mark Esler (eslerm@umn.edu)
-**Authors** - Stephen Brockman (brock197@umn.edu)
+**Authors** - Mark Esler & Stephen Brockman (University of Minnesota)
 
 Release notes
 -------------
 
-Version 0.9
+Version 1.0
 
   ]]></help>
 
