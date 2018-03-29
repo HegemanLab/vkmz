@@ -47,9 +47,6 @@ vkError = getattr(args, "error")
 vkMultiprocessing = getattr(args, "multiprocessing")
 
 vkDatabaseFile = getattr(args, "database")
-vkDirectory = getattr(args, "directory")
-if vkDirectory != None:
- vkDatabaseFile = vkDirectory + vkDatabaseFile
 
 vkMass = []
 vkFormula = []
