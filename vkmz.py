@@ -119,9 +119,9 @@ def featurePrediction(feature):
 def adjust(mass, polarity):
   # value to adjust by
   proton = 1.007276
-  if polarity == 'pos':
+  if polarity == 'positive':
     mass += proton
-  elif polarity == 'neg':
+  elif polarity == 'negative':
     mass -= proton
   return mass
 
@@ -167,7 +167,7 @@ def predictNeighbors(mass, uncertainty, prediction):
 def saveForcast(vkOutputList):
   try:
     with open(vkOutput+'.tsv', 'w') as f: 
-      f.writelines(str("sample id\tpolarity\tmz\tretention time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\tretention_time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+'\n')
   except ValueError:
@@ -269,6 +269,15 @@ def plotRatios(vkData):
   fig = go.Figure(data=data, layout=layout)
   py.plot(fig, auto_open=False, show_link=False, filename=vkOutput+'.html')
  
+def polaritySanitizer(sample_polarity):
+  if sample_polarity.lower() in {'positive','pos','+'}:
+    sample_polarity = 'positive'
+  elif sample_polarity.lower() in {'negative', 'neg', '-'}:
+    sample_polarity = 'negative'
+  else:
+    print('A sample has an unknown polarity type: %s. Polarity in the XCMS sample metadata should be set to "negative" or "positive".' % sample_polarity)
+    raise ValueError
+  return sample_polarity
 
 # main
 if vkInputType == "tsv":
@@ -279,7 +288,7 @@ if vkInputType == "tsv":
       next(f) # skip hearder line
       tsvData = csv.reader(f, delimiter='\t')
       for row in tsvData:
-        vkInput.append([row[0],row[1],float(row[2]),float(row[3]),float(row[4]),[]])
+        vkInput.append([row[0],polaritySanitizer(row[1]),float(row[2]),float(row[3]),float(row[4]),[]])
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
   vkData = forecaster(vkInput)
@@ -292,10 +301,13 @@ elif vkInputType == "xcms":
     polarity = {}
     with open(xcmsSampleMetadataFile, 'r') as f:
       xcmsSampleMetadata = csv.reader(f, delimiter='\t')
+      next(xcmsSampleMetadata, None) # skip header
       for row in xcmsSampleMetadata:
-        polarity[row[0]] = row[2]
+        sample = row[0]
+        sample_polarity = polaritySanitizer(row[2])
+        polarity[sample] = sample_polarity
   except ValueError:
-    print('The %s data file could not be read.' % xcmsSampleMetadataFile)
+    print('The %s data file could not be read. Check that polarity is set to "negative" or "positive"' % xcmsSampleMetadataFile)
   xcmsVariableMetadataFile = getattr(args, "variable_metadata")
   try:
     mz = {}
@@ -334,7 +346,7 @@ elif vkInputType == "xcms":
               i+=1
             else:
               intensity = row[i]
-              if intensity != "NA" and intensity != "#DIV/0!" and intensity != "0":
+              if intensity not in {'NA', '#DIV/0!', '0'}:
                 variable = row[0]
                 sample = sample_id[i]
                 # XCMS data may include empty columns
