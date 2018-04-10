@@ -32,7 +32,7 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=int, required=True, help='PPM error for identification.')
   inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database.')
-  inputSubparser.add_argument('--directory','-di', nargs='?', type=str, help='Define directory of tool.')
+  inputSubparser.add_argument('--directory', nargs='?', default='', type=str, help='Define directory of tool.')
   inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Use flag to turn on multiprocessing.')
   inputSubparser.add_argument('--plottype', '-p', nargs='?', default='scatter-2d', choices=['scatter-2d', 'scatter-3d'], help='Select plot type.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set size of of dots. size+2*log(size*peak/(highest_peak/lowest_peak')
@@ -47,11 +47,12 @@ vkError = getattr(args, "error")
 vkMultiprocessing = getattr(args, "multiprocessing")
 
 vkDatabaseFile = getattr(args, "database")
+vkDirectory = getattr(args, "directory")
 
 vkMass = []
 vkFormula = []
 try:
-  with open(vkDatabaseFile, 'r') as tsv:
+  with open(vkDirectory+vkDatabaseFile, 'r') as tsv:
     next(tsv) # skip first row
     for row in tsv:
       mass, formula = row.split()
