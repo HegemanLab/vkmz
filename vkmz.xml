@@ -1,6 +1,6 @@
-<tool id="vkmz" name="vkmz" version="alpha-0.1">
+<tool id="vkmz" name="vkmz" version="1.0">
 
-  <description>predict formulas and generate VK diagram</description>
+  <description>: predict formulas and generate van Krevelen diagrams from LC-MS data</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
@@ -25,7 +25,7 @@
     #end if
     --output vkmz
     --error $prediction.error
-    --database $prediction.database
+    --database $prediction.database_type.database
     --size $diagram.size
     --size-algorithm $diagram.sizealgorithm
     --directory $__tool_directory__/
@@ -48,16 +48,27 @@
     </conditional>
     <section name="prediction" title="Prediction Options" expanded="true">
       <param name="error" label="Mass Error (PPM)" type="integer" value="3" min="0" help="Set according to mass spectrometer's mass error in parts-per-million" />
-      <param name="database" label="Database" type="select" help="Select heuriestically generated database">
-        <option value="databases/bmrb-light.tsv">Monoisotopic</option>
-        <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
-        <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
-        <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
-      </param>
+      <conditional name="database_type">
+        <param name="database_type_selector" type="select" label="Database Type">
+          <option value="heuristic">Heuristically Generated</option>
+          <option value="custom">Custom</option>
+        </param>
+	<when value="heuristic">
+          <param name="database" label="Database" type="select" help="Select heuriestically generated database">
+            <option value="databases/bmrb-light.tsv">Monoisotopic</option>
+            <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
+            <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
+            <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
+          </param>
+        </when>
+        <when value="custom">
+          <param name="database" label="Database" type="data" format="tabular" help="Select a custom tabular database" />
+        </when>
+      </conditional>
     </section>
     <section name="diagram" title="Diagram Options" expanded="true">
-      <param name="size" label="Marker base size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
-      <param name="sizealgorithm" label="Marker size algorithm" type="select" help="Select algorithm to change marker sizes. 1.) Set all markers to the base size, 2.) Marker sizes are relative to feature's log intensity">
+      <param name="size" label="Minimum Maker Size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
+      <param name="sizealgorithm" label="Marker Size Algorithm" type="select" help="Select algorithm to change marker sizes. 1.) Set all markers to the base size, 2.) Marker sizes are relative to feature's log intensity">
         <option value="0">Uniform</option>
         <option value="1">Relative Log Intensity</option>
       </param>
@@ -91,7 +102,9 @@
         <param name="input" value="tabular.tabular" />
       </conditional>
       <param name="error" value="3" />
-      <param name="database" value="databases/bmrb-light.tsv" />
+      <conditional name="database_type">
+        <param name="database" value="databases/bmrb-light.tsv" />
+      </conditional>
       <output name="output">
         <assert_contents>
           <has_text text="9.36699999556e-05" />
@@ -101,19 +114,41 @@
   </tests>
 
   <help><![CDATA[
+========
+vkmz 1.0
+========
 
-**Authors** - Mark Esler & Stephen Brockman (University of Minnesota)
+vkmz is a metabolomics vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
 
-Release notes
--------------
+=============
+Documentation
+=============
 
-Version 1.0
+**Input Modes**
 
+vkmz is designed to use XCMS [1] data as input. Tabular data can also be used as input.
+
+*XCMS* mode requires three files which XCMS generates.
+
+*Tabular* mode requires a tab delimited file with the first five columns being: Sample ID, polarity, mz, retention time, and intensity. Tabular mode is for workflows which do not use XCMS.
+
+**Prediction Options**
+
+For each feature in the data vkmz attempts to predict the molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. Features without predictions are discarded.
+
+Set the mass error option to the mass error of the mass spectrometer which collected the initial data!
+
+Heuristically generated databases for unlabeled and labeled data are included with vkmz [2]. Custom database can also be set.
+
+**Diagram Options**
+
+Predicted features are plotted as markers. The size of the marker is determined by the minimum marker size and marker size algorithm.
   ]]></help>
 
   <citations>
-    <!--Van Krevelen diagram visualization of high resolution-mass spectrometry metabolomics data with OpenVanKrevelen-->
     <citation type="doi">10.1007/s11306-018-1343-y</citation>
+    <citation type="doi">10.1021/ac051437y</citation>
+    <citation type="doi">10.1021/ac070346t</citation>
   </citations>
 
 </tool>

@@ -1,10 +1,11 @@
 # vkmz version 1.0 
 
-vkmz is a metabolomics vizualization tool which creates van Krevelen diagrams (VKD) from mass spectrometry data.
+vkmz is a metabolomics vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
 
-This program is based on [OpenVanKrevelen](https://github.com/HegemanLab/VanKrevelenLocal) [0].
 
 ## Using vkmz
+
+vkmz is designed to use XCMS [1] data as input. Tabular data can also be used as input. For each feature in the data vkmz attempts to predict it's molecular formula by comparing the features mass to a database of known formula masses. Heristically generated databases for unlabeled and labeled data is included with vkmz. Users can define their own database. A VKD is created from formulas with predictions and outputed as a webpage and tabular file.
 
 ### Input modes
 
