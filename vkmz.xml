@@ -1,4 +1,4 @@
-<tool id="vkmz" name="vkmz" version="1.0">
+<tool id="VKMZ" name="VKMZ" version="1.0">
 
   <description>: predict formulas and generate van Krevelen diagrams from LC-MS data</description>
   
@@ -115,10 +115,10 @@
 
   <help><![CDATA[
 ========
-vkmz 1.0
+VKMZ 1.0
 ========
 
-vkmz is a metabolomics vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
+VKMZ is a metabolomics vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
 
 =============
 Documentation
@@ -126,7 +126,7 @@ Documentation
 
 **Input Modes**
 
-vkmz is designed to use XCMS [1] data as input. Tabular data can also be used as input.
+VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as input.
 
 *XCMS* mode requires three files which XCMS generates.
 
@@ -134,11 +134,11 @@ vkmz is designed to use XCMS [1] data as input. Tabular data can also be used as
 
 **Prediction Options**
 
-For each feature in the data vkmz attempts to predict the molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. Features without predictions are discarded.
+For each feature in the data VKMZ attempts to predict the molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. Features without predictions are discarded.
 
 Set the mass error option to the mass error of the mass spectrometer which collected the initial data!
 
-Heuristically generated databases for unlabeled and labeled data are included with vkmz [2]. Custom database can also be set.
+Heuristically generated databases for unlabeled and labeled data are included with VKMZ [2]. Custom database can also be set.
 
 **Diagram Options**
 
@@ -152,4 +152,3 @@ Predicted features are plotted as markers. The size of the marker is determined 
   </citations>
 
 </tool>
-
