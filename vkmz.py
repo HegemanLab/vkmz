@@ -88,7 +88,9 @@ def forecaster(vkInput):
 
 # predict feature formulas and creates output list
 def featurePrediction(feature):
+  print(feature)
   mass = adjust(feature[2], feature[1]) # mz & polarity
+  feature[2] = mass
   uncertainty = mass * vkError / 1e6
   prediction = predict(mass, uncertainty, 0, vkMaxIndex)
   if prediction != -1:
@@ -129,7 +131,7 @@ def adjust(mass, polarity):
 # Binary search to match observed mass to known mass within error
 # https://en.wikipedia.org/wiki/Binary_search_tree
 def predict(mass, uncertainty, left, right):
-  mid = left + (right - left) / 2
+  mid = ((right - left) / 2) + left
   if left <= mid <= right and mid <= vkMaxIndex:
     delta = float(vkMass[mid]) - mass
     if uncertainty >= abs(delta):
