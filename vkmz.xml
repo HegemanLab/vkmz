@@ -92,7 +92,7 @@
       <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output">
         <assert_contents>
-          <has_text text="9.366969197799335e-05" />
+          <has_text text="0.00016357" />
         </assert_contents>
       </output>
     </test>
@@ -107,10 +107,11 @@
       </conditional>
       <output name="output">
         <assert_contents>
-          <has_text text="9.36699999556e-05" />
+          <has_text text="0.00016357" />
         </assert_contents>
       </output>
     </test>
+
   </tests>
 
   <help><![CDATA[
