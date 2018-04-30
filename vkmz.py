@@ -88,12 +88,11 @@ def forecaster(vkInput):
 
 # predict feature formulas and creates output list
 def featurePrediction(feature):
-  print(feature)
   mass = adjust(feature[2], feature[1]) # mz & polarity
-  feature[2] = mass
   uncertainty = mass * vkError / 1e6
   prediction = predict(mass, uncertainty, 0, vkMaxIndex)
   if prediction != -1:
+    feature[2] = mass
     predictions = predictNeighbors(mass, uncertainty, prediction)
     feature[5] = predictions
     predictionClosest = predictions[0]
