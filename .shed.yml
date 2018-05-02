@@ -1,5 +1,5 @@
 categories: [Metabolomics]
-description: A van Krevelen Diagram and prediction tool for LC-MS data
+description: metabolomics formula prediction and van Krevelen diagram generation
 name: vkmz
 owner: eslerm
-remote_repository_url: https://github.com/HegemanLab/vkmz
+remote_repository_url: https://github.com/HegemanLab/VKMZ
