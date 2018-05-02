@@ -328,8 +328,8 @@ elif vkInputType == "xcms":
       i = 0
       for row in xcmsVariableMetadata:
         if i != 0:
-          mz[row[0]] = row[mz_index]
-          rt[row[0]] = row[rt_index]
+          mz[row[0]] = float(row[mz_index])
+          rt[row[0]] = float(row[rt_index])
         else:
           for column in row:
             variable_index[column] = i
@@ -359,7 +359,7 @@ elif vkInputType == "xcms":
                 sample = sample_id[i]
                 # XCMS data may include empty columns
                 if sample != "":
-                  vkInput.append([sample, polarity[sample], float(mz[variable]), float(rt[variable]), intensity, []])
+                  vkInput.append([sample, polarity[sample], mz[variable], rt[variable], float(intensity), []])
             i+=1
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
