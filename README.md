@@ -2,16 +2,16 @@
 
 VKMZ is a metabolomics vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot based on the molecule's oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
 
-
+VKMZ can be used as a standalone tool or on the Galaxy Project web platform [1].
 ## Using VKMZ
 
-VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as input. For each feature in the data VKMZ attempts to predict it's molecular formula by comparing the features mass to a database of known formula masses. Heristically generated databases for unlabeled and labeled data is included with VKMZ. Users can define their own database. A VKD is created from formulas with predictions and outputed as a webpage and tabular file.
+VKMZ is designed to use XCMS [2] data as input. Tabular data can also be used as input. For each feature in the data VKMZ attempts to predict it's molecular formula by comparing the features mass to a database of known formula masses. Heristically generated databases for unlabeled and labeled data is included with VKMZ. Users can define their own database. A VKD is created from formulas with predictions and outputed as a webpage and tabular file.
 
 ### Input modes
 
 VKMZ has three modes:
   1. `tsv` mode reads a specially formatted tabular file
-  2. `xcms` mode reads features in [XCMS](https://bioconductor.org/packages/release/bioc/html/xcms.html) [1] data
+  2. `xcms` mode reads features in [XCMS](https://bioconductor.org/packages/release/bioc/html/xcms.html) data
   3. `plot` mode replots VKMZ tabular data
 
 Select a mode by declaring it as the first argument to `vkmz.py`.
@@ -44,7 +44,7 @@ Both xcms and tsv mode require the mass error, in parts-per-million, of the mass
 
 There are several options for xcms and tsv modes:
   * `--database [DATABASE_FILE]`
-    * default is BMRB's monoisotopic heuristically generated database [2]
+    * default is BMRB's monoisotopic heuristically generated database [3]
   * `--directory [TOOL_PATH]`
     * define tool directory
   * `--no-plot`
@@ -82,5 +82,6 @@ Specifying the VKMZ tabular file is required:
 ## Citations
 
 0. Brockman et al. [doi:10.1007/s11306-018-1343-y](https://doi.org/10.1007/s11306-018-1343-y)
-1. Giacomoni et al. [doi:10.1093/bioinformatics/btu813](https://doi.org/10.1093/bioinformatics/btu813)
-2. Hegeman et al. [doi:10.1021/ac070346t](https://doi.org/10.1021/ac070346t)
+1. Galaxy Project [Galaxy](https://github.com/galaxyproject/galaxy)
+2. Giacomoni et al. [doi:10.1093/bioinformatics/btu813](https://doi.org/10.1093/bioinformatics/btu813)
+3. Hegeman et al. [doi:10.1021/ac070346t](https://doi.org/10.1021/ac070346t)
