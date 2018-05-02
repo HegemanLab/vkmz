@@ -137,6 +137,10 @@ VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as
 
 *Tabular* mode requires a tab delimited file with the first five columns being: Sample ID, polarity, mz, retention time, and intensity. Tabular mode is for workflows which do not use XCMS.
 
+**Mass adjustment**
+
+VKMZ adjusts masses by removing or adding the mass of a proton based on polarity to calculate the nominal mass. Mass adjustment should be turned off if using nominal mass data. VKMZ tabular output contains nominal masses.
+
 **Prediction Options**
 
 For each feature in the data VKMZ attempts to predict the molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. Features without predictions are discarded.
