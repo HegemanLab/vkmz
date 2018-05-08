@@ -123,7 +123,7 @@ def featurePrediction(feature):
     feature += [predictionClosestDelta, hc, oc, nc]
     return(feature)
 
-# adjust observed mass to a neutral mass
+# adjust charged mass to a neutral mass
 def adjust(mass, polarity):
   # value to adjust by
   proton = 1.007276
@@ -147,6 +147,33 @@ def predict(mass, uncertainty, left, right):
       return predict(mass, uncertainty, mid+1, right)
   return -1
   
+def plotInfo(vkData):
+  max_rt = 0
+  max_intensity = 0.0
+  max_hc = 0
+  max_oc = 0
+  max_nc = 0
+  for row in vkData:
+    if row[3] > max_rt:
+      max_rt = row[3]
+    intensity = float(row[4])
+    if intensity < min_intensity: #
+      min_intensity = intensity   #
+    if intensity > max_intensity:
+      max_intensity = intensity   
+    if row[7] > max_hc:
+      max_hc = row[7]
+    if row[8] > max_oc:
+      max_oc = row[8]
+    if row[9] > max_nc:
+      max_nc = row[9]
+  if vkSizeAlgo == 0:
+    radii
+  else:
+   alpha = vkSize/math.log(max_itensity+1)
+   radii = vkData[4].apply(lambda x: alpha*log(x+1))
+   return vkData
+
 # find and sort known masses within error limit of observed mass
 def predictNeighbors(mass, uncertainty, prediction):
   i = 0
@@ -175,33 +202,16 @@ def predictNeighbors(mass, uncertainty, prediction):
 def saveForcast(vkOutputList):
   try:
     with open(vkOutput+'.tsv', 'w') as f: 
+     #                  0           1        2   3               4      5         6       7             8    9    10
+     #f.writelines(str("sample_id\tpolarity\tmz\tretention_time\tcolor\tintensity\tradius\tpredictions\tH:C\tO:C\tN:C") + '\n')
+     #                  0          1         2   3               4          6            6      7   8     9
       f.writelines(str("sample_id\tpolarity\tmz\tretention_time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C") + '\n')
       for feature in vkOutputList:
-       f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+'\n')
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
 def plotRatios(vkData):
-  max_rt = 0
-  min_intensity = 10.0**10
-  max_intensity = 0.0
-  max_hc = 0
-  max_oc = 0
-  max_nc = 0
-  for row in vkData:
-    if row[3] > max_rt:
-      max_rt = row[3]
-    intensity = float(row[4])
-    if intensity < min_intensity:
-      min_intensity = intensity
-    if intensity > max_intensity:
-      max_intensity = intensity
-    if row[7] > max_hc:
-      max_hc = row[7]
-    if row[8] > max_oc:
-      max_oc = row[8]
-    if row[9] > max_nc:
-      max_nc = row[9]
   labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc']
   df = pd.DataFrame.from_records(vkData, columns=labels)
   sampleIDs = df.sampleID.unique()
@@ -213,7 +223,7 @@ def plotRatios(vkData):
     if vkSizeAlgo == 0:
       size = dfSample.intensity.apply(lambda x: vkSize)
     else:
-      size = dfSample.intensity.apply(lambda x: vkSize+4*vkSize*float(x)/max_intensity)
+      size = dfSample.intensity.apply(lambda x: vkSize+vkSize*math.log(float(x)/max_intensity))
     trace = go.Scatter(
       x = dfSample.oc,
       y = dfSample.hc,
@@ -296,7 +306,7 @@ if vkInputType == "tsv":
       next(f) # skip hearder line
       tsvData = csv.reader(f, delimiter='\t')
       for row in tsvData:
-        vkInput.append([row[0],polaritySanitizer(row[1]),float(row[2]),float(row[3]),float(row[4]),[]])
+        vkInput.append([row[0],polaritySanitizer(row[1]),float(row[2]),float(row[3]),float(row[4])])
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
   vkData = forecaster(vkInput)
@@ -358,6 +368,8 @@ elif vkInputType == "xcms":
                 variable = row[0]
                 sample = sample_id[i]
                 # XCMS data may include empty columns
+     #                  0           1        2   3               4          5      6       7             8    9    10
+     #f.writelines(str("sample_id\tpolarity\tmz\tretention_time\tintensity\tcolor\tradius\tpredictions\tH:C\tO:C\tN:C") + '\n')
                 if sample != "":
                   vkInput.append([sample, polarity[sample], mz[variable], rt[variable], float(intensity), []])
             i+=1
