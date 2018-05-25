@@ -228,6 +228,7 @@ def plotRatios(vkData):
       mode = 'markers',
       marker = dict(
         size = size,
+        sizemode = "area",
         color = dfSample.rt,
         colorscale = 'Viridis',
         cmin = 0,
