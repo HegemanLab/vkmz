@@ -47,7 +47,6 @@ vkInputType = getattr(args, "input-type")
 vkError = getattr(args, "error")
 
 vkPolarity = getattr(args, "polarity")
-print(vkPolarity)
 
 vkMultiprocessing = getattr(args, "multiprocessing")
 
