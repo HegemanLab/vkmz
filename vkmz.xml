@@ -159,9 +159,9 @@ VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as
 
 For each feature in the data VKMZ attempts to predict a molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. VKMZ finds all predictions for an observed mass within the mass error. The prediction with the lowest delta, absolute difference between observed and known mass, is plotted. Features without predictions are discarded. Using low resolution data may result in finding too many predictions per feature to be useful, especially for large mass metabolites.
  
-Set the mass error option to the mass error, in parts per million, of the mass spectrometer which collected the initial data. 
+Set *Mass error* to the mass error, in parts per million, of the mass spectrometer which collected the data. 
 
-Heuristically generated databases for unlabeled and labeled formulas are included with VKMZ [2]. Custom database can also be set.
+*Database* can be set to heuristically generated databases for unlabeled and labeled chemcials [2] or to a custom database.
 
 **Diagram Options**
 
