@@ -61,6 +61,8 @@ There are several optional parameters for xcms and tsv modes:
   * `--directory [TOOL_PATH]`
     * Explicitly define tool directory
     * Sets root directory for database file path
+  * `--polarity`
+    * Set polarity for all samples overriding input files
   * `--no-plot`
     * Disable html output
 
