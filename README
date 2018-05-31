@@ -63,6 +63,8 @@ There are several optional parameters for xcms and tsv modes:
     * Sets root directory for database file path
   * `--polarity`
     * Set polarity for all samples overriding input files
+  * `--unique`
+    * Remove features with multiple predictions
   * `--no-plot`
     * Disable html output
 

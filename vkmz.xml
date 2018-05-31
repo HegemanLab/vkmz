@@ -1,4 +1,4 @@
-<tool id="VKMZ" name="VKMZ" version="1.0">
+<tool id="VKMZ" name="VKMZ" version="1.1.1">
 
   <description>metabolomics formula prediction and van Krevelen diagram generation</description>
   
@@ -34,6 +34,9 @@
     --output vkmz
     --error $prediction.error
     --database $prediction.database_type.database
+    #if $prediction.unique=="True":
+      --unique
+    #end if
     --size $diagram.size
     --size-algorithm $diagram.sizealgorithm
     --directory $__tool_directory__/
@@ -54,7 +57,7 @@
         <param name="input" label="Tabular input" type="data" format="tabular" help="Select tabular data" />
       </when>
     </conditional>
-    <section name="advanced_input" title="Advanced Input Options" expanded="fals:we">
+    <section name="advanced_input" title="Advanced Input Options" expanded="false">
       <param name="polarity" label="Override polarity" type="select" help="Set polarity for all samples ignoring input files">
         <option value="NA">No override</option>
         <option value="negative">Negative</option>
@@ -81,6 +84,7 @@
           <param name="database" label="Database" type="data" format="tabular" help="Select a custom tabular database" />
         </when>
       </conditional>
+      <param name="unique" label="Unique matches" type="boolean" truevalue="True" help="Only output features with a single prediction" />
     </section>
     <section name="diagram" title="Diagram Options" expanded="true">
       <param name="size" label="Minimum Maker Size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
@@ -162,6 +166,8 @@ For each feature in the data VKMZ attempts to predict a molecular formula by com
 Set *Mass error* to the mass error, in parts per million, of the mass spectrometer which collected the data. 
 
 *Database* can be set to heuristically generated databases for unlabeled and labeled chemcials [2] or to a custom database.
+
+*Unique matches* removes features from the output which have multiple predictions. Low mass molecules are less affected by this filter than high mass molecules.
 
 **Diagram Options**
 
