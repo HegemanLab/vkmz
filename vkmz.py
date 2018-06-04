@@ -136,9 +136,9 @@ def adjust(mass, polarity):
   # value to adjust by
   proton = 1.007276
   if polarity == 'positive':
-    mass += proton
-  elif polarity == 'negative':
     mass -= proton
+  elif polarity == 'negative':
+    mass += proton
   return mass
 
 # Binary search to match observed mass to known mass within error
