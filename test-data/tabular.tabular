@@ -1,4 +1,4 @@
-sample_id	polarity	mz	retention_time	intensity
+sample_id	polarity	mz	rt	intensity
 control_2	negative	58.0649616577	66.4569085128	2436019.067
 control_3	negative	58.0649616577	66.4569085128	2244732.895
 control_recovery_1	negative	58.0649616577	66.4569085128	5468467.966

@@ -209,7 +209,7 @@ def predictNeighbors(mass, uncertainty, prediction):
 def saveForcast(vkOutputList):
   try: 
     with open(vkOutput+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\tretention_time\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C\tsymbol_size") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\tdelta\tH:C\tO:C\tN:C\tsymbol_size") + '\n')
       for feature in vkOutputList:
         f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\t'+'\n')
   except ValueError:
