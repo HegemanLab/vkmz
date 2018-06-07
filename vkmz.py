@@ -39,7 +39,7 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Set flag to turn on multiprocessing.')
   inputSubparser.add_argument('--plottype', '-t', nargs='?', default='scatter-2d', choices=['scatter-2d', 'scatter-3d'], help='Select plot type.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set maxium size of plot symbols.')
-  inputSubparser.add_argument('--size-algorithm', '-a', nargs='?', default=0, type=int, choices=[0,1], help="Symbol size algorithm selector. Algorithm 0 sets all symbols to the maxium size. Algorithm 2 determines a features symbol size by it's log intensity.")
+  inputSubparser.add_argument('--size-algorithm', '-a', choices=['uniform', 'relative-intensity', 'relative-log-intensity'], default='uniform', help="Symbol size algorithm selector. Algorithm 0 sets all symbols to the maxium size. Algorithm 2 determines a features symbol size by it's log intensity.")
 args = parser.parse_args()
 
 vkInputType = getattr(args, "input-type")
@@ -77,7 +77,7 @@ vkPlotType = getattr(args, 'plottype')
 
 vkSize = getattr(args, 'size')
 
-vkSizeAlgo = getattr(args, 'size_algorithm')
+vkSizeAlgorithm = getattr(args, 'size_algorithm')
 
 # control predictions
 def forecaster(vkInput):
@@ -137,7 +137,7 @@ def adjust(mass, polarity):
   proton = 1.007276
   if polarity == 'positive':
     mass -= proton
-  elif polarity == 'negative':
+  else: # sanitized to negative
     mass += proton
   return mass
 
@@ -166,19 +166,31 @@ def polaritySanitizer(sample_polarity):
   return sample_polarity
 
 def plotData(vkData):
-  if vkSizeAlgo == 0:
+  max_rt = 0.0
+  max_intensity = 0.0
+  for row in vkData:
+    intensity = row[4]
+    if intensity > max_intensity:
+      max_intensity = intensity
+    rt = row[3]
+    if rt > max_rt:
+      max_rt = rt
+  if vkSizeAlgorithm == 'uniform':
     for row in vkData:
       row.append(vkSize)
-  else:
-    max_intensity = 0.0
+  elif vkSizeAlgorithm == 'relative-intensity':
+    alpha = vkSize/max_intensity
     for row in vkData:
       intensity = row[4]
-      if intensity > max_intensity:
-        max_intensity = intensity   
+      row.append(alpha*intensity)
+  else: # relative-log-intensity
     alpha = vkSize/math.log(max_intensity+1)
     for row in vkData:
       intensity = row[4]
       row.append(alpha*math.log(intensity+1))
+  for row in vkData:
+    rt = row[3]
+    row.append(rt/max_rt)
   return vkData
 
 # find and sort known masses within error limit of observed mass
@@ -209,9 +221,9 @@ def predictNeighbors(mass, uncertainty, prediction):
 def saveForcast(vkOutputList):
   try: 
     with open(vkOutput+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\tdelta\thc\toc\tnc\tsize") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\tdelta\thc\toc\tnc\tsize\tcolor") + '\n')
       for feature in vkOutputList:
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\t'+'\n')
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\t'+str(feature[11])+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
@@ -229,7 +241,7 @@ def plotRatios(vkData):
       max_oc = row[8]
     if row[9] > max_nc:
       max_nc = row[9]
-  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc', 'size']
+  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc', 'size', 'color']
   df = pd.DataFrame.from_records(vkData, columns=labels)
   sampleIDs = df.sampleID.unique()
   data = []
