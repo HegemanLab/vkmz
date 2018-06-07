@@ -155,6 +155,16 @@ def predict(mass, uncertainty, left, right):
       return predict(mass, uncertainty, mid+1, right)
   return -1
   
+def polaritySanitizer(sample_polarity):
+  if sample_polarity.lower() in {'positive','pos','+'}:
+    sample_polarity = 'positive'
+  elif sample_polarity.lower() in {'negative', 'neg', '-'}:
+    sample_polarity = 'negative'
+  else:
+    print('A sample has an unknown polarity type: %s. Polarity in the XCMS sample metadata should be set to "negative" or "positive".' % sample_polarity)
+    raise ValueError
+  return sample_polarity
+
 def plotData(vkData):
   if vkSizeAlgo == 0:
     for row in vkData:
@@ -292,16 +302,6 @@ def plotRatios(vkData):
   fig = go.Figure(data=data, layout=layout)
   py.plot(fig, auto_open=False, show_link=False, filename=vkOutput+'.html')
  
-def polaritySanitizer(sample_polarity):
-  if sample_polarity.lower() in {'positive','pos','+'}:
-    sample_polarity = 'positive'
-  elif sample_polarity.lower() in {'negative', 'neg', '-'}:
-    sample_polarity = 'negative'
-  else:
-    print('A sample has an unknown polarity type: %s. Polarity in the XCMS sample metadata should be set to "negative" or "positive".' % sample_polarity)
-    raise ValueError
-  return sample_polarity
-
 # main
 if vkInputType == "tsv":
   vkInput = []
