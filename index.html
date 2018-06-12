@@ -3,15 +3,22 @@
 <style>
 body { margin: 0; padding: 0; font: 12px sans-serif; }
 path, line { shape-rendering: crispEdges; }
-div, svg, canvas { position: absolute; }
 svg { pointer-events: none; }
 .axis path, .axis line { fill: none; stroke: #000; stroke-width: 1px; }
 circle { stroke-width: 4px; stroke: #000; fill: none; }
 .hidden { display: none; }
+#sidebar strong {float: left;}
 </style>
 <body>
-<div id="graph"></div>
-<div id="sidebar" style="margin-top: 500px"></div>
+<div id="graph" style="width: 960px; height: 500px; float: left;"></div>
+<div id="sidebar">
+  <h3>Selected Feature Info:</h3>
+  <strong>sample: </strong><p id="sample_id">NA</p>
+  <strong>mz: </strong><p id="mz">NA</p>
+  <strong>retention time: </strong><p id="rt">NA</p>
+  <strong>poloarity:	</strong><p id="polarity">NA</p>
+  <strong>predictions:	</strong><p id="predictions">NA</p>
+</div>
 <script src="d3.min.js"></script>
 <script>
 
@@ -22,6 +29,7 @@ var margin = {top: 20, right: 10, bottom: 30, left: 40},
 var svg = d3.select("#graph").append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
+  .attr("position", "absolute")
   .append("g")
     .attr("transform", "translate(" + margin.left + " " + margin.top + ")");
 
@@ -40,11 +48,13 @@ var yg = svg.append("g")
 
 var chartArea = d3.select("#graph").append("div")
   .style("left", margin.left + "px")
-  .style("top", margin.top + "px");
+  .style("top", margin.top + "px")
+  .style("position", "absolute");
 
 var canvas = chartArea.append("canvas")
   .attr("width", width)
-  .attr("height", height);
+  .attr("height", height)
+  .style("position", "absolute");
 
 var offscreen = d3.select(document.createElement("canvas"))
   .attr("width", width)
@@ -115,7 +125,7 @@ function redraw() {
 
       // If it matches a point, highlight it
       if (selected) {
-      //  console.log(selected)
+        console.log(selected);
         highlight.attr("cx", x(selected.oc))
           .attr("cy", y(selected.hc))
           .attr("r", selected.size);
@@ -124,7 +134,11 @@ function redraw() {
 
     canvas.on("click",function(){
       if (selected) {
-	document.getElementById("sidebar").innerHTML = selected.mz;
+	document.getElementById("sample_id").innerHTML = selected.sample_id;
+	document.getElementById("mz").innerHTML = selected.mz;
+	document.getElementById("rt").innerHTML = selected.rt;
+	document.getElementById("polarity").innerHTML = selected.polarity;
+	document.getElementById("predictions").innerHTML = selected.predictions;
       }
     });
 
