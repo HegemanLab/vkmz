@@ -10,6 +10,8 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
 .hidden { display: none; }
 </style>
 <body>
+<div id="graph"></div>
+<div id="sidebar" style="margin-top: 500px"></div>
 <script src="d3.min.js"></script>
 <script>
 
@@ -17,7 +19,7 @@ var margin = {top: 20, right: 10, bottom: 30, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#graph").append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
   .append("g")
@@ -36,7 +38,7 @@ var xg = svg.append("g")
 var yg = svg.append("g")
   .attr("class", "y axis");
 
-var chartArea = d3.select("body").append("div")
+var chartArea = d3.select("#graph").append("div")
   .style("left", margin.left + "px")
   .style("top", margin.top + "px");
 
@@ -113,10 +115,16 @@ function redraw() {
 
       // If it matches a point, highlight it
       if (selected) {
-        console.log(selected)
+      //  console.log(selected)
         highlight.attr("cx", x(selected.oc))
           .attr("cy", y(selected.hc))
           .attr("r", selected.size);
+      }
+    });
+
+    canvas.on("click",function(){
+      if (selected) {
+	document.getElementById("sidebar").innerHTML = selected.mz;
       }
     });
 
