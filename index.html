@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <style>
 body { margin: 0; padding: 0; font: 12px sans-serif; }
@@ -9,74 +11,81 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
 .hidden { display: none; }
 #sidebar strong {float: left;}
 </style>
+<link href="https://unpkg.com/basscss@8.0.2/css/basscss.min.css" rel="stylesheet">
+</head>
 <body>
-<div id="sidebar" style="width: 300px; height: 500px; float: left;">
-  <h3>Selected Feature Info:</h3>
-  <strong>sample: </strong><p id="sample_id">NA</p>
-  <strong>mz: </strong><p id="mz">NA</p>
-  <strong>retention time: </strong><p id="rt">NA</p>
-  <strong>poloarity:	</strong><p id="polarity">NA</p>
-  <strong>predictions:	</strong><p id="predictions">NA</p>
+<div class="clearfix">
+  <div id="sidebar" class="col sm-col-12 left">
+    <h3>Selected Feature Info:</h3>
+    <strong>sample: </strong><p id="sample_id">NA</p>
+    <strong>mz: </strong><p id="mz">NA</p>
+    <strong>retention time: </strong><p id="rt">NA</p>
+    <strong>poloarity:	</strong><p id="polarity">NA</p>
+    <strong>predictions:	</strong><p id="predictions">NA</p>
+  </div>
+  <div id="chart" class="col sm-col-12 left" style="height: 500px;"></div>
 </div>
-<div id="graph" style="width: 750px; height: 500px; float: left;"></div>
 <script src="d3.min.js"></script>
+
 <script>
 
-var margin = {top: 20, right: 10, bottom: 30, left: 40},
-    width = 750 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+var chartDiv = document.getElementById("chart");
 
-var svg = d3.select("#graph").append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .style("float", "left")
-  .attr("position", "absolute")
-  .append("g")
-    .attr("transform", "translate(" + margin.left + " " + margin.top + ")");
+var margin = {top: 20, right: 10, bottom: 30, left: 40};
 
-var x = d3.scaleLinear()
-  .range([0, width]);
+function draw() {
+  var width = chartDiv.clientWidth;
+  var height = chartDiv.clientHeight;
+  console.log(width, height)
 
-var y = d3.scaleLinear()
-  .range([height, 0]);
+  var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .style("float", "left")
+    .attr("position", "absolute")
+    .append("g")
+      .attr("transform", "translate(" + margin.left + " " + margin.top + ")");
 
-var xg = svg.append("g")
-  .attr("class", "x axis")
-  .attr("transform", "translate(0," + height + ")");
+  var x = d3.scaleLinear()
+    .range([0, width]);
 
-var yg = svg.append("g")
-  .attr("class", "y axis");
+  var y = d3.scaleLinear()
+    .range([height, 0]);
 
-var chartArea = d3.select("#graph").append("div")
-  .style("margin-left", margin.left + "px")
-  .style("margin-top", margin.top + "px")
-  .style("float", "left")
-  .style("position", "absolute");
+  var xg = svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")");
 
-var canvas = chartArea.append("canvas")
-  .attr("width", width)
-  .attr("height", height)
-  .style("position", "absolute");
+  var yg = svg.append("g")
+    .attr("class", "y axis");
 
-var offscreen = d3.select(document.createElement("canvas"))
-  .attr("width", width)
-  .attr("height", height)
+  var chartArea = d3.select("#chart").append("div")
+    .style("margin-left", margin.left + "px")
+    .style("margin-top", margin.top + "px")
+    .style("float", "left")
+    .style("position", "absolute");
 
-var context = canvas.node().getContext("2d"),
-    picker = offscreen.node().getContext("2d");
+  var canvas = chartArea.append("canvas")
+    .attr("width", width)
+    .attr("height", height)
+    .style("position", "absolute");
 
-context.fillStyle = "#f0f";
+  var offscreen = d3.select(document.createElement("canvas"))
+    .attr("width", width)
+    .attr("height", height)
 
-// Layer on top of canvas, example of selection details
-var highlight = chartArea.append("svg")
-  .attr("width", width)
-  .attr("height", height)
-    .append("circle")
-      .classed("hidden", true);
+  var context = canvas.node().getContext("2d"),
+      picker = offscreen.node().getContext("2d");
 
-redraw();
+  context.fillStyle = "#f0f";
 
-function redraw() {
+  // Layer on top of canvas, example of selection details
+  var highlight = chartArea.append("svg")
+    .attr("width", width)
+    .attr("height", height)
+      .append("circle")
+        .classed("hidden", true);
+
   d3.tsv("d3-test-data.tsv").then(function(data) {
 
     data.forEach(function(d) {
@@ -145,10 +154,25 @@ function redraw() {
     });
 
   });
+  console.log("foo resize")
 };
 
 function getColor(i) {
   return (i % 256) + "," + (Math.floor(i / 256) % 256) + "," + (Math.floor(i / 65536) % 256);
 }
+
+// inital draw
+draw(); 
+
+function redraw() {
+  d3.select("#chart svg").remove();
+  d3.select("#chart div").remove();
+  draw();
+}
+
+// redraw on browser window resize
+window.addEventListener("resize", redraw);
+
 </script>
 </body>
+</html>
