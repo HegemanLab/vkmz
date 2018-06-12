@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body { margin: 0; padding: 0; font: 12px sans-serif; }
+path, line { shape-rendering: crispEdges; }
+div, svg, canvas { position: absolute; }
+svg { pointer-events: none; }
+.axis path, .axis line { fill: none; stroke: #000; stroke-width: 1px; }
+circle { stroke-width: 4px; stroke: #000; fill: none; }
+.hidden { display: none; }
+</style>
+<body>
+<script src="d3.min.js"></script>
+<script>
+
+var margin = {top: 20, right: 10, bottom: 30, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var svg = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + " " + margin.top + ")");
+
+var x = d3.scaleLinear()
+  .range([0, width]);
+
+var y = d3.scaleLinear()
+  .range([height, 0]);
+
+var xg = svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")");
+
+var yg = svg.append("g")
+  .attr("class", "y axis");
+
+var chartArea = d3.select("body").append("div")
+  .style("left", margin.left + "px")
+  .style("top", margin.top + "px");
+
+var canvas = chartArea.append("canvas")
+  .attr("width", width)
+  .attr("height", height);
+
+var offscreen = d3.select(document.createElement("canvas"))
+  .attr("width", width)
+  .attr("height", height)
+
+var context = canvas.node().getContext("2d"),
+    picker = offscreen.node().getContext("2d");
+
+context.fillStyle = "#f0f";
+
+// Layer on top of canvas, example of selection details
+var highlight = chartArea.append("svg")
+  .attr("width", width)
+  .attr("height", height)
+    .append("circle")
+      .classed("hidden", true);
+
+redraw();
+
+function redraw() {
+  d3.tsv("d3-test-data.tsv").then(function(data) {
+
+    data.forEach(function(d) {
+      d.oc = +d.oc
+      d.hc = +d.hc
+      d.size = Math.sqrt(d.size/Math.PI) // absolute scaling
+      d.color = +d.color
+    });
+
+    // Redraw axes
+    x.domain([0, d3.max(data, d => d.oc)]);
+    y.domain([0, d3.max(data, d => d.hc)]);
+    xg.call(d3.axisBottom(x));
+    yg.call(d3.axisLeft(y)); 
+
+    var colors = {};
+
+    // Update canvas
+    context.clearRect(0, 0, width, height);
+    picker.clearRect(0, 0, width, height);
+
+    data.forEach(function(p,i){
+      // Space out the colors a bit
+      var color = getColor(i * 1000 + 1);
+      colors[color] = p;
+      picker.fillStyle = "rgb(" + color + ")";
+
+      context.fillStyle = d3.interpolateViridis(p.color);
+
+      context.beginPath();
+      picker.beginPath();
+
+      context.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
+      picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
+
+      context.fill();
+      picker.fill();
+    });
+
+    canvas.on("mousemove",function(){
+      var xy = d3.mouse(this);
+
+      // Get pixel from offscreen canvas
+      var color = picker.getImageData(xy[0], xy[1], 1, 1).data;
+          selected = colors[color.slice(0,3).toString()];
+
+      highlight.classed("hidden", !selected);
+
+      // If it matches a point, highlight it
+      if (selected) {
+        console.log(selected)
+        highlight.attr("cx", x(selected.oc))
+          .attr("cy", y(selected.hc))
+          .attr("r", selected.size);
+      }
+    });
+
+  });
+};
+
+function getColor(i) {
+  return (i % 256) + "," + (Math.floor(i / 256) % 256) + "," + (Math.floor(i / 65536) % 256);
+}
+</script>
+</body>
