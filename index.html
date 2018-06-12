@@ -10,8 +10,7 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
 #sidebar strong {float: left;}
 </style>
 <body>
-<div id="graph" style="width: 960px; height: 500px; float: left;"></div>
-<div id="sidebar">
+<div id="sidebar" style="width: 300px; height: 500px; float: left;">
   <h3>Selected Feature Info:</h3>
   <strong>sample: </strong><p id="sample_id">NA</p>
   <strong>mz: </strong><p id="mz">NA</p>
@@ -19,16 +18,18 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
   <strong>poloarity:	</strong><p id="polarity">NA</p>
   <strong>predictions:	</strong><p id="predictions">NA</p>
 </div>
+<div id="graph" style="width: 750px; height: 500px; float: left;"></div>
 <script src="d3.min.js"></script>
 <script>
 
 var margin = {top: 20, right: 10, bottom: 30, left: 40},
-    width = 960 - margin.left - margin.right,
+    width = 750 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
 var svg = d3.select("#graph").append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
+  .style("float", "left")
   .attr("position", "absolute")
   .append("g")
     .attr("transform", "translate(" + margin.left + " " + margin.top + ")");
@@ -47,8 +48,9 @@ var yg = svg.append("g")
   .attr("class", "y axis");
 
 var chartArea = d3.select("#graph").append("div")
-  .style("left", margin.left + "px")
-  .style("top", margin.top + "px")
+  .style("margin-left", margin.left + "px")
+  .style("margin-top", margin.top + "px")
+  .style("float", "left")
   .style("position", "absolute");
 
 var canvas = chartArea.append("canvas")
