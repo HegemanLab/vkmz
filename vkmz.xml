@@ -1,4 +1,4 @@
-<tool id="VKMZ" name="VKMZ" version="1.1.1">
+<tool id="VKMZ" name="VKMZ" version="1.1.2">
 
   <description>metabolomics formula prediction and van Krevelen diagram generation</description>
   
@@ -58,7 +58,7 @@
       </when>
     </conditional>
     <section name="advanced_input" title="Advanced Input Options" expanded="false">
-      <param name="polarity" label="Override polarity" type="select" help="Set polarity for all samples ignoring input files">
+      <param name="polarity" label="Override polarity" type="select" help="Force the polarity of all samples">
         <option value="NA">No override</option>
         <option value="negative">Negative</option>
         <option value="positive">Positive</option>
@@ -66,7 +66,7 @@
       <param name="no_adjustment" label="Disable polarity based mass adjustment" type="boolean" truevalue="True" help="Use this option if data contains neutral masses." />
     </section>
     <section name="prediction" title="Prediction Options" expanded="true">
-      <param name="error" label="Mass Error (PPM)" type="float" value="3.0" min="0" help="Set according to mass spectrometer's mass error in parts-per-million" />
+      <param name="error" label="Mass Error (PPM)" type="float" value="10.0" min="0" help="Set according to expected mass error in parts-per-million" />
       <conditional name="database_type">
         <param name="database_type_selector" type="select" label="Database Type">
           <option value="heuristic">Heuristically Generated</option>
@@ -87,14 +87,14 @@
       <param name="unique" label="Unique matches" type="boolean" truevalue="True" help="Only output features with a single prediction" />
     </section>
     <section name="diagram" title="Diagram Options" expanded="true">
-      <param name="size" label="Minimum Maker Size" type="integer" value="5" min="0" help="Set the base size of diagram's markers" />
-      <param name="sizealgorithm" label="Marker Size Algorithm" type="select" help="Select algorithm to change marker sizes. 1.) Set all markers to the base size, 2.) Marker sizes are relative to feature's log intensity">
-        <option value="0">Uniform</option>
-        <option value="1">Relative Log Intensity</option>
+      <param name="size" label="Maximum Symbol Size" type="integer" value="5" min="0" help="Set the maximum size of plotted symbols" />
+      <param name="sizealgorithm" label="Symbol Size Algorithm" type="select" help="Choose algorithm which sets the symbol size of each feature">
+        <option value="uniform">Uniform</option>
+        <option value="relative-intensity">Relative Intensity</option>
+        <option value="relative-log-intensity">Relative Log Intensity</option>
       </param>
     </section>
   </inputs>
-
   <outputs>
     <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${mode.mode_selector}_tabular" />
     <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}_html" />
@@ -135,9 +135,9 @@
   </tests>
 
   <help><![CDATA[
-========
-VKMZ 1.0
-========
+==========
+VKMZ 1.1.2
+==========
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD briefly conveys untargeted metabolomics data.
 
@@ -147,7 +147,7 @@ Documentation
 
 **Input Data**
 
-VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as input.
+VKMZ is designed to use XCMS [1] or tabular data as input.
 
 *XCMS* mode requires three files which XCMS generates: the data matrix, sample metadata, and variable metadata files.
 
@@ -155,23 +155,33 @@ VKMZ is designed to use XCMS [1] data as input. Tabular data can also be used as
 
 **Advanced Input Options**
 
-*Override polarity* allows users to set the polarity of all features to either positive or negative. This option should not be used if data contains both polarity types.
+*Override polarity* allows users to set the polarity of all features to either *Positive* or *Negative*. Set this if input does not contain the correct polarity information. This option should not be used if data contains both positive and negative polarity.
 
-*Disable mass adjustment* prevents converting charged masses to neutral masses. If you are using neutral mass data this option should be used.
+*Disable mass adjustment* prevents converting charged masses to neutral masses.
 
 **Prediction Options**
 
-For each feature in the data VKMZ attempts to predict a molecular formula by comparing the feature's mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of the observed mass. VKMZ finds all predictions for an observed mass within the mass error. The prediction with the lowest delta, absolute difference between observed and known mass, is plotted. Features without predictions are discarded. Using low resolution data may result in finding too many predictions per feature to be useful, especially for large mass metabolites.
+For each feature VKMZ attempts to predict a molecular formula by comparing the feature's uncharged mass to a database of known formula masses. A prediction is made when a known mass is within a mass error of observed, uncharged, mass. VKMZ finds all predictions for an observed mass within a specified mass error. The prediction with the lowest delta (absolute difference between observed and known mass) is plotted. Features without predictions are discarded. Using low resolution data may result in finding too many predictions per feature to be useful, especially for large mass metabolites.
  
-Set *Mass error* to the mass error, in parts per million, of the mass spectrometer which collected the data. 
+*Mass error* sets the mass error in parts per million. Mass error will be specific to your mass spectrometer, calibration and other methods. Mass error can be approximated by running similar methods with targeted standards with a range in mass.
 
-*Database* can be set to heuristically generated databases for unlabeled and labeled chemcials [2] or to a custom database.
+*Database* can be set to the provided heuristically generated databases for unlabeled and labeled molecules [2] or to a custom database.
 
-*Unique matches* removes features from the output which have multiple predictions. Low mass molecules are less affected by this filter than high mass molecules.
+*Unique matches* removes features from the output which have multiple predictions. High mass molecules are affected by this filter more than low mass molecules. This is due to the increased number of possible elemental combinations at a higher mass.
 
 **Diagram Options**
 
-Predicted features are plotted as markers. The size of each marker is determined by the minimum marker size and a marker size algorithm. The marker size algorithms use minimum marker size as a variable. 
+Predicted features are plotted as circle symbols.
+
+*Maximum Symbol Size* sets the maxium area a plotted symbol can have. VKMZ plots with absolute scaling.
+
+*Symbol Size Algorithm* allows the size of symbols to be set in three different ways.
+
+ *Uniform* sets the symbols of all features to the *Maxiumum Symbol Size*.
+
+ *Relative Intensity* sets the symbol size of each feature by the feature's intensity divided by the maxium intensity in the dataset mutiplied by the *Maxium Symbol Size*.
+
+ *Relative Log Intensity* sets the symbol size of each feature by the feature's log intensity divided by the maxium log intensity in the dataset mutiplied by the *Maxium Symbol Size*.
   ]]></help>
 
   <citations>
