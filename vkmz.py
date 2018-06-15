@@ -241,7 +241,7 @@ def plotRatios(vkData):
       max_oc = row[8]
     if row[9] > max_nc:
       max_nc = row[9]
-  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc', 'size', 'color']
+  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc', 'symbol_size', 'color']
   df = pd.DataFrame.from_records(vkData, columns=labels)
   sampleIDs = df.sampleID.unique()
   data = []
@@ -249,7 +249,7 @@ def plotRatios(vkData):
   i = 0
   for sampleID in sampleIDs:
     dfSample = df.loc[df['sampleID'] == sampleID]
-    size = dfSample.size
+    size = dfSample.symbol_size
     trace = go.Scatter(
       x = dfSample.oc,
       y = dfSample.hc,
