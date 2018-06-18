@@ -120,8 +120,7 @@ def featurePrediction(feature):
     hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
     oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
     nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
-    predictionClosestDelta = feature[5][0][2]
-    feature += [predictionClosestDelta, hc, oc, nc]
+    feature += [hc, oc, nc]
     return(feature)
 
 # adjust charged mass to a neutral mass
@@ -214,9 +213,9 @@ def predictNeighbors(mass, uncertainty, prediction):
 def saveForcast(vkOutputList):
   try: 
     with open(vkOutput+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\tdelta\thc\toc\tnc\tsize\tcolor") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize\tcolor") + '\n')
       for feature in vkOutputList:
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\t'+str(feature[11])+'\n')
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
@@ -234,7 +233,7 @@ def plotRatios(vkData):
       max_oc = row[8]
     if row[9] > max_nc:
       max_nc = row[9]
-  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'delta', 'hc', 'oc', 'nc', 'symbol_size', 'color']
+  labels = ['sampleID', 'polarity', 'mz', 'rt', 'intensity', 'predictions', 'hc', 'oc', 'nc', 'symbol_size', 'color']
   df = pd.DataFrame.from_records(vkData, columns=labels)
   sampleIDs = df.sampleID.unique()
   data = []
