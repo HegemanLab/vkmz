@@ -3,8 +3,6 @@ import argparse
 import multiprocessing
 from multiprocessing import Pool
 import csv
-
-import numpy as np
 import math
 import pandas as pd
 from plotly import __version__
