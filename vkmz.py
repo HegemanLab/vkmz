@@ -117,7 +117,6 @@ def featurePrediction(feature):
           formulaDictionary[formulaList[i]] = formulaList[i+1]
           i+=1
       i+=1
-    predictionClosest.append(formulaDictionary)
     hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
     oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
     nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
