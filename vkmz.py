@@ -1,8 +1,3 @@
-'''
-based on the BMRB compound database which can be found at:
-http://www.bmrb.wisc.edu/ftp/pub/bmrb/relational_tables/metabolomics/Chem_comp.csv
-'''
-
 import re
 import argparse
 import multiprocessing
@@ -104,7 +99,6 @@ def featurePrediction(feature):
   uncertainty = mass * vkError / 1e6
   prediction = predict(mass, uncertainty, 0, vkMaxIndex)
   if prediction != -1:
-    feature[2] = mass
     predictions = predictNeighbors(mass, uncertainty, prediction)
     if vkUnique and len(predictions) > 1:
       return
