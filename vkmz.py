@@ -1,7 +1,7 @@
-import re
 import argparse
 import csv
 import math
+import re
  
 parser = argparse.ArgumentParser()
 inputSubparser = parser.add_subparsers(help='Select input type:', dest='input-type')
@@ -243,30 +243,32 @@ def plotData(vkData):
     row.append(rt/max_rt)
   return vkData
 
-# write tabular output file
-def writeTabular(vkData):
+# write output file
+def write(vkData):
+  json = ''
   try: 
+    # write tabular file and generate json for html output
     with open(OUTPUT+'.tsv', 'w') as f: 
       f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize\tcolor") + '\n')
       for feature in vkData:
         f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\n')
+        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+', size:'+str(feature[9])+', color:'+str(feature[10])+'},'
+    json = json[:-1] # remove final comma
+    # write html
+    try:
+      with open(DIRECTORY+'d3.html', 'r') as template, open(OUTPUT+'.html', 'w') as f:
+       for line in template:
+         line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
+         #line = re.sub('^var data', 'var data = ['+json+']', line, flags=re.M)
+         f.write(line)
+    except ValueError:
+      print('"%s" could not be read or "%s" could not be written' % template, f)
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
-# write HTML output file
-def writeHTML(vkData):
-  try:
-    with open(DIRECTORY+'index.html', 'r') as template, open(OUTPUT+'.html', 'w') as f:
-     for line in template:
-       line = re.sub('test-data/d3-test-data.tsv', OUTPUT+'.tsv', line)
-       f.write(line)
-  except ValueError:
-    print('"%s" could not be read or "%s" could not be written' % template, f)
- 
 # main
 vkData = map(featurePrediction, vkInput)
 vkData = [x for x in vkData if x is not None]
 # will be deprecated
 vkData = plotData(vkData)
-writeTabular(vkData)
-writeHTML(vkData)
+write(vkData)
