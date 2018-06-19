@@ -11,19 +11,14 @@ parse_xcms = inputSubparser.add_parser('xcms', help='Use XCMS data as input.')
 parse_xcms.add_argument('--data-matrix', '-xd', required=True, nargs='?', type=str, help='Path to XCMS dataMatrix file.')
 parse_xcms.add_argument('--sample-metadata', '-xs', required=True, nargs='?', type=str, help='Path to XCMS sampleMetadata file.')
 parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', type=str, help='Path to XCMS variableMetadata file.')
-# Dprecated by future D3 plot
-#parse_plot = inputSubparser.add_parser('plot', help='Only plot data.')
-#parse_plot.add_argument('--input', '-i', required=True, nargs='?', type=str, help='Path to VKMZ generated tabular file.')
 for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
-  inputSubparser.add_argument('--database', '-d', nargs='?', default='databases/bmrb-light.tsv', help='Select database of known formula masses.')
-  inputSubparser.add_argument('--directory', nargs='?', default='', type=str, help='Define path of tool directory. Assumes relative path if unset.')
+  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Select database of known formula masses.')
+  inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define path of tool directory. Assumes relative path if unset.')
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
-  inputSubparser.add_argument('--neutral', '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
-  inputSubparser.add_argument('--unique', '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
-# currently non-functional
-#  inputSubparser.add_argument('--plottype', '-t', nargs='?', default='scatter-2d', choices=['scatter-2d', 'scatter-3d'], help='Select plot type.')
+  inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
+  inputSubparser.add_argument('--unique',   '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set maxium size of plot symbols.')
   inputSubparser.add_argument('--size-algorithm', '-sa', choices=['uniform', 'relative-intensity', 'relative-log-intensity'], default='uniform', help='Set size algorithm selector.')
 args = parser.parse_args()
@@ -248,23 +243,30 @@ def plotData(vkData):
     row.append(rt/max_rt)
   return vkData
 
-# write output file
-def save(OUTPUTList):
+# write tabular output file
+def writeTabular(vkData):
   try: 
     with open(OUTPUT+'.tsv', 'w') as f: 
       f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize\tcolor") + '\n')
-      for feature in OUTPUTList:
+      for feature in vkData:
         f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\n')
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
-def plot(vkData):
-  print("plot is foobar")
+# write HTML output file
+def writeHTML(vkData):
+  try:
+    with open(DIRECTORY+'index.html', 'r') as template, open(OUTPUT+'.html', 'w') as f:
+     for line in template:
+       line = re.sub('test-data/d3-test-data.tsv', OUTPUT+'.tsv', line)
+       f.write(line)
+  except ValueError:
+    print('"%s" could not be read or "%s" could not be written' % template, f)
  
 # main
 vkData = map(featurePrediction, vkInput)
 vkData = [x for x in vkData if x is not None]
 # will be deprecated
 vkData = plotData(vkData)
-save(vkData)
-plot(vkData)
+writeTabular(vkData)
+writeHTML(vkData)
