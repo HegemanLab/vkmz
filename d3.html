@@ -117,6 +117,8 @@ function draw() {
     picker.fillStyle = "rgb(" + color + ")";
 
     context.fillStyle = d3.interpolateViridis(p.color);
+    context.globalAlpha = 0.5;
+    console.log(context.fillStyle)
 
     context.beginPath();
     picker.beginPath();
