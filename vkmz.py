@@ -20,7 +20,6 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
   inputSubparser.add_argument('--unique',   '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set maxium size of plot symbols.')
-  inputSubparser.add_argument('--size-algorithm', '-sa', choices=['uniform', 'relative-intensity', 'relative-log-intensity'], default='uniform', help='Set size algorithm selector.')
 args = parser.parse_args()
 
 # store input constants
@@ -214,38 +213,16 @@ def featurePrediction(feature):
     feature += [hc, oc, nc] # feature[6], [7], [8]
     return(feature)
  
-# will be deprecated by d3
-def plotData(vkData):
-  max_intensity = 0.0
-  for row in vkData:
-    intensity = row[4]
-    if intensity > max_intensity:
-      max_intensity = intensity
-  if SIZE_ALGORITHM == 'uniform':
-    for row in vkData:
-      row.append(MAX_SIZE)
-  elif SIZE_ALGORITHM == 'relative-intensity':
-    alpha = MAX_SIZE/max_intensity
-    for row in vkData:
-      intensity = row[4]
-      row.append(alpha*intensity)
-  else: # relative-log-intensity
-    alpha = MAX_SIZE/math.log(max_intensity+1)
-    for row in vkData:
-      intensity = row[4]
-      row.append(alpha*math.log(intensity+1))
-  return vkData
-
 # write output file
 def write(vkData):
   json = ''
   try: 
     # write tabular file and generate json for html output
     with open(OUTPUT+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc") + '\n')
       for feature in vkData:
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\n')
-        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+', size:'+str(feature[9])+'},'
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\n')
+        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+'},'
     json = json[:-1] # remove final comma
     # write html
     try:
@@ -261,6 +238,4 @@ def write(vkData):
 # main
 vkData = map(featurePrediction, vkInput)
 vkData = [x for x in vkData if x is not None]
-# will be deprecated
-vkData = plotData(vkData)
 write(vkData)

@@ -29,6 +29,13 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
     <strong>predictions:	</strong><p id="predictions">NA</p>
   </div>
   <div id="chart" class="col sm-col-12 left" style="height: 500px;"></div>
+  <div id="controls" class="col col-12" style="margin-top: 100px">
+  <select id="size_algorithm">
+    <option value="uniform" selected="selected">Uniform</option>
+    <option value="relative-intensity">Relative Intensity</option>
+    <option value="relative-log-intensity">Relative Log Intensity</option>
+  </select>
+  </div>
 </div>
 
 <script>
@@ -40,6 +47,7 @@ var chartDiv = document.getElementById("chart");
 var margin = {top: 20, right: 10, bottom: 30, left: 40};
 
 function draw() {
+
   var width = chartDiv.clientWidth;
   var height = chartDiv.clientHeight;
 
@@ -91,8 +99,20 @@ function draw() {
       .append("circle")
         .classed("hidden", true);
 
+  var intensity_max = d3.max(data, d=> d.intensity);
+  var size_max = 200;
+
+  var size_algorithm = document.getElementById("size_algorithm").selectedIndex
+  console.log(size_algorithm)
+
   data.forEach(function(d) {
-    d.size = Math.sqrt(d.size/Math.PI) // absolute scaling
+    if(size_algorithm == 0) {
+      d.size = 1;
+    } else if (size_algorithm == 1) {
+      d.size = d.intensity/intensity_max;
+    } else {
+      d.size = Math.log(d.intensity+1)/Math.log(intensity_max+1);
+    }
   });
 
   // Redraw axes
@@ -107,7 +127,7 @@ function draw() {
   context.clearRect(0, 0, width, height);
   picker.clearRect(0, 0, width, height);
 
-  var rt_max = d3.max(data, d=> d.rt)
+  var rt_max = d3.max(data, d=> d.rt);
 
   data.forEach(function(p,i){
     // Space out the colors a bit
@@ -121,8 +141,9 @@ function draw() {
     context.beginPath();
     picker.beginPath();
 
-    context.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
-    picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
+    context.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
+    picker.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
+//    picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
 
     context.fill();
     picker.fill();
@@ -155,6 +176,7 @@ function draw() {
       document.getElementById("predictions").innerHTML = selected.predictions;
     }
   });
+  console.log("redraw foo");
 };
 
 function getColor(i) {
@@ -172,6 +194,13 @@ function redraw() {
 
 // redraw on browser window resize
 window.addEventListener("resize", redraw);
+
+// redraw when size algorithm changes
+d3.select('#size_algorithm')
+  .on("change", function () {
+    redraw();
+  });
+
 
 </script>
 </body>
