@@ -235,4 +235,6 @@ def write(vkData):
 # main
 vkData = map(featurePrediction, vkInput)
 vkData = [x for x in vkData if x is not None]
+# sort by intensity so D3 draws largest symbols first
+vkData.sort(key=lambda x: x[4], reverse=True)
 write(vkData)
