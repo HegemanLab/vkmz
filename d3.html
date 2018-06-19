@@ -149,7 +149,6 @@ function draw() {
 
     context.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
     picker.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
-//    picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
 
     context.fill();
     picker.fill();
@@ -169,7 +168,7 @@ function draw() {
       console.log(selected);
       highlight.attr("cx", x(selected.oc))
         .attr("cy", y(selected.hc))
-        .attr("r", selected.size);
+        .attr("r", size_max*(selected.size/Math.PI));
     }
   });
 
