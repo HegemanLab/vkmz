@@ -1,7 +1,5 @@
 import re
 import argparse
-import multiprocessing
-from multiprocessing import Pool
 import csv
 import math
 import pandas as pd
@@ -30,7 +28,6 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
   inputSubparser.add_argument('--no-adjustment', '-na', action='store_true', help='Set flag to diasble charged mass adjustment.')
   inputSubparser.add_argument('--unique', '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
-  inputSubparser.add_argument('--multiprocessing', '-m', action='store_true', help='Set flag to enable multiprocessing.')
 # currently non-functional
 #  inputSubparser.add_argument('--plottype', '-t', nargs='?', default='scatter-2d', choices=['scatter-2d', 'scatter-3d'], help='Select plot type.')
   inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set maxium size of plot symbols.')
@@ -44,7 +41,6 @@ vkError = getattr(args, "error")
 
 vkUnique = getattr(args, "unique")
 
-vkMultiprocessing = getattr(args, "multiprocessing")
 
 vkNoAdjustment = getattr(args, "no_adjustment")
 
@@ -75,17 +71,7 @@ vkSizeAlgorithm = getattr(args, 'size_algorithm')
 
 # control predictions
 def forecaster(vkInput):
-  if vkMultiprocessing:
-    try:
-      pool = Pool()
-      vkOutputList = pool.map(featurePrediction, vkInput)
-    except Exception as e:
-      print("Error during multirpocessing: "+str(e))
-    finally:
-      pool.close()
-      pool.join()
-  else:
-    vkOutputList = map(featurePrediction, vkInput)
+  vkOutputList = map(featurePrediction, vkInput)
   vkOutputList = [x for x in vkOutputList if x is not None]
   return(vkOutputList)
 
