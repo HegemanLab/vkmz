@@ -19,7 +19,6 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
   inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
   inputSubparser.add_argument('--unique',   '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
-  inputSubparser.add_argument('--size',     '-s', nargs='?', default=5, type=int, help='Set maxium size of plot symbols.')
 args = parser.parse_args()
 
 # store input constants
@@ -131,8 +130,6 @@ try:
 except ValueError:
   print('The %s database could not be loaded.' % DATABASE)
 MAX_MASS_INDEX = len(MASS)-1
-MAX_SIZE = getattr(args, 'size')
-SIZE_ALGORITHM = getattr(args, 'size_algorithm')
 
 # adjust charged mass to a neutral mass
 def adjust(mass, polarity):

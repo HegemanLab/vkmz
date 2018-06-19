@@ -30,11 +30,16 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
   </div>
   <div id="chart" class="col sm-col-12 left" style="height: 500px;"></div>
   <div id="controls" class="col col-12" style="margin-top: 100px">
-  <select id="size_algorithm">
-    <option value="uniform" selected="selected">Uniform</option>
-    <option value="relative-intensity">Relative Intensity</option>
-    <option value="relative-log-intensity">Relative Log Intensity</option>
-  </select>
+    <div class="col">
+      <input id="size_max" type="number" min="1" value="500" />
+    </div>
+    <div class="col">
+      <select id="size_algorithm">
+        <option value="uniform">Uniform</option>
+        <option value="relative-intensity" selected="selected">Relative Intensity</option>
+        <option value="relative-log-intensity">Relative Log Intensity</option>
+      </select>
+    </div>
   </div>
 </div>
 
@@ -100,10 +105,11 @@ function draw() {
         .classed("hidden", true);
 
   var intensity_max = d3.max(data, d=> d.intensity);
-  var size_max = 200;
+
+  var size_max = document.getElementById("size_max").value;
+  console.log(size_max);
 
   var size_algorithm = document.getElementById("size_algorithm").selectedIndex
-  console.log(size_algorithm)
 
   data.forEach(function(d) {
     if(size_algorithm == 0) {
@@ -201,6 +207,11 @@ d3.select('#size_algorithm')
     redraw();
   });
 
+// redraw if max size changed
+d3.select('#size_max')
+  .on("change", function () {
+    redraw();
+  });
 
 </script>
 </body>
