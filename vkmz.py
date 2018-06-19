@@ -216,15 +216,11 @@ def featurePrediction(feature):
  
 # will be deprecated by d3
 def plotData(vkData):
-  max_rt = 0.0
   max_intensity = 0.0
   for row in vkData:
     intensity = row[4]
     if intensity > max_intensity:
       max_intensity = intensity
-    rt = row[3]
-    if rt > max_rt:
-      max_rt = rt
   if SIZE_ALGORITHM == 'uniform':
     for row in vkData:
       row.append(MAX_SIZE)
@@ -238,9 +234,6 @@ def plotData(vkData):
     for row in vkData:
       intensity = row[4]
       row.append(alpha*math.log(intensity+1))
-  for row in vkData:
-    rt = row[3]
-    row.append(rt/max_rt)
   return vkData
 
 # write output file
@@ -249,17 +242,16 @@ def write(vkData):
   try: 
     # write tabular file and generate json for html output
     with open(OUTPUT+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize\tcolor") + '\n')
+      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\tsize") + '\n')
       for feature in vkData:
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\t'+str(feature[10])+'\n')
-        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+', size:'+str(feature[9])+', color:'+str(feature[10])+'},'
+        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\t'+str(feature[9])+'\n')
+        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+', size:'+str(feature[9])+'},'
     json = json[:-1] # remove final comma
     # write html
     try:
       with open(DIRECTORY+'d3.html', 'r') as template, open(OUTPUT+'.html', 'w') as f:
        for line in template:
          line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
-         #line = re.sub('^var data', 'var data = ['+json+']', line, flags=re.M)
          f.write(line)
     except ValueError:
       print('"%s" could not be read or "%s" could not be written' % template, f)

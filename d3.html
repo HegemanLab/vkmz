@@ -92,10 +92,7 @@ function draw() {
         .classed("hidden", true);
 
   data.forEach(function(d) {
-    d.oc = +d.oc
-    d.hc = +d.hc
     d.size = Math.sqrt(d.size/Math.PI) // absolute scaling
-    d.color = +d.color
   });
 
   // Redraw axes
@@ -110,15 +107,16 @@ function draw() {
   context.clearRect(0, 0, width, height);
   picker.clearRect(0, 0, width, height);
 
+  var rt_max = d3.max(data, d=> d.rt)
+
   data.forEach(function(p,i){
     // Space out the colors a bit
     var color = getColor(i * 1000 + 1);
     colors[color] = p;
     picker.fillStyle = "rgb(" + color + ")";
 
-    context.fillStyle = d3.interpolateViridis(p.color);
+    context.fillStyle = d3.interpolateViridis(p.rt/rt_max);
     context.globalAlpha = 0.5;
-    console.log(context.fillStyle)
 
     context.beginPath();
     picker.beginPath();
