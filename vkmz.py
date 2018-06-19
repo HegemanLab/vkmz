@@ -21,7 +21,7 @@ parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', 
 parse_xcms.add_argument('--no-plot', '-np', action='store_true', help='Disable plot generation.')
 # Dprecated by future D3 plot
 #parse_plot = inputSubparser.add_parser('plot', help='Only plot data.')
-parse_plot.add_argument('--input', '-i', required=True, nargs='?', type=str, help='Path to VKMZ generated tabular file.')
+#parse_plot.add_argument('--input', '-i', required=True, nargs='?', type=str, help='Path to VKMZ generated tabular file.')
 for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
@@ -66,7 +66,8 @@ vkMaxIndex = len(vkMass)-1
 
 vkOutput = getattr(args, "output")
 
-vkPlotType = getattr(args, 'plottype')
+# Dprecated by future D3 plot
+#vkPlotType = getattr(args, 'plottype')
 
 vkSize = getattr(args, 'size')
 
