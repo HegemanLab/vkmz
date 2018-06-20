@@ -35,7 +35,7 @@ h1, h3 { margin: 0.25em 0em; }
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
     <div class="col lg-col-2 p1">
-      <input type="button" class="btn btn-primary" value="Update Diagram"/>
+      <input type="button" id="update" onclick="redraw()" value="Update Diagram"/>
     </div>
     <div class="col lg-col-2 p1">
       <h3>Maximum Size</h3>
@@ -252,24 +252,6 @@ function redraw() {
 
 // redraw on browser window resize
 window.addEventListener("resize", redraw);
-
-// redraw when sample-id changes
-d3.select('#sample-id')
-  .on("change", function () {
-    redraw();
-  });
-
-// redraw when size algorithm changes
-d3.select('#size-algorithm')
-  .on("change", function () {
-    redraw();
-  });
-
-// redraw if max size changed
-d3.select('#size-max')
-  .on("change", function () {
-    redraw();
-  });
 
 var samples_expanded = false;
 
