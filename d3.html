@@ -37,11 +37,11 @@ h1, h3 { margin: 0.25em 0em; }
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
     <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-4 lg-col-3 p1">
-      <h3>Active Samples</h3>
+      <h3>Visible Samples</h3>
       <form>
         <div class="selectBox" onclick="showCheckboxes()">
           <select class="mainControl">
-            <option>Select Sample IDs</option>
+            <option>Select Visible Samples</option>
           </select>
           <div class="overSelect"></div>
         </div>
@@ -158,7 +158,7 @@ function draw() {
     samples_active.push(this.value)
   });
 
-  var data_active = data.filter(d => samples_active.indexOf(d.sample_id) >= 0);
+  var data_visible = data.filter(d => samples_active.indexOf(d.sample_id) >= 0);
 
   var intensity_max = d3.max(data, d=> d.intensity);
 
@@ -166,7 +166,7 @@ function draw() {
 
   var size_algorithm = document.getElementById("size-algorithm").selectedIndex
 
-  data_active.forEach(function(d) {
+  data_visible.forEach(function(d) {
     if(size_algorithm == 0) {
       d.size = 1;
     } else if (size_algorithm == 1) {
@@ -190,7 +190,7 @@ function draw() {
 
   var rt_max = d3.max(data, d=> d.rt);
 
-  data_active.forEach(function(p,i){
+  data_visible.forEach(function(p,i){
     // Space out the colors a bit
     var color = getColor(i * 1000 + 1);
     colors[color] = p;
