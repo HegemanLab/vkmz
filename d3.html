@@ -21,17 +21,19 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
 .selectBox select { width: 100%; }
 .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
 #checkboxes { display: none; border: 1px #dadada solid; position:absolute; z-index:1; background-color: #FFF; }
-#checkboxes label { display: block; height: 2em; line-height: 1.5em; }
-#checkboxes label:hover { background-color: #1e90ff; } 
 #title { background-color: #7a0019; color: #ffcc33; text-align: center;}
+h1, h3 { margin: 0.25em 0em; }
 #controls { background-color: #ffcc33; color: #7a0019; vertical-align:middle; }
 #controls input { background-color: #7a0019; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #ffcc33; text-align: center;}
+#checkboxes label { display: block; height: 2em; line-height: 1.5em; }
+#checkboxes label:hover { background-color: #1e90ff; } 
+#sidebar {word-wrap: break-word;}
 </style>
 </head>
 <body>
 <div class="clearfix">
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
-  <div id="controls" class="col col-12 p2">
+  <div id="controls" class="col col-12">
     <div class="col lg-col-2 p1">
       <input type="button" class="btn btn-primary" value="Update Diagram"/>
     </div>
@@ -62,14 +64,15 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
     </div>
   </div>
   <div id="sidebar" class="col sm-col-12 md-col-2 p2">
-    <h3>Selected Feature Info:</h3>
-    <strong>sample: </strong><p id="sample_id">NA</p>
-    <strong>mz: </strong><p id="mz">NA</p>
-    <strong>retention time: </strong><p id="rt">NA</p>
-    <strong>poloarity:	</strong><p id="polarity">NA</p>
-    <strong>predictions:	</strong><p id="predictions">NA</p>
+    <h3>Feature Info:</h3>
+    <p><strong>sample:</strong> <span id="sample_id">NA</span></p>
+    <p><strong>polarity:</strong> <span id="polarity">NA</span></p>
+    <p><strong>mz:</strong> <span id="mz">NA</span></p>
+    <p><strong>intensity:</strong> <span id="intensity">NA</span></p>
+    <p><strong>retention time:</strong> <span id="rt">NA</span></p>
+    <p><strong>predictions: </strong><span id="predictions">NA</span></p>
   </div>
-  <div id="chart" class="col sm-col-12 md-col-8" style="height: 500px;"></div>
+  <div id="chart" class="col sm-col-12 md-col-9" style="height: 500px;"></div>
 </div>
 
 <script>
@@ -225,9 +228,10 @@ function draw() {
   canvas.on("click",function(){
     if (selected) {
       document.getElementById("sample_id").innerHTML = selected.sample_id;
-      document.getElementById("mz").innerHTML = selected.mz;
-      document.getElementById("rt").innerHTML = selected.rt;
       document.getElementById("polarity").innerHTML = selected.polarity;
+      document.getElementById("mz").innerHTML = selected.mz;
+      document.getElementById("intensity").innerHTML = selected.intensity;
+      document.getElementById("rt").innerHTML = selected.rt;
       document.getElementById("predictions").innerHTML = selected.predictions;
     }
   });
