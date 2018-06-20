@@ -23,17 +23,23 @@ circle { stroke-width: 4px; stroke: #000; fill: none; }
 #title { background-color: #7a0019; color: #ffcc33; text-align: center;}
 h1, h3 { margin: 0.25em 0em; }
 #controls { min-height: 58px; background-color: #ffcc33; color: #7a0019; vertical-align:middle; }
-.mainControl { width: 100%; background-color: #7a0019; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #ffcc33;}
+.mainControl { opacity: 0.9; width: 100%; background-color: #7a0019; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #ffcc33;}
+.mainControl:hover { opacity: 1; color: #FFF;}
 #update { height: 42px; font-size: 2em; }
-#update:hover { color: #FFF; }
 #checkboxes label { display: block; height: 2em; line-height: 1.5em; }
 #checkboxes label:hover { background-color: #1e90ff; } 
 #sidebar {word-wrap: break-word;}
 #chart { margin-right: 50px; margin-bottom: 50px; }
+.clearfix { background-color: #FFF; border-bottom: 0.5em solid #ffcc33; }
+.slider { -webkit-appearance: none; height: 12px; -webkit-transition: .2s; transition: opacity .2s; }
+.slider::-webkit-slider-thumb:hover { background: #FFF; }
+.slider::-moz-range-thumb:hover { background: #FFF; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; background: #ffcc33; cursor: pointer; }
+.slider::-moz-range-thumb { width: 10px; height: 10px; background: #ffcc33; cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="clearfix" style="background-color: #FFF; border-bottom: 0.5em solid #ffcc33">
+<div class="clearfix">
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
     <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-4 lg-col-3 p1">
@@ -49,7 +55,11 @@ h1, h3 { margin: 0.25em 0em; }
         </div>
       </form>
     </div>
-    <div class="col-right col-12 sm-col-6 md-col-4 lg-col-3 p1">
+    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
+      <h3>Opacity</h3>
+      <input id="opacity" class="mainControl slider" type="range" min="1" max="100" value="25">
+    </div>
+    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
       <h3>Size Algorithm</h3>
       <select id="size-algorithm" class="mainControl">
         <option value="uniform">Uniform</option>
@@ -57,9 +67,13 @@ h1, h3 { margin: 0.25em 0em; }
         <option value="relative-log-intensity">Relative Log Intensity</option>
       </select>
     </div>
-    <div class="col-right col-12 sm-col-6 md-col-4 lg-col-3 p1">
-      <h3>Maximum Size</h3>
+    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-2 p1">
+      <h3>Max. Size</h3>
       <input id="size-max" class="mainControl" type="number" min="1" value="500" />
+    </div>
+    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-1 p1">
+      <h3>Min. Size</h3>
+      <input id="size-min" class="mainControl" type="number" min="0" value="0" />
     </div>
     <div class="col col-12 sm-col-12 md-col-12 lg-col-3 p1";>
       <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update Diagram"/>
@@ -163,16 +177,23 @@ function draw() {
   var intensity_max = d3.max(data, d=> d.intensity);
 
   var size_max = document.getElementById("size-max").value;
+  var size_min = document.getElementById("size-min").value;
+
+  var opacity = document.getElementById("opacity").value;
 
   var size_algorithm = document.getElementById("size-algorithm").selectedIndex
-
   data_visible.forEach(function(d) {
     if(size_algorithm == 0) {
-      d.size = 1;
+      temp = size_max*(1/Math.PI);
     } else if (size_algorithm == 1) {
-      d.size = d.intensity/intensity_max;
+      temp = size_max*((d.intensity/intensity_max)/Math.PI);
     } else {
-      d.size = Math.log(d.intensity+1)/Math.log(intensity_max+1);
+      temp = size_max*((Math.log(d.intensity+1)/Math.log(intensity_max+1))/Math.PI);
+    }
+    if(temp > size_min) {
+      d.size = temp;
+    } else {
+      d.size = size_min;
     }
   });
 
@@ -197,13 +218,13 @@ function draw() {
     picker.fillStyle = "rgb(" + color + ")";
 
     context.fillStyle = d3.interpolateViridis(p.rt/rt_max);
-    context.globalAlpha = 0.5;
+    context.globalAlpha = opacity/100;
 
     context.beginPath();
     picker.beginPath();
 
-    context.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
-    picker.arc(x(p.oc), y(p.hc), size_max*(p.size/Math.PI), 0, 2 * Math.PI);
+    context.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
+    picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
 
     context.fill();
     picker.fill();
@@ -223,7 +244,7 @@ function draw() {
       console.log(selected);
       highlight.attr("cx", x(selected.oc))
         .attr("cy", y(selected.hc))
-        .attr("r", size_max*(selected.size/Math.PI));
+        .attr("r", selected.size);
     }
   });
 
