@@ -42,7 +42,7 @@ h1, h3 { margin: 0.25em 0em; }
 <div class="clearfix">
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
-    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-2 lg-col-3 p1">
+    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
       <h3>Visible Samples</h3>
       <form>
         <div class="selectBox" onclick="showCheckboxes()">
@@ -55,9 +55,9 @@ h1, h3 { margin: 0.25em 0em; }
         </div>
       </form>
     </div>
-    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
-      <h3>Filter</h3>
-      <input id="filter" class="mainControl slider" type="range" min="1" max="100" value="25">
+    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
+      <h3>Intensity Filter</h3>
+      <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="500" value="0">
     </div>
     <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
       <h3>Opacity</h3>
@@ -71,13 +71,13 @@ h1, h3 { margin: 0.25em 0em; }
         <option value="relative-log-intensity">Relative Log Intensity</option>
       </select>
     </div>
-    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-2 p1">
+    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-1 p1">
       <h3>Max. Size</h3>
       <input id="size-max" class="mainControl" type="number" min="1" value="500" />
     </div>
     <div class="col-right col-6 sm-col-6 md-col-2 lg-col-1 p1">
       <h3>Min. Size</h3>
-      <input id="size-min" class="mainControl" type="number" min="0" value="0" />
+      <input id="size-min" class="mainControl" type="number" min="0" value="1" />
     </div>
     <div class="col col-12 sm-col-12 md-col-12 lg-col-3 p1";>
       <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update Diagram"/>
@@ -176,16 +176,18 @@ function draw() {
     samples_active.push(this.value)
   });
 
-  var data_visible = data.filter(d => samples_active.indexOf(d.sample_id) >= 0);
-
   var intensity_max = d3.max(data, d=> d.intensity);
+  var intensity_threshold = document.getElementById("intensity-threshold").value;
+  console.log(intensity_threshold)
+  var data_visible = data.filter(d => samples_active.indexOf(d.sample_id) >= 0).filter(d => d.intensity/intensity_max >= Math.pow(intensity_threshold,2)/Math.pow(500,2));
 
   var size_max = document.getElementById("size-max").value;
   var size_min = document.getElementById("size-min").value;
 
   var opacity = document.getElementById("opacity").value;
 
-  var size_algorithm = document.getElementById("size-algorithm").selectedIndex
+  var size_algorithm = document.getElementById("size-algorithm").selectedIndex;
+
   data_visible.forEach(function(d) {
     if(size_algorithm == 0) {
       temp = size_max*(1/Math.PI);
