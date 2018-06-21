@@ -42,7 +42,7 @@ h1, h3 { margin: 0.25em 0em; }
 <div class="clearfix">
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
-    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-4 lg-col-3 p1">
+    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-2 lg-col-3 p1">
       <h3>Visible Samples</h3>
       <form>
         <div class="selectBox" onclick="showCheckboxes()">
@@ -54,6 +54,10 @@ h1, h3 { margin: 0.25em 0em; }
         <div id="checkboxes">
         </div>
       </form>
+    </div>
+    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
+      <h3>Filter</h3>
+      <input id="filter" class="mainControl slider" type="range" min="1" max="100" value="25">
     </div>
     <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
       <h3>Opacity</h3>
