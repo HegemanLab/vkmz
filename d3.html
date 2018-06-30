@@ -25,13 +25,13 @@ h1, h3 { margin: 0.25em 0em; }
 #controls { min-height: 58px; background-color: #ffcc33; color: #7a0019; vertical-align:middle; }
 .mainControl { opacity: 0.9; width: 100%; background-color: #7a0019; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #ffcc33;}
 .mainControl:hover { opacity: 1; color: #FFF;}
-#update { height: 42px; font-size: 2em; }
+#update { height: 46px; font-size: 2em; }
 #checkboxes label { display: block; height: 2em; line-height: 1.5em; }
 #checkboxes label:hover { background-color: #1e90ff; } 
 #sidebar {word-wrap: break-word;}
 #chart { margin-right: 50px; margin-bottom: 50px; }
 .clearfix { background-color: #FFF; border-bottom: 0.5em solid #ffcc33; }
-.slider { -webkit-appearance: none; height: 12px; -webkit-transition: .2s; transition: opacity .2s; }
+.slider { -webkit-appearance: none; margin: 2px 0px 0px 0px; height: 12px; -webkit-transition: .2s; transition: opacity .2s; }
 .slider::-webkit-slider-thumb:hover { background: #FFF; }
 .slider::-moz-range-thumb:hover { background: #FFF; }
 .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; background: #ffcc33; cursor: pointer; }
@@ -42,7 +42,7 @@ h1, h3 { margin: 0.25em 0em; }
 <div class="clearfix">
   <div id="title" class="col col-12"><h1>VKMZ</h1></div>
   <div id="controls" class="col col-12">
-    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
+    <div id="sample_ids" class="col-right col-12 sm-col-6 md-col-3 lg-col-2 p1">
       <h3>Visible Samples</h3>
       <form>
         <div class="selectBox" onclick="showCheckboxes()">
@@ -55,29 +55,45 @@ h1, h3 { margin: 0.25em 0em; }
         </div>
       </form>
     </div>
-    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
-      <h3>Intensity Filter</h3>
-      <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="1000" value="0">
-    </div>
-    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-1 p1">
+    <div class="col-right col-12 sm-col-6 md-col-3 lg-col-1 p1">
       <h3>Opacity</h3>
       <input id="opacity" class="mainControl slider" type="range" min="1" max="100" value="25">
     </div>
-    <div class="col-right col-12 sm-col-6 md-col-2 lg-col-2 p1">
-      <h3>Size Algorithm</h3>
+    <div class="col-right col-12 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>y-axis</h3>
+      <select id="y-axis" class="mainControl">
+        <option value="hc" selected="selected">H:C</option>
+        <option value="nc">N:C</option>
+        <option value="oc">O:C</option>
+      </select>
+    </div>
+    <div class="col-right col-12 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>x-axis</h3>
+      <select id="x-axis" class="mainControl">
+        <option value="hc">H:C</option>
+        <option value="nc">N:C</option>
+        <option value="oc" selected="selected">O:C</option>
+      </select>
+    </div>
+    <div class="col-right col-12 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>Threshhold</h3>
+      <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="500" value="0">
+    </div>
+    <div class="col-right col-6 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>Max Size</h3>
+      <input id="size-max" class="mainControl" type="number" min="1" value="500" />
+    </div>
+    <div class="col-right col-6 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>Min Size</h3>
+      <input id="size-min" class="mainControl" type="number" min="0" value="1" />
+    </div>
+    <div class="col-right col-12 sm-col-6 md-col-3 lg-col-1 p1">
+      <h3>Sizer</h3>
       <select id="size-algorithm" class="mainControl">
         <option value="uniform">Uniform</option>
         <option value="relative-intensity" selected="selected">Relative Intensity</option>
         <option value="relative-log-intensity">Relative Log Intensity</option>
       </select>
-    </div>
-    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-1 p1">
-      <h3>Max Size</h3>
-      <input id="size-max" class="mainControl" type="number" min="1" value="500" />
-    </div>
-    <div class="col-right col-6 sm-col-6 md-col-2 lg-col-1 p1">
-      <h3>Min Size</h3>
-      <input id="size-min" class="mainControl" type="number" min="0" value="1" />
     </div>
     <div class="col col-12 sm-col-12 md-col-12 lg-col-3 p1";>
       <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update Diagram"/>
@@ -117,8 +133,6 @@ var chartDiv = document.getElementById("chart");
 var margin = {top: 20, right: 10, bottom: 30, left: 40};
 
 function draw() {
-  console.log("foo draw");
-
   var width = chartDiv.clientWidth;
   var height = chartDiv.clientHeight;
 
@@ -178,7 +192,6 @@ function draw() {
 
   var intensity_max = d3.max(data, d=> d.intensity);
   var intensity_threshold = document.getElementById("intensity-threshold").value;
-  console.log(intensity_threshold)
   var data_visible = data.filter(d => samples_active.indexOf(d.sample_id) >= 0).filter(d => d.intensity/intensity_max >= Math.pow(intensity_threshold,2)/Math.pow(500,2));
 
   var size_max = document.getElementById("size-max").value;
@@ -187,6 +200,9 @@ function draw() {
   var opacity = document.getElementById("opacity").value;
 
   var size_algorithm = document.getElementById("size-algorithm").selectedIndex;
+
+  var x_axis = document.getElementById("x-axis").selectedIndex;
+  var y_axis = document.getElementById("y-axis").selectedIndex;
 
   data_visible.forEach(function(d) {
     if(size_algorithm == 0) {
@@ -201,11 +217,25 @@ function draw() {
     } else {
       d.size = size_min;
     }
-  });
 
+    if(x_axis == 0) {
+      d.x = d.hc;
+    } else if (x_axis == 1) {
+      d.x = d.nc;
+    } else {
+      d.x = d.oc; 
+    }
+    if(y_axis == 0) {
+      d.y = d.hc;
+    } else if (y_axis == 1) {
+      d.y = d.nc;
+    } else {
+      d.y = d.oc; 
+    }
+  });
   // Redraw axes
-  x.domain([0, d3.max(data, d => d.oc)]);
-  y.domain([0, d3.max(data, d => d.hc)]);
+  x.domain([0, d3.max(data, d => d.x)]);
+  y.domain([0, d3.max(data, d => d.y)]);
   xg.call(d3.axisBottom(x));
   yg.call(d3.axisLeft(y)); 
 
@@ -229,8 +259,8 @@ function draw() {
     context.beginPath();
     picker.beginPath();
 
-    context.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
-    picker.arc(x(p.oc), y(p.hc), p.size, 0, 2 * Math.PI);
+    context.arc(x(p.x), y(p.y), p.size, 0, 2 * Math.PI);
+    picker.arc(x(p.x), y(p.y), p.size, 0, 2 * Math.PI);
 
     context.fill();
     picker.fill();
@@ -247,15 +277,15 @@ function draw() {
 
     // If it matches a point, highlight it
     if (selected) {
-      console.log(selected);
-      highlight.attr("cx", x(selected.oc))
-        .attr("cy", y(selected.hc))
+      highlight.attr("cx", x(selected.x))
+        .attr("cy", y(selected.y))
         .attr("r", selected.size);
     }
   });
 
   canvas.on("click",function(){
     if (selected) {
+      console.log(selected);
       document.getElementById("sample_id").innerHTML = selected.sample_id;
       document.getElementById("polarity").innerHTML = selected.polarity;
       document.getElementById("mz").innerHTML = selected.mz;
