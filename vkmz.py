@@ -122,7 +122,6 @@ MASS = []
 FORMULA = []
 try:
   with open(DIRECTORY+DATABASE, 'r') as tsv:
-    print("foo")
     for row in tsv:
       mass, formula = row.split()
       MASS.append(mass)
