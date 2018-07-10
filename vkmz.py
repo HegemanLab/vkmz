@@ -111,7 +111,7 @@ else: # INPUT_TYPE == "xcms"
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
 
-# generate remaining constants
+# store||generate remaining constants
 OUTPUT = getattr(args, "output")
 MASS_ERROR = getattr(args, "error")
 UNIQUE = getattr(args, "unique")
@@ -122,7 +122,7 @@ MASS = []
 FORMULA = []
 try:
   with open(DIRECTORY+DATABASE, 'r') as tsv:
-    next(tsv) # skip first row
+    print("foo")
     for row in tsv:
       mass, formula = row.split()
       MASS.append(mass)
