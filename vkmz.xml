@@ -1,11 +1,9 @@
-<tool id="VKMZ" name="VKMZ" version="1.1.2">
+<tool id="VKMZ" name="VKMZ" version="1.3.0">
 
   <description>metabolomics formula prediction and van Krevelen diagram generation</description>
   
   <requirements>
     <requirement type="package" version="2.7">python</requirement>
-    <requirement type="package">pandas</requirement>
-    <requirement type="package">plotly</requirement>
   </requirements>
   
   <stdio>
@@ -37,8 +35,6 @@
     #if $prediction.unique=="True":
       --unique
     #end if
-    --size $diagram.size
-    --size-algorithm $diagram.sizealgorithm
     --directory $__tool_directory__/
   ]]></command>
 
@@ -86,14 +82,6 @@
       </conditional>
       <param name="unique" label="Unique matches" type="boolean" truevalue="True" help="Only output features with a single prediction" />
     </section>
-    <section name="diagram" title="Diagram Options" expanded="true">
-      <param name="size" label="Maximum Symbol Size" type="integer" value="5" min="0" help="Set the maximum size of plotted symbols" />
-      <param name="sizealgorithm" label="Symbol Size Algorithm" type="select" help="Choose algorithm which sets the symbol size of each feature">
-        <option value="uniform">Uniform</option>
-        <option value="relative-intensity">Relative Intensity</option>
-        <option value="relative-log-intensity">Relative Log Intensity</option>
-      </param>
-    </section>
   </inputs>
   <outputs>
     <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${mode.mode_selector}_tabular" />
@@ -108,7 +96,7 @@
         <param name="samplemetadata" value="sampleMetadata.tabular" />
         <param name="variablemetadata" value="variableMetadata.tabular" />
       </conditional>
-      <param name="error" value="3" />
+      <param name="error" value="10" />
       <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output">
         <assert_contents>
@@ -121,7 +109,7 @@
         <param name="mode_selector" value="tsv" />
         <param name="input" value="tabular.tabular" />
       </conditional>
-      <param name="error" value="3" />
+      <param name="error" value="10" />
       <conditional name="database_type">
         <param name="database" value="databases/bmrb-light.tsv" />
       </conditional>
@@ -136,7 +124,7 @@
 
   <help><![CDATA[
 ==========
-VKMZ 1.1.2
+VKMZ 1.2.0
 ==========
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD briefly conveys untargeted metabolomics data.
@@ -169,19 +157,35 @@ For each feature VKMZ attempts to predict a molecular formula by comparing the f
 
 *Unique matches* removes features from the output which have multiple predictions. High mass molecules are affected by this filter more than low mass molecules. This is due to the increased number of possible elemental combinations at a higher mass.
 
-**Diagram Options**
+**Tabular Output**
+
+Tabular output contians the columns: sample_id, polarity, mz, rt (retentnion time), intensity, predictions (list of list-elements which contains: predicted mz, predicted formula, and predicted delta), hc (hydrogen to carbon ratio), oc, nc.
+
+**HTML Output**
+
+The HTML web page is an interactive van Krevelen diagram for exploring data.
 
 Predicted features are plotted as circle symbols.
 
-*Maximum Symbol Size* sets the maxium area a plotted symbol can have. VKMZ plots with absolute scaling.
+*Min Size* and *Max Size* sets the minimal and maximum area of symbols (absolute scaling).
 
-*Symbol Size Algorithm* allows the size of symbols to be set in three different ways.
+The *Sizer* dropdown sets the algorithm to size each symbol.
 
- *Uniform* sets the symbols of all features to the *Maxiumum Symbol Size*.
+  * *Uniform* sets the symbols of all features to the *Max Size*.
+  * *Relative Intensity* sets the symbol size of each feature by the feature's intensity divided by the maxium intensity in the dataset mutiplied by the *Maxium Symbol Size*.
+  * *Relative Log Intensity* sets the symbol size of each feature by the feature's log intensity divided by the maxium log intensity in the dataset mutiplied by the *Maxium Symbol Size*.
 
- *Relative Intensity* sets the symbol size of each feature by the feature's intensity divided by the maxium intensity in the dataset mutiplied by the *Maxium Symbol Size*.
+*Threshold* is a slider which removes low-intensity features. The slider exponentially scales.
 
- *Relative Log Intensity* sets the symbol size of each feature by the feature's log intensity divided by the maxium log intensity in the dataset mutiplied by the *Maxium Symbol Size*.
+  * Setting the slider to 50% removes features with intensities lower than 25% of the maximum inensity.
+  * Setting the slider to 75% removes features with intensities lower than 50% of the maximum inensity.
+
+*x-axis* and *y-axis* allow setting axis to alternate elemental ratios.
+
+*Opacity* sets the opacity of feature symbols.
+
+*Visible Samples* sets the visibility of features from given sample IDs. Checked samples are visible. By default all samples are visible.
+ 
   ]]></help>
 
   <citations>
