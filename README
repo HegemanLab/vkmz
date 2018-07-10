@@ -1,4 +1,4 @@
-# VKMZ version 1.3
+# VKMZ version 1.2.0
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a 2D scatterplot based on the molecule's oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD can be used to briefly convey untargeted metabolomics data.
 
