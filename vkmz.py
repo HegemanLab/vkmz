@@ -222,7 +222,7 @@ def write(vkData):
     json = json[:-1] # remove final comma
     # write html
     try:
-      with open(DIRECTORY+'d3.html', 'r') as templateHTML, open(OUTPUT+'.html', 'w') as fileHTML:
+      with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as templateHTML, open(OUTPUT+'.html', 'w', encoding='utf-8') as fileHTML:
        for line in templateHTML:
          line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
          fileHTML.write(line)
