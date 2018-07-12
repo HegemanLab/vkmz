@@ -142,7 +142,7 @@ def adjust(mass, polarity):
 
 # binary search to match a neutral mass to known mass within error
 def predict(mass, uncertainty, left, right):
-  mid = ((right - left) / 2) + left
+  mid = int(((right - left) / 2) + left)
   if left <= mid <= right and mid <= MAX_MASS_INDEX:
     delta = float(MASS[mid]) - mass
     if uncertainty >= abs(delta):
