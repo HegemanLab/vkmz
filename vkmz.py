@@ -227,7 +227,7 @@ def write(vkData):
          line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
          f.write(line)
     except ValueError:
-      print('"%s" could not be read or "%s" could not be written' % template, f)
+      print('"%s" could not be read or "%s" could not be written' % (template, f))
   except ValueError:
     print('"%s" could not be saved.' % filename)
 
