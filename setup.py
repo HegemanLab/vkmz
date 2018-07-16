@@ -15,5 +15,5 @@ setup(
     author_email="eslerm@umn.edu",
     url="https://github.com/HegemanLab/VKMZ",
     license="MIT",
-    packages=["vkmz"]
+    packages=["VKMZ"]
 )
