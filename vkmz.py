@@ -142,7 +142,7 @@ def adjust(mass, polarity):
 
 # binary search to match a neutral mass to known mass within error
 def predict(mass, uncertainty, left, right):
-  mid = ((right - left) / 2) + left
+  mid = int(((right - left) / 2) + left)
   if left <= mid <= right and mid <= MAX_MASS_INDEX:
     delta = float(MASS[mid]) - mass
     if uncertainty >= abs(delta):
@@ -214,22 +214,22 @@ def write(vkData):
   json = ''
   try: 
     # write tabular file and generate json for html output
-    with open(OUTPUT+'.tsv', 'w') as f: 
-      f.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc") + '\n')
+    with open(OUTPUT+'.tsv', 'w') as fileTSV: 
+      fileTSV.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc") + '\n')
       for feature in vkData:
-        f.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\n')
+        fileTSV.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\n')
         json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+'},'
     json = json[:-1] # remove final comma
     # write html
     try:
-      with open(DIRECTORY+'d3.html', 'r') as template, open(OUTPUT+'.html', 'w') as f:
-       for line in template:
+      with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as templateHTML, open(OUTPUT+'.html', 'w', encoding='utf-8') as fileHTML:
+       for line in templateHTML:
          line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
-         f.write(line)
+         fileHTML.write(line)
     except ValueError:
-      print('"%s" could not be read or "%s" could not be written' % template, f)
+      print('"%s" could not be read or "%s" could not be written' % (templateHTML, fileHTML))
   except ValueError:
-    print('"%s" could not be saved.' % filename)
+    print('"%s" could not be saved.' % fileTSV)
 
 # main
 vkData = map(featurePrediction, vkInput)
