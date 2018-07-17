@@ -1,7 +1,8 @@
 {% set version = "1.3.0" %}
 
+
 package:
-  name: vkmz 
+  name: 'vkmz'
   version: {{ version }}
 
 source:
@@ -20,13 +21,14 @@ requirements:
     - python 3.6.*
 
 test:
-  files:
-    - vkmz.py
+  imports
+    - vkmz
   commands:
-    - pwd && ls -la
+    - vkmz --help
 
 about:
   home: https://github.com/HegemanLab/vkmz
   license: MIT License
   summary: 'vkmz: metabolomics formula prediction and van Krevelen diagram generation'
   license_family: MIT
+
