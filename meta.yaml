@@ -5,12 +5,12 @@ package:
   version: {{ version }}
 
 source:
-  git_url: https://github.com/HegemanLab/VKMZ.git
+  git_url: https://github.com/HegemanLab/vkmz.git
   git_tag: master
 
 build:
   number: 0
-  script: python -m pip install --no-deps --ignore-installed .
+  script: python setup.py install --single-version-externally-managed --record=record.txt
 
 requirements:
   host:
@@ -20,13 +20,13 @@ requirements:
     - python 3.6.*
 
 test:
-  imports:
-    - vkmz
+  files:
+    - vkmz.py
   commands:
-    - vkmz -help
+    - pwd && ls -la
 
 about:
-  home: https://github.com/HegemanLab/VKMZ
+  home: https://github.com/HegemanLab/vkmz
   license: MIT License
-  summary: 'VKMZ: metabolomics formula prediction and van Krevelen diagram generation'
+  summary: 'vkmz: metabolomics formula prediction and van Krevelen diagram generation'
   license_family: MIT

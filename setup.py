@@ -13,7 +13,7 @@ setup(
     description="metabolomics formula prediction and van Krevelen diagram generation",
     author="Mark Esler",
     author_email="eslerm@umn.edu",
-    url="https://github.com/HegemanLab/VKMZ",
+    url="https://github.com/HegemanLab/vkmz",
     license="MIT",
-    packages=["VKMZ"]
+    packages=["vkmz"]
 )
