@@ -11,7 +11,7 @@ source:
 
 build:
   number: 0
-  script: mkdir -p $PREFIX/bin $PREFIX/share $PREFIX/info && cp vkmz.py $PREFIX/bin && cp -R databsaes $PREFIX/share && cp -R test-data $PREFIX/share && cp -R d3.html $PREFIX/share && cp LICENSE $PREFIX/info && cp README* $PREFIX/info
+  script: mkdir -p $PREFIX/bin $PREFIX/share $PREFIX/info && cp vkmz.py $PREFIX/bin && cp -R databases $PREFIX/share && cp -R test-data $PREFIX/share && cp -R d3.html $PREFIX/share && cp LICENSE $PREFIX/info && cp README* $PREFIX/info
 
 requirements:
   host:
