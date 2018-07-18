@@ -1,4 +1,4 @@
-{% set version = "1.3.0" %}
+{% set version = "v1.3.1" %}
 #{% set sha256 = "fb705cc4bc926a903e4d640bb0de6e400198d94745ece51adc5c935dd5605627" %}
 
 package:
@@ -6,7 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  url: https://github.com/HegemanLab/vkmz/archive/v{{ version }}.tar.gz
+  url: https://github.com/HegemanLab/vkmz/archive/{{ version }}.tar.gz
 #  sha256: {{ sha256 }}
 
 build:
