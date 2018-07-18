@@ -6,7 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  url: https://github.com/HegemanLab/vkmz/archive/{{ version }}.tar.gz
+  url: https://github.com/HegemanLab/VKMZ/archive/{{ version }}.tar.gz
 #  sha256: {{ sha256 }}
 
 build:
@@ -25,7 +25,7 @@ test:
     - vkmz.py --help
 
 about:
-  home: https://github.com/HegemanLab/vkmz
+  home: https://github.com/HegemanLab/VKMZ
   license: MIT License
   summary: 'vkmz: metabolomics formula prediction and van Krevelen diagram generation'
   license_family: MIT
