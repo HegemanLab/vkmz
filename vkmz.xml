@@ -35,7 +35,7 @@
     #if $prediction.unique=="True":
       --unique
     #end if
-    --directory $__tool_directory__/
+    --directory $__tool_directory__/share/
   ]]></command>
 
   <inputs>
