@@ -15,5 +15,10 @@ setup(
     author_email="eslerm@umn.edu",
     url="https://github.com/HegemanLab/vkmz",
     license="MIT",
-    packages=["vkmz"]
+    packages=["vkmz"],
+    entry_points={
+      'console_scripts': [
+        'vkmz = vkmz.vkmz'
+      ]
+    }
 )
