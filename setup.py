@@ -18,7 +18,7 @@ setup(
     packages=["vkmz"],
     entry_points={
       'console_scripts': [
-        'vkmz = vkmz.vkmz'
+        'vkmz = vkmz.vkmz:'
       ]
     }
 )
