@@ -1,9 +1,10 @@
-<tool id="VKMZ" name="VKMZ" version="1.3.0">
+<tool id="vkmz" name="VKMZ" version="1.3.1">
 
-  <description>metabolomics formula prediction and van Krevelen diagram generation</description>
+  <description>Metabolomics formula prediction and van Krevelen diagram generation</description>
   
   <requirements>
     <requirement type="package" version="3.6">python</requirement>
+    <requirement type="package">vkmz</requirement>
   </requirements>
   
   <stdio>
@@ -11,7 +12,7 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
-    python3 $__tool_directory__/vkmz.py
+    vkmz.py
     #if str( $mode.mode_selector ) == "xcms":
       xcms
       --data-matrix $mode.datamatrix
@@ -31,11 +32,13 @@
     #end if
     --output vkmz
     --error $prediction.error
+    #if $prediction.database_type.database_type_selector=="heuristic":
+      --directory \$CONDA_PREFIX/share/
+    #end if
     --database $prediction.database_type.database
     #if $prediction.unique=="True":
       --unique
     #end if
-    --directory $__tool_directory__/share/
   ]]></command>
 
   <inputs>
@@ -124,7 +127,7 @@
 
   <help><![CDATA[
 ==========
-VKMZ 1.3.0
+VKMZ 1.3.1
 ==========
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD briefly conveys untargeted metabolomics data.
