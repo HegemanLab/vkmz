@@ -158,12 +158,12 @@ def predict(mass, uncertainty, left, right):
 # find and rank predictions which are adjacent to the index of an intial prediction
 def predictNeighbors(mass, uncertainty, prediction):
   i = 0
-  neighbors = [[MASS[prediction],FORMULA[prediction],(float(MASS[prediction])-mass)],]
+  neighbors = [(float(MASS[prediction]),FORMULA[prediction],(float(MASS[prediction])-mass)),]
   while prediction+i+1 <= MAX_MASS_INDEX:
     neighbor = prediction+i+1
     delta = float(MASS[neighbor])-mass
     if uncertainty >= abs(delta):
-      neighbors.append([MASS[neighbor],FORMULA[neighbor],delta])
+      neighbors.append((float(MASS[neighbor]),FORMULA[neighbor],delta))
       i += 1
     else:
       break
@@ -172,7 +172,7 @@ def predictNeighbors(mass, uncertainty, prediction):
     neighbor = prediction+i-1
     delta = float(MASS[neighbor])-mass
     if uncertainty >= abs(delta):
-      neighbors.append([MASS[neighbor],FORMULA[neighbor],(float(MASS[neighbor])-mass)])
+      neighbors.append((float(MASS[neighbor]),FORMULA[neighbor],(float(MASS[neighbor])-mass)))
       i -= 1
     else:
       break
