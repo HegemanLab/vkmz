@@ -91,25 +91,19 @@ else: # INPUT_TYPE == "xcms"
   try:
     with open(xcmsDataMatrixFile, 'r') as f:
       xcmsDataMatrix = csv.reader(f, delimiter='\t')
-      first_row = True
+      sample_id = xcmsDataMatrix[1]
+      next(xcmsDataMatrix, None)
       for row in xcmsDataMatrix:
-        if first_row:
-          sample_id = row
-          first_row = False
-        else: 
-          i = 0
-          while(i < len(row)):
-            if i == 0:
-              i+=1
-            else:
-              intensity = row[i]
-              if intensity not in {'NA', '#DIV/0!', '0'}:
-                variable = row[0]
-                sample = sample_id[i]
-                # XCMS data may include empty columns
-                if sample != "":
-                  vkInput.append([sample, polarity[sample], mz[variable], rt[variable], float(intensity)])
-            i+=1
+        i = 1
+        while(i < len(row)):
+          intensity = row[i]
+          if intensity not in {'NA', '#DIV/0!', '0'}:
+            variable = row[0]
+            sample = sample_id[i]
+            # XCMS data may include empty columns
+            if sample != "":
+              vkInput.append([sample, polarity[sample], mz[variable], rt[variable], float(intensity)])
+          i+=1
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
 
