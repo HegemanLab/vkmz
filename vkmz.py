@@ -23,6 +23,19 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--unique',   '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
 args = parser.parse_args()
 
+featureList = []
+class Feature(object):
+ def __init__(self, sample_id, polarity, mz, rt, intensity):
+   self.sample_id = sample_id
+   self.polarity = polarity
+   self.mz = mz
+   self.rt = rt
+   self.intensity = intensity
+
+def makeFeature(sample_id, polarity, mz, rt, intensity):
+  feature = Feature(sample_id, polarity, mz, rt, intensity)
+  return feature
+
 # store input constants
 INPUT_TYPE = getattr(args, "input-type")
 POLARITY = getattr(args, "polarity")
@@ -38,7 +51,6 @@ def polaritySanitizer(sample_polarity):
   return sample_polarity
 
 # read input
-vkInput = [] # each element is a feature from input
 if INPUT_TYPE == "tsv":
   tsvFile = getattr(args, "input")
   try:
@@ -46,10 +58,12 @@ if INPUT_TYPE == "tsv":
       next(f) # skip hearder line
       tsvData = csv.reader(f, delimiter='\t')
       for row in tsvData:
-        vkInput.append([row[0],polaritySanitizer(row[1]),float(row[2]),float(row[3]),float(row[4])])
+        feature = makeFeature(row[0], polaritySanitizer(row[1]), float(row[2]), float(row[3]), float(row[4]))
+        featureList.append(feature)
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
 else: # INPUT_TYPE == "xcms"
+  # extract sample polarities
   xcmsSampleMetadataFile = getattr(args, "sample_metadata")
   try:
     polarity = {}
@@ -65,6 +79,7 @@ else: # INPUT_TYPE == "xcms"
           polarity[sample] = sample_polarity
   except ValueError:
     print('The %s data file could not be read. Check that polarity is set to "negative" or "positive"' % xcmsSampleMetadataFile)
+  # extract variable mz & rt
   xcmsVariableMetadataFile = getattr(args, "variable_metadata")
   try:
     mz = {}
@@ -87,22 +102,25 @@ else: # INPUT_TYPE == "xcms"
           rt_index = variable_index["rt"]
   except ValueError:
     print('The %s data file could not be read.' % xcmsVariableMetadataFile)
+  # extract intensity and relate polarity, mz, & rt to variable names
+  # to create feature objects
   xcmsDataMatrixFile = getattr(args, "data_matrix")
   try:
     with open(xcmsDataMatrixFile, 'r') as f:
       xcmsDataMatrix = csv.reader(f, delimiter='\t')
-      sample_id = xcmsDataMatrix[1]
-      next(xcmsDataMatrix, None)
+      samples = next(xcmsDataMatrix, None)
+      # remove empty columns, XCMS bug?
+      samples = [x for x in samples if x is not '']
       for row in xcmsDataMatrix:
+        row = [x for x in row if x is not '']
         i = 1
         while(i < len(row)):
-          intensity = row[i]
-          if intensity not in {'NA', '#DIV/0!', '0'}:
+          intensity = row[i] # keep as string for test
+          if intensity not in {"NA", "#DIV/0!", '0'}:
             variable = row[0]
-            sample = sample_id[i]
-            # XCMS data may include empty columns
-            if sample != "":
-              vkInput.append([sample, polarity[sample], mz[variable], rt[variable], float(intensity)])
+            sample_id = samples[i]
+            feature = makeFeature(sample_id, polarity[sample], mz[variable], rt[variable], float(intensity))
+            featureList.append(feature)
           i+=1
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
@@ -176,16 +194,17 @@ def predictNeighbors(mass, uncertainty, prediction):
 # predict formulas by the mass of a feature
 def featurePrediction(feature):
   if NEUTRAL:
-    mass = feature[2]
+    mass = feature.mz
   else:
-    mass = adjust(feature[2], feature[1]) # mz & polarity
+    mass = adjust(feature.mz, feature.polarity) # mz & polarity
   uncertainty = mass * MASS_ERROR / 1e6
   prediction = predict(mass, uncertainty, 0, MAX_MASS_INDEX)
   if prediction != -1: # else feature if forgotten
     predictions = predictNeighbors(mass, uncertainty, prediction)
     if UNIQUE and len(predictions) > 1:
       return
-    feature.append(predictions) # feature[5]
+    feature.predictions = predictions
+    # calculate elemental ratios
     formula = predictions[0][1] # formula of prediction with lowest abs(delta)
     formulaList = re.findall('[A-Z][a-z]?|[0-9]+', formula)
     formulaDictionary = {'C':0,'H':0,'O':0,'N':0} # other elements are easy to add
@@ -199,22 +218,21 @@ def featurePrediction(feature):
           formulaDictionary[formulaList[i]] = formulaList[i+1]
           i+=1
       i+=1
-    hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
-    oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
-    nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
-    feature += [hc, oc, nc] # feature[6], [7], [8]
+    feature.hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
+    feature.oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
+    feature.nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
     return(feature)
  
 # write output file
-def write(vkData):
+def write(predictionList):
   json = ''
   try: 
     # write tabular file and generate json for html output
     with open(OUTPUT+'.tsv', 'w') as fileTSV: 
-      fileTSV.writelines(str("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc") + '\n')
-      for feature in vkData:
-        fileTSV.writelines(feature[0]+'\t'+feature[1]+'\t'+str(feature[2])+'\t'+str(feature[3])+'\t'+str(feature[4])+'\t'+str(feature[5])+'\t'+str(feature[6])+'\t'+str(feature[7])+'\t'+str(feature[8])+'\n')
-        json += '{sample_id:\''+str(feature[0])+'\', polarity:\''+str(feature[1])+'\', mz:'+str(feature[2])+', rt:'+str(feature[3])+', intensity:'+str(feature[4])+', predictions:'+str(feature[5])+', hc:'+str(feature[6])+', oc:'+str(feature[7])+', nc:'+str(feature[8])+'},'
+      fileTSV.writelines("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\n")
+      for p in predictionList:
+        fileTSV.writelines(p.sample_id+'\t'+p.polarity+'\t'+str(p.mz)+'\t'+str(p.rt)+'\t'+str(p.intensity)+'\t'+str(p.predictions)+'\t'+str(p.hc)+'\t'+str(p.oc)+'\t'+str(p.nc)+'\n')
+        json += "{sample_id: \'"+p.sample_id+"\', polarity: \'"+p.polarity+"\', mz: "+str(p.mz)+", rt: "+str(p.rt)+", intensity: "+str(p.intensity)+", predictions: "+str(p.predictions)+", hc: "+str(p.hc)+", oc: "+str(p.oc)+", nc: "+str(p.nc)+"},"
     json = json[:-1] # remove final comma
     # write html
     try:
@@ -228,8 +246,8 @@ def write(vkData):
     print('"%s" could not be saved.' % fileTSV)
 
 # main
-vkData = map(featurePrediction, vkInput)
-vkData = [x for x in vkData if x is not None]
+predictionList = map(featurePrediction, featureList)
+predictionList = [x for x in predictionList if x is not None]
 # sort by intensity so D3 draws largest symbols first
-vkData.sort(key=lambda x: x[4], reverse=True)
-write(vkData)
+predictionList.sort(key=lambda x: x.intensity, reverse=True)
+write(predictionList)
