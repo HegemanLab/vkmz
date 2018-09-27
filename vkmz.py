@@ -6,7 +6,10 @@ import math
 import re
  
 parser = argparse.ArgumentParser()
-inputSubparser = parser.add_subparsers(help='Select input type:', dest='input-type')
+inputSubparser = parser.add_subparsers(help='Select mode:', dest='mode')
+parse_db = inputSubparser.add_parser('db', help='Construct Database.')
+parse_db.add_argument('--input', '-i', required=True, help='Path to tabular database file. The first two columns must be "mass" and "formula".')
+parse_db.add_argument('--output','-o', nargs='?', type=str, required=True, help='Specify output file path.')
 parse_tsv = inputSubparser.add_parser('tsv', help='Use tabular data as input.')
 parse_tsv.add_argument('--input', '-i', required=True, help='Path to tabular file. Must include columns: sample ID, mz, polarity, intensity, & retention time.')
 parse_xcms = inputSubparser.add_parser('xcms', help='Use XCMS data as input.')
@@ -37,8 +40,30 @@ def makeFeature(sample_id, polarity, mz, rt, intensity):
   return feature
 
 # store input constants
-INPUT_TYPE = getattr(args, "input-type")
-POLARITY = getattr(args, "polarity")
+MODE = getattr(args, "mode")
+OUTPUT = getattr(args, "output")
+
+if MODE == "db":
+  dbFileIn = getattr(args, "input")
+  try:
+    with open(dbFileIn, 'r') as f:
+      database = []
+      dbData = csv.reader(f, delimiter='\t')
+      next(dbData) 
+      for row in dbData:
+        if not row[0].isspace() and not row[1].isspace():
+          database.append((float(row[0]), row[1].strip().replace(" ","")))
+      database = sorted(set(database))
+      try:
+        with open(OUTPUT, 'w') as dbFileOut: 
+          dbFileOut.write("mass\tformula\n")
+          for pair in database:
+            dbFileOut.write(str(pair[0])+'\t'+pair[1]+'\n')
+    except ValueError:
+      print('Error while writing the %s database file.' % dbFileOut)
+  except ValueError:
+    print('Error while reading the %s database file.' % dbFileIn)
+  exit()
 
 def polaritySanitizer(sample_polarity):
   if sample_polarity.lower() in {'positive','pos','+'}:
@@ -51,7 +76,8 @@ def polaritySanitizer(sample_polarity):
   return sample_polarity
 
 # read input
-if INPUT_TYPE == "tsv":
+POLARITY = getattr(args, "polarity")
+if MODE == "tsv":
   tsvFile = getattr(args, "input")
   try:
     with open(tsvFile, 'r') as f:
@@ -62,7 +88,7 @@ if INPUT_TYPE == "tsv":
         featureList.append(feature)
   except ValueError:
     print('The %s data file could not be read.' % tsvFile)
-else: # INPUT_TYPE == "xcms"
+else: # MODE == "xcms"
   # extract sample polarities
   xcmsSampleMetadataFile = getattr(args, "sample_metadata")
   try:
@@ -126,7 +152,6 @@ else: # INPUT_TYPE == "xcms"
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
 
 # store||generate remaining constants
-OUTPUT = getattr(args, "output")
 MASS_ERROR = getattr(args, "error")
 UNIQUE = getattr(args, "unique")
 NEUTRAL = getattr(args, "neutral")
