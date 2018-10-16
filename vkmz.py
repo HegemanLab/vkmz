@@ -22,6 +22,7 @@ parse_xcms.add_argument('--sample-metadata', '-xs', required=True, nargs='?', ty
 parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', type=str, help='Path to XCMS variable metadata file.')
 for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
+  inputSubparser.add_argument('--json',     '-j', action='store_true', help='Set JSON flag to save JSON output.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
   inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Select database of known formula masses.')
   inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define path of tool directory. Assumes relative path if unset.')
@@ -38,6 +39,8 @@ class Feature(object):
    self.mz = mz
    self.rt = rt
    self.intensity = intensity
+   # list of prediction elements
+   self.predictions = []
 
 class Prediction(object):
   def __init__(self, mass, formula, delta):
@@ -51,6 +54,7 @@ class Prediction(object):
 # store input constants
 MODE = getattr(args, "mode")
 OUTPUT = getattr(args, "output")
+JSON = getattr(args, "json")
 
 if MODE == "db":
   dbFileIn = getattr(args, "input")
@@ -70,7 +74,7 @@ if MODE == "db":
       formula_index = 0 if formula_column == None else header.index(formula_column)
       # test that mass_column works
       if mass_column:
-        mass_index = 1 if mass_column == None else header.index(mass_column)
+        mass_index = header.index(mass_column)
         index_length = formula_index if formula_index >= mass_index else mass_index # test that this works
         for row in dbData:
           # sanity check that mass-formula indices exist
@@ -103,23 +107,24 @@ if MODE == "db":
                   elementMass = elementDictionary[formulaList[i]]
                   elementExponent = elementMass.as_tuple().exponent
                   if elementExponent > significantExponent : significantExponent = elementExponent
-                  # if there is only one of this element
+                  # elementCount == 1
                   if i+1 == len(formulaList) or formulaList[i+1].isalpha():
                     formulaMass += elementMass
                   else:
                     elementCount = int(formulaList[i+1])
                     formulaMass += elementMass * elementCount
                     i+=1
+                # fail softly
                 else:
-                  print("The formula %s has an unknown element %s", formula, formulaList[i])
-                  # partial values are incorrectly being stored
-                  # add parameter to ignore issues and remove formula
-                  # raise error and exit should be default
-                  # raise error triggers try exception
+                  print("The formula '%s' has an unknown element: '%s'", (formula, formulaList[i]))
+                  formulaMass = "error"
+                  i = len(formulaList)
                 i+=1
-              # round non-significant figures
-              formulaMass = formulaMass.quantize(Decimal((0,(1,0),significantExponent)))
-              database.append(((formulaMass), formula.strip().replace(" ","")))
+              if formulaMass != "error":
+                # round non-significant figures
+                formulaMass = formulaMass.quantize(Decimal((0,(1,0),significantExponent)))
+                # store tuple
+                database.append((formulaMass, formula.strip().replace(" ","")))
       # remove duplicates and sort
       database = sorted(set(database))
       try:
@@ -328,8 +333,8 @@ def write(predictionList):
       fileTSV.writelines("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\n")
       for p in predictionList:
         fileTSV.writelines(p.sample_id+'\t'+p.polarity+'\t'+str(p.mz)+'\t'+str(p.rt)+'\t'+str(p.intensity)+'\t'+str(p.predictions)+'\t'+str(p.hc)+'\t'+str(p.oc)+'\t'+str(p.nc)+'\n')
-        json += "{sample_id: \'"+p.sample_id+"\', polarity: \'"+p.polarity+"\', mz: "+str(p.mz)+", rt: "+str(p.rt)+", intensity: "+str(p.intensity)+", predictions: "+str(p.predictions)+", hc: "+str(p.hc)+", oc: "+str(p.oc)+", nc: "+str(p.nc)+"},"
-    json = json[:-1] # remove final comma
+        json += "{\n  \"sample_id\": \""+p.sample_id+"\",\n  \"polarity\": \""+p.polarity+"\",\n  \"mz\": "+str(p.mz)+",\n  \"rt\": "+str(p.rt)+",\n  \"intensity\": "+str(p.intensity)+",\n  \"prediction\": ["+str(p.predictions)+"],\n  \"hc\": "+str(p.hc)+",\n  \"oc\": "+str(p.oc)+",\n  \"nc\": "+str(p.nc)+"\n},\n"
+    json = json[:-2] # remove final comma
     # write html
     try:
       with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as templateHTML, open(OUTPUT+'.html', 'w', encoding='utf-8') as fileHTML:
@@ -338,6 +343,12 @@ def write(predictionList):
          fileHTML.write(line)
     except ValueError:
       print('"%s" could not be read or "%s" could not be written' % (templateHTML, fileHTML))
+    if JSON: # needs test
+      try:
+        with open(OUTPUT+".json", 'w') as jsonFile:
+          jsonFile.write(json)
+      except ValueError:
+        print('"%s" could not be read or "%s" could not be written' % (templateHTML, fileHTML))
   except ValueError:
     print('"%s" could not be saved.' % fileTSV)
 
