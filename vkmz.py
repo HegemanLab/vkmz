@@ -28,7 +28,7 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define path of tool directory. Assumes relative path if unset.')
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
   inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
-  inputSubparser.add_argument('--unique',   '-u', action='store_true', help='Set flag to remove features with multiple predictions.')
+  inputSubparser.add_argument('--alternate','-a', action='store_true', help='Set flag to keep features with multiple predictions.')
 args = parser.parse_args()
 
 featureList = []
@@ -226,7 +226,7 @@ else: # MODE == "xcms"
 
 # store||generate remaining constants
 MASS_ERROR = getattr(args, "error")
-UNIQUE = getattr(args, "unique")
+ALTERNATE = getattr(args, "alternate")
 NEUTRAL = getattr(args, "neutral")
 DATABASE = getattr(args, "database")
 DIRECTORY = getattr(args, "directory")
@@ -302,7 +302,7 @@ def featurePrediction(feature):
   prediction = predict(mass, uncertainty, 0, MAX_MASS_INDEX)
   if prediction != -1: # else feature if forgotten
     predictions = predictNeighbors(mass, uncertainty, prediction)
-    if UNIQUE and len(predictions) > 1:
+    if not ALTERNATE and len(predictions) > 1:
       return
     feature.predictions = predictions
     # calculate elemental ratios
