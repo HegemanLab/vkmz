@@ -39,17 +39,17 @@ class Feature(object):
    self.mz = mz
    self.rt = rt
    self.intensity = intensity
-   # list of prediction elements
-   self.predictions = []
+   self.predictions = [] # list of Prediction objects
 
 class Prediction(object):
   def __init__(self, mass, formula, delta):
-    self.mass = mass
     self.formula = formula
+    self.elementCount = {}
+    self.mass = mass
     self.delta = delta
-    self.hc = hc
-    self.nc = nc
-    self.oc = oc
+    self.hc = float()
+    self.nc = float()
+    self.oc = float()
 
 # store input constants
 MODE = getattr(args, "mode")
@@ -148,7 +148,7 @@ def polaritySanitizer(sample_polarity):
     raise ValueError
   return sample_polarity
 
-# read input
+# read input modes
 POLARITY = getattr(args, "polarity")
 if MODE == "tsv":
   tsvFile = getattr(args, "input")
@@ -201,8 +201,7 @@ else: # MODE == "xcms"
           rt_index = variable_index["rt"]
   except ValueError:
     print('The %s data file could not be read.' % xcmsVariableMetadataFile)
-  # extract intensity and relate polarity, mz, & rt to variable names
-  # to create feature objects
+  # extract intensity and build Feature objects
   xcmsDataMatrixFile = getattr(args, "data_matrix")
   try:
     with open(xcmsDataMatrixFile, 'r') as f:
@@ -224,7 +223,7 @@ else: # MODE == "xcms"
   except ValueError:
     print('The %s data file could not be read.' % xcmsDataMatrixFile)
 
-# store||generate remaining constants
+# store or generate remaining constants
 MASS_ERROR = getattr(args, "error")
 ALTERNATE = getattr(args, "alternate")
 NEUTRAL = getattr(args, "neutral")
@@ -269,12 +268,12 @@ def predict(mass, uncertainty, left, right):
 # find and rank predictions which are adjacent to the index of an intial prediction
 def predictNeighbors(mass, uncertainty, prediction):
   i = 0
-  neighbors = [(float(MASS[prediction]),FORMULA[prediction],(float(MASS[prediction])-mass)),]
+  neighbors = [Prediction(float(MASS[prediction]),FORMULA[prediction],(float(MASS[prediction])-mass))]
   while prediction+i+1 <= MAX_MASS_INDEX:
     neighbor = prediction+i+1
     delta = float(MASS[neighbor])-mass
     if uncertainty >= abs(delta):
-      neighbors.append((float(MASS[neighbor]),FORMULA[neighbor],delta))
+      neighbors.append(Prediction(float(MASS[neighbor]),FORMULA[neighbor],delta))
       i += 1
     else:
       break
@@ -283,13 +282,12 @@ def predictNeighbors(mass, uncertainty, prediction):
     neighbor = prediction + i - 1
     delta = float(MASS[neighbor]) - mass
     if uncertainty >= abs(delta):
-      neighbors.append((float(MASS[neighbor]),FORMULA[neighbor],(float(MASS[neighbor])-mass)))
+      neighbors.append(Prediction(float(MASS[neighbor]),FORMULA[neighbor],delta))
       i -= 1
     else:
       break
-  #neighbors.sort(key=lambda x: x.[2])
   # sort predictions by lowest absolute delta
-  neighbors = sorted(neighbors, key = (lambda delta: abs(delta[2])))
+  neighbors.sort(key=lambda x: abs(x.delta))
   return neighbors
 
 # predict formulas by the mass of a feature
@@ -299,62 +297,116 @@ def featurePrediction(feature):
   else:
     mass = adjust(feature.mz, feature.polarity) # mz & polarity
   uncertainty = mass * MASS_ERROR / 1e6
-  prediction = predict(mass, uncertainty, 0, MAX_MASS_INDEX)
-  if prediction != -1: # else feature if forgotten
-    predictions = predictNeighbors(mass, uncertainty, prediction)
-    if not ALTERNATE and len(predictions) > 1:
+  # initialPrediction is an index
+  initialPrediction = predict(mass, uncertainty, 0, MAX_MASS_INDEX) 
+  if initialPrediction != -1: # else feature if forgotten
+    feature.predictions = predictNeighbors(mass, uncertainty, initialPrediction)
+    if not ALTERNATE and len(feature.predictions) > 1:
       return
-    feature.predictions = predictions
-    # calculate elemental ratios
-    formula = predictions[0][1] # formula of prediction with lowest abs(delta)
-    formulaList = re.findall('[A-Z][a-z]?|[0-9]+', formula)
-    formulaDictionary = {'C':0,'H':0,'O':0,'N':0} # other elements are easy to add
-    i = 0;
-    while i < len(formulaList):
-      if formulaList[i] in formulaDictionary:
+    # calculate elemental ratios for the lowest abs(delta) prediction
+    for p in feature.predictions:
+      formulaList = re.findall('[A-Z][a-z]?|[0-9]+', p.formula)
+      i = 0;
+      while i < len(formulaList):
+        # create key
+        if formulaList[i] not in p.elementCount:
+          p.elementCount[formulaList[i]] = 0
         # if there is only one of this element
         if i+1 == len(formulaList) or formulaList[i+1].isalpha():
-          formulaDictionary[formulaList[i]] = 1
+          p.elementCount[formulaList[i]] += 1
         else:
-          formulaDictionary[formulaList[i]] = formulaList[i+1]
+          p.elementCount[formulaList[i]] += int(formulaList[i+1])
           i+=1
-      i+=1
-    feature.hc = float(formulaDictionary['H'])/float(formulaDictionary['C'])
-    feature.oc = float(formulaDictionary['O'])/float(formulaDictionary['C'])
-    feature.nc = float(formulaDictionary['N'])/float(formulaDictionary['C'])
+        i+=1
+      if 'C' in p.elementCount:
+        if 'H' in p.elementCount : p.hc = float(p.elementCount['H'])/float(p.elementCount['C'])
+        if 'O' in p.elementCount : p.oc = float(p.elementCount['O'])/float(p.elementCount['C'])
+        if 'N' in p.elementCount : p.nc = float(p.elementCount['N'])/float(p.elementCount['C'])
     return(feature)
  
 # write output file
-def write(predictionList):
+def write(predictedFeatures):
   json = ''
   try: 
-    # write tabular file and generate json for html output
-    with open(OUTPUT+'.tsv', 'w') as fileTSV: 
-      fileTSV.writelines("sample_id\tpolarity\tmz\trt\tintensity\tpredictions\thc\toc\tnc\n")
-      for p in predictionList:
-        fileTSV.writelines(p.sample_id+'\t'+p.polarity+'\t'+str(p.mz)+'\t'+str(p.rt)+'\t'+str(p.intensity)+'\t'+str(p.predictions)+'\t'+str(p.hc)+'\t'+str(p.oc)+'\t'+str(p.nc)+'\n')
-        json += "{\n  \"sample_id\": \""+p.sample_id+"\",\n  \"polarity\": \""+p.polarity+"\",\n  \"mz\": "+str(p.mz)+",\n  \"rt\": "+str(p.rt)+",\n  \"intensity\": "+str(p.intensity)+",\n  \"prediction\": ["+str(p.predictions)+"],\n  \"hc\": "+str(p.hc)+",\n  \"oc\": "+str(p.oc)+",\n  \"nc\": "+str(p.nc)+"\n},\n"
-    json = json[:-2] # remove final comma
-    # write html
-    try:
-      with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as templateHTML, open(OUTPUT+'.html', 'w', encoding='utf-8') as fileHTML:
-       for line in templateHTML:
-         line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
-         fileHTML.write(line)
-    except ValueError:
-      print('"%s" could not be read or "%s" could not be written' % (templateHTML, fileHTML))
-    if JSON: # needs test
-      try:
-        with open(OUTPUT+".json", 'w') as jsonFile:
-          jsonFile.write(json)
-      except ValueError:
-        print('"%s" could not be read or "%s" could not be written' % (templateHTML, fileHTML))
-  except ValueError:
-    print('"%s" could not be saved.' % fileTSV)
+    with open(OUTPUT+'.tsv', 'w') as tsvFile:
+      tabularHeader = "sample_id\t\
+                       polarity\t\
+                       mz\t\
+                       rt\t\
+                       intensity\t\
+                       predicted_mass\t\
+                       predicted_delta\t\
+                       predicted_formula\t\
+                       predicted_element_count\t\
+                       predicted_hc\t\
+                       predicted_oc\t\
+                       predicted_nc\n"
+      if ALTERNATE:
+        tabularHeader = tabularHeader[:-1]+"\talternate_predictions\n"
+      tsvFile.writelines(tabularHeader)
+      for f in predictedFeatures:
+        p = f.predictions[0]
+        tsvRow = f.sample_id+'\t'+\
+                 f.polarity+'\t'+\
+                 str(f.mz)+'\t'+\
+                 str(f.rt)+'\t'+\
+                 str(f.intensity)+'\t'+\
+                 str(p.mass)+'\t'+\
+                 str(p.delta)+'\t'+\
+                 p.formula+'\t'+\
+                 str(p.elementCount)+'\t'+\
+                 str(p.hc)+'\t'+\
+                 str(p.oc)+'\t'+\
+                 str(p.nc)+'\n'
+        jsonElement = "{\n  \"sample_id\": \""+f.sample_id+\
+                "\",\n  \"polarity\": \""+f.polarity+\
+                "\",\n  \"mz\": "+str(f.mz)+\
+                ",\n  \"rt\": "+str(f.rt)+\
+                ",\n  \"intensity\": "+ str(f.intensity)+\
+                ",\n  \"prediction\": {\n    \"mass\": "+str(p.mass)+\
+                ",\n    \"delta\": \""+str(p.delta)+\
+                ",\n    \"formula\": \""+p.formula+\
+                "\",\n    \"element_count\": \""+str(p.elementCount)+\
+                "\",\n    \"hc\": "+str(p.hc)+\
+                ",\n    \"oc\": "+str(p.oc)+\
+                ",\n    \"nc\": "+str(p.nc)+"\n  }\n},\n"
+        if ALTERNATE:
+          tsvAppend = []
+          jsonAppend = str()
+          for a in f.predictions[1:]:
+            tsvAppend.append((a.mass, a.formula, a.delta))
+            jsonAppend += "     {\n       \"mass\": "+str(a.mass)+\
+                ",\n       \"delta\": \""+str(a.delta)+\
+                ",\n       \"formula\": \""+a.formula+\
+                "\",\n       \"element_count\": \""+str(a.elementCount)+\
+                "\",\n       \"hc\": "+str(a.hc)+\
+                ",\n       \"oc\": "+str(a.oc)+\
+                ",\n       \"nc\": "+str(a.nc)+"\n     },\n"
+          tsvRow = tsvRow[:-1]+'\t'+str(tsvAppend)+'\n'
+          jsonElement = jsonElement[:-4]+",\n  \"alternate_predictions\": [\n"+jsonAppend[:-2]+"\n  ]\n},\n"
+        tsvFile.writelines(tsvRow)
+        json += jsonElement
+    json = json[:-2] # remove final comma # [:-1] ??
+  except IOError as error:
+    print('IOError while writing tabular output: %s' % error.strerror)
+  try: 
+    with open(DIRECTORY+'d3.html','r',encoding='utf-8') as htmlTemplate,\
+         open(OUTPUT+'.html','w',encoding='utf-8') as htmlFile:
+      for line in htmlTemplate:
+        line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
+        htmlFile.write(line)
+  except IOError as error:
+    print('IOError while writing HTML output or reading HTML template: %s' % error.strerror)
+  if JSON:
+    try: 
+      with open(OUTPUT+'.json','w') as jsonFile:
+        jsonFile.write(json)
+    except IOError as error:
+      print('IOError while writing JSON output: %s' % error.strerror)
 
 # main
-predictionList = map(featurePrediction, featureList)
-predictionList = [x for x in predictionList if x is not None]
-# sort by intensity so D3 draws largest symbols first
-predictionList.sort(key=lambda x: x.intensity, reverse=True)
-write(predictionList)
+predictedFeatures = map(featurePrediction, featureList)
+predictedFeatures = [x for x in predictedFeatures if x is not None]
+# sort by intensity so that D3 draws largest symbols first
+predictedFeatures.sort(key=lambda x: x.intensity, reverse=True)
+write(predictedFeatures)
