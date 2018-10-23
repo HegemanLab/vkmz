@@ -17,40 +17,49 @@ for inputSubparser in [parse_tsv, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--json',     '-j', action='store_true', help='Set JSON flag to save JSON output.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
-  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Select database of known formula masses.')
-  inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define path of tool directory. Assumes relative path if unset.')
+  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Define database of known fomrula-mass pairs.')
+  inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define tool directory path. Defaults to relative path.')
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
   inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
   inputSubparser.add_argument('--alternate','-a', action='store_true', help='Set flag to keep features with multiple predictions.')
+  inputSubparser.add_argument('--charge','-c', action='store_true', help='Set flag if input data contains charge.')
 args = parser.parse_args()
 
 class Feature(object):
   '''Feature Class'''
-  def __init__(self, sample_id, polarity, mz, rt, intensity, charge = 1):
+  def __init__(self, sample_id, polarity, mz, rt, intensity, variable_id = False,
+               charge = 1):
     self.sample_id = sample_id
     self.polarity = polarity
     self.mz = mz
     self.rt = rt
     self.intensity = intensity
     self.predictions = [] # list of Prediction objects
+    if variable_id:
+      self.variable_id = variable_id
+    else:
+      self.variable_id = sample_id+'-'+str(rt)+'-'+str(mz)
     self.charge = charge
-    # CAUTION: a charge of one is assumed.
+    # CAUTION: a charge of one is assumed if not specified with --charge
 
 class Prediction(object):
   '''Prediction Class'''
-  def __init__(self, mass, formula, delta, elementCount, hc, oc, nc):
+  def __init__(self, mass, formula, delta, element_count, hc, oc, nc):
     self.formula = formula
     self.mass = mass
     self.delta = delta
-    self.elementCount = elementCount
+    self.element_count = element_count
     self.hc = hc
     self.oc = oc
     self.nc = nc
 
-# input constants
+# parameter constants
 MODE = getattr(args, "mode")
 OUTPUT = getattr(args, "output")
 JSON = getattr(args, "json")
+
+# using charge not yet implemented
+CHARGE = getattr(args, "charge")
 
 def polaritySanitizer(polarity: str):
   """Sanitize input polarity values.
@@ -68,98 +77,120 @@ def polaritySanitizer(polarity: str):
     raise ValueError("%s is an unknown polarity type." % polarity)
   return polarity
 
-def readTabular(tsvFile):
-  """Read a tabular file and return a list of predictions.
+def readTabular(tsv_file):
+  """Read a tabular file and return a list of features.
 
-  Columns must be...
+  Reads columns named "sample_id", "polarity", "mz", "rt", "intensity", and
+  optionally "charge" to create Features for each row.
   """
-  featureList = []
+  feature_list = []
   try:
-    with open(tsvFile, 'r') as f:
-      next(f) # skip hearder line
+    with open(tsv_file, 'r') as f:
       tsvData = csv.reader(f, delimiter='\t')
+      header = next(tsvData)
+      sample_id_index = header.index("sample_id")
+      polarity_index = header.index("polarity")
+      mz_index = header.index("mz")
+      rt_index = header.index("rt")
+      intensity_index = header.index("intensity")
+      if CHARGE:
+        charge_index = header.index("charge")
       for row in tsvData:
-        feature = Feature(row[0], polaritySanitizer(row[1]), float(row[2]),\
-                          float(row[3]), float(row[4]))
-        featureList.append(feature)
+        feature = Feature(
+                    sample_id = row[sample_id_index],\
+                    polarity = polaritySanitizer(row[polarity_index]),\
+                    mz = float(row[mz_index]),\
+                    rt = float(row[rt_index]),\
+                    intensity = float(row[intensity_index]))
+        if CHARGE:
+          feature.charge = row[charge_index]
+        feature_list.append(feature)
   except IOError:
-    print('Error while reading %s.' % tsvFile)
-  return featureList
+    print('Error while reading %s.' % tsv_file)
+  return feature_list
 
-def readXcmsTabular(xcmsSampleFile, xcmsVariableFile, xcmsDataMatrixFile):
-  """Read W4M's XCMS tabular files and return a list of predictions.
+def readXcmsTabular(sample_file, variable_file, matrix_file):
+  """Read W4M's XCMS tabular files and return a list of features.
 
-  The sample metadata file is read to assign polarities to samples.
+  Reads sample metadata to create a dictionary of sample ids keys with,
+  sanitized, polarity values.
 
-  The variable metadata file is read to 
+  Reads variable metadata to create two dictionaries with variable ids as keys
+  and either mass to charge or retention time as values.
+
+  Finally, read data matrix and create all Feature objects and append to list.
   """
-  featureList = []
+  feature_list = []
   # extract sample polarities
   try:
     polarity = {}
-    with open(xcmsSampleFile,'r') as f:
-      xcmsSampleMetadata = csv.reader(f, delimiter='\t')
-      next(xcmsSampleMetadata) # skip header
-      for row in xcmsSampleMetadata:
+    with open(sample_file,'r') as f:
+      sample_data = csv.reader(f, delimiter='\t')
+      next(sample_data) # skip header
+      for row in sample_data:
         sample = row[0]
         if POLARITY:
           polarity[sample] = POLARITY
         else:
-          polarity[sample] =  polaritySanitizer(row[2])
+          polarity[sample] = polaritySanitizer(row[2])
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % xcmsSampleFile)
+    print('Error while reading the XCMS tabular file %s.' % sample_file)
   # extract variable mz & rt
   try:
     mz = {}
     rt = {}
     mzIndex = int()
     rtIndex = int()
-    with open(xcmsVariableFile,'r') as f:
-      xcmsVariableData = csv.reader(f, delimiter='\t')
-      header = next(xcmsVariableData)
+    with open(variable_file,'r') as f:
+      variable_data = csv.reader(f, delimiter='\t')
+      header = next(variable_data)
       mzIndex = header.index("mz")
       rtIndex = header.index("rt")
-      for row in xcmsVariableData:
+      for row in variable_data:
         mz[row[0]] = float(row[mzIndex])
         rt[row[0]] = float(row[rtIndex])
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % xcmsVariableFile)
+    print('Error while reading the XCMS tabular file %s.' % variable_file)
   # extract intensity and build Feature objects
   try:
-    with open(xcmsDataMatrixFile,'r') as f:
-      xcmsDataMatrix = csv.reader(f, delimiter='\t')
-      samples = next(xcmsDataMatrix)
+    with open(matrix_file,'r') as f:
+      matrix_data = csv.reader(f, delimiter='\t')
+      samples = next(matrix_data)
       # remove empty columns
-      # bug in W4M XCMS input?
       # check w/ fresh input
       samples = [x for x in samples if x is not '']
-      for row in xcmsDataMatrix:
+      for row in matrix_data:
         # remove empty columns
         row = [x for x in row if x is not '']
         i = 1
         while(i < len(row)):
           intensity = row[i] # keep type string for test
           if intensity not in {"NA", "#DIV/0!", '0'}:
-            variable = row[0]
+            variable_id = row[0]
             sample = samples[i]
-            feature = Feature(sample, polarity[sample], mz[variable],\
-                              rt[variable], float(intensity))
-            featureList.append(feature)
+            feature = Feature(
+                        sample_id = sample,\
+                        polarity = polarity[sample],\
+                        mz = mz[variable_id],\
+                        rt = rt[variable_id],\
+                        intensity = float(intensity),\
+                        variable_id = variable_id)
+            feature_list.append(feature)
           i+=1
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % xcmsDataMatrixFile)
-  return featureList
+    print('Error while reading the XCMS tabular file %s.' % matrix_file)
+  return feature_list
 
 
 POLARITY = getattr(args, "polarity")
 if MODE == "tsv":
-  tsvFile = getattr(args, "input")
-  featureList = readTabular(tsvFile)
+  tsv_file = getattr(args, "input")
+  feature_list = readTabular(tsv_file)
 else: # MODE == "xcms"
-  xcmsSampleFile = getattr(args, "sample_metadata")
-  xcmsVariableFile = getattr(args, "variable_metadata")
-  xcmsDataMatrixFile = getattr(args, "data_matrix")
-  featureList = readXcmsTabular(xcmsSampleFile, xcmsVariableFile, xcmsDataMatrixFile)
+  sample_file = getattr(args, "sample_metadata")
+  variable_file = getattr(args, "variable_metadata")
+  matrix_file = getattr(args, "data_matrix")
+  feature_list = readXcmsTabular(sample_file, variable_file, matrix_file)
 
 # store or generate remaining constants
 MASS_ERROR = getattr(args, "error")
@@ -180,7 +211,7 @@ except ValueError:
   print('The %s database could not be loaded.' % DATABASE)
 MAX_MASS_INDEX = len(MASS)-1
 
-def adjust(mass, polarity, charges = 1):
+def adjust(mass, polarity, charge):
   """
   Adjust a charged mass to a neutral mass.
 
@@ -190,9 +221,9 @@ def adjust(mass, polarity, charges = 1):
   # value to adjust by
   proton = 1.007276
   if polarity == 'positive':
-    mass -= (proton * charges)
+    mass -= (proton * charge)
   else: # sanitized to negative
-    mass += (proton * charges)
+    mass += (proton * charge)
   return mass
 
 def predict(mass, uncertainty, left, right):
@@ -214,16 +245,16 @@ def predict(mass, uncertainty, left, right):
       return predict(mass, uncertainty, mid+1, right)
   return -1
 
-def predictAll(mass, uncertainty, initIndex):
+def predictAll(mass, uncertainty, init_index):
   """Search for all matching masses within the known-mass list.
 
   Checks adjacent indexes from a given index of known-masses which are within a
   given uncertinty of a given mass.
   """
-  matches = [initIndex]
+  matches = [init_index]
   i = 0
-  while initIndex+i+1 <= MAX_MASS_INDEX:
-    m = initIndex+i+1
+  while init_index+i+1 <= MAX_MASS_INDEX:
+    m = init_index+i+1
     delta = mass - MASS[m]
     if uncertainty >= abs(delta):
       matches.append(m)
@@ -231,8 +262,8 @@ def predictAll(mass, uncertainty, initIndex):
     else:
       break
   i = 0
-  while initIndex+i-1 >= 0:
-    m = initIndex+i-1
+  while init_index+i-1 >= 0:
+    m = init_index+i-1
     delta = float(MASS[m]) - mass
     if uncertainty >= abs(delta):
       matches.append(m)
@@ -243,28 +274,28 @@ def predictAll(mass, uncertainty, initIndex):
 
 def parseFormula(formula):
   # calculate elemental ratios
-  formulaList = re.findall('[A-Z][a-z]?|[0-9]+', formula)
-  elementCount = {}
+  formula_list = re.findall('[A-Z][a-z]?|[0-9]+', formula)
+  element_count = {}
   hc = float()
   oc = float()
   nc = float()
   i = 0;
-  while i < len(formulaList):
+  while i < len(formula_list):
     # create keys
-    if formulaList[i] not in elementCount:
-      elementCount[formulaList[i]] = 0
+    if formula_list[i] not in element_count:
+      element_count[formula_list[i]] = 0
     # if there is only one of this element
-    if i+1 == len(formulaList) or formulaList[i+1].isalpha():
-      elementCount[formulaList[i]] += 1
+    if i+1 == len(formula_list) or formula_list[i+1].isalpha():
+      element_count[formula_list[i]] += 1
     else:
-      elementCount[formulaList[i]] += int(formulaList[i+1])
+      element_count[formula_list[i]] += int(formula_list[i+1])
       i+=1
     i+=1
-  if 'C' in elementCount:
-    if 'H' in elementCount : hc = elementCount['H']/float(elementCount['C'])
-    if 'O' in elementCount : oc = elementCount['O']/float(elementCount['C'])
-    if 'N' in elementCount : nc = elementCount['N']/float(elementCount['C'])
-  return elementCount, hc, oc, nc
+  if 'C' in element_count:
+    if 'H' in element_count : hc = element_count['H']/float(element_count['C'])
+    if 'O' in element_count : oc = element_count['O']/float(element_count['C'])
+    if 'N' in element_count : nc = element_count['N']/float(element_count['C'])
+  return element_count, hc, oc, nc
 
 
 def featurePrediction(feature):
@@ -286,7 +317,7 @@ def featurePrediction(feature):
   By default, features with multiple predictions are thrown out unless the
   --alternate flag is set. Alternate matches are sorted by absolute delta.
 
-  For each match an elementCount dictionary is parsed and elemental ratios are
+  For each match an element_count dictionary is parsed and elemental ratios are
   calculated.
 
   Prediction objects are made for each match and added to the features
@@ -298,18 +329,18 @@ def featurePrediction(feature):
     mass = adjust(feature.mz, feature.polarity, feature.charge)
   # mass error in parts per million
   uncertainty = mass * MASS_ERROR / 1e6
-  initIndex = predict(mass, uncertainty, 0, MAX_MASS_INDEX) 
-  if initIndex != -1:
-    matches = predictAll(mass, uncertainty, initIndex)
+  init_index = predict(mass, uncertainty, 0, MAX_MASS_INDEX) 
+  if init_index != -1:
+    matches = predictAll(mass, uncertainty, init_index)
     # remove feature if multiple predictions are made and --alternate not set
     if not ALTERNATE and len(matches) > 1:
       return
     for m in matches:
       delta = mass - MASS[m] # check with Stephen
       formula = FORMULA[m]
-      elementCount, hc, oc, nc = parseFormula(formula)
+      element_count, hc, oc, nc = parseFormula(formula)
       feature.predictions.append(Prediction(MASS[m], formula, delta,\
-                                 elementCount, hc, oc, nc))
+                                 element_count, hc, oc, nc))
     # sort alternate matches by lowest absolute delta
     if not ALTERNATE and len(matches) > 1:
       feature.predictions.sort(key=lambda m: abs(m.delta))
@@ -319,11 +350,12 @@ def featurePrediction(feature):
     return
  
 # write output file
-def write(predictedFeatures):
+def write(predicted_list):
   json = ''
   try: 
-    with open(OUTPUT+'.tsv', 'w') as tsvFile:
+    with open(OUTPUT+'.tsv', 'w') as tsv_file:
       tabularHeader = "sample_id\t\
+                       variable_id\t\
                        polarity\t\
                        mz\t\
                        rt\t\
@@ -337,10 +369,11 @@ def write(predictedFeatures):
                        predicted_nc\n"
       if ALTERNATE:
         tabularHeader = tabularHeader[:-1]+"\talternate_predictions\n"
-      tsvFile.writelines(tabularHeader)
-      for f in predictedFeatures:
+      tsv_file.writelines(tabularHeader)
+      for f in predicted_list:
         p = f.predictions[0]
-        tsvRow = f.sample_id+'\t'+\
+        tsv_row = f.sample_id+'\t'+\
+                 f.variable_id+'\t'+\
                  f.polarity+'\t'+\
                  str(f.mz)+'\t'+\
                  str(f.rt)+'\t'+\
@@ -348,11 +381,12 @@ def write(predictedFeatures):
                  str(p.mass)+'\t'+\
                  str(p.delta)+'\t'+\
                  p.formula+'\t'+\
-                 str(p.elementCount)+'\t'+\
+                 str(p.element_count)+'\t'+\
                  str(p.hc)+'\t'+\
                  str(p.oc)+'\t'+\
                  str(p.nc)+'\n'
-        jsonElement = "{\n  \"sample_id\": \""+f.sample_id+\
+        json_element = "{\n  \"sample_id\": \""+f.sample_id+\
+                "\",\n  \"variable_id\": \""+f.variable_id+\
                 "\",\n  \"polarity\": \""+f.polarity+\
                 "\",\n  \"mz\": "+str(f.mz)+\
                 ",\n  \"rt\": "+str(f.rt)+\
@@ -360,27 +394,27 @@ def write(predictedFeatures):
                 ",\n  \"prediction\": {\n    \"mass\": "+str(p.mass)+\
                 ",\n    \"delta\": \""+str(p.delta)+\
                 ",\n    \"formula\": \""+p.formula+\
-                "\",\n    \"element_count\": \""+str(p.elementCount)+\
+                "\",\n    \"element_count\": \""+str(p.element_count)+\
                 "\",\n    \"hc\": "+str(p.hc)+\
                 ",\n    \"oc\": "+str(p.oc)+\
                 ",\n    \"nc\": "+str(p.nc)+"\n  }\n},\n"
         if ALTERNATE and len(f.predictions) > 1:
-          tsvAppend = []
-          jsonAppend = str()
+          tsv_append = []
+          json_append = str()
           for a in f.predictions[1:]:
-            tsvAppend.append((a.mass, a.formula, a.delta))
-            jsonAppend += "     {\n       \"mass\": "+str(a.mass)+\
+            tsv_append.append((a.mass, a.formula, a.delta))
+            json_append += "     {\n       \"mass\": "+str(a.mass)+\
                 ",\n       \"delta\": \""+str(a.delta)+\
                 ",\n       \"formula\": \""+a.formula+\
-                "\",\n       \"element_count\": \""+str(a.elementCount)+\
+                "\",\n       \"element_count\": \""+str(a.element_count)+\
                 "\",\n       \"hc\": "+str(a.hc)+\
                 ",\n       \"oc\": "+str(a.oc)+\
                 ",\n       \"nc\": "+str(a.nc)+"\n     },\n"
-          tsvRow = tsvRow[:-1]+'\t'+str(tsvAppend)+'\n'
-          jsonElement = jsonElement[:-4]+",\n  \"alternate_predictions\": [\n"\
-                        +jsonAppend[:-2]+"\n  ]\n},\n"
-        tsvFile.writelines(tsvRow)
-        json += jsonElement
+          tsv_row = tsv_row[:-1]+'\t'+str(tsv_append)+'\n'
+          json_element = json_element[:-4]+",\n  \"alternate_predictions\": [\n"\
+                        +json_append[:-2]+"\n  ]\n},\n"
+        tsv_file.writelines(tsv_row)
+        json += json_element
     json = json[:-2] # remove final comma # [:-1] ??
   except IOError as error:
     print('IOError while writing tabular output: %s' % error.strerror)
@@ -401,8 +435,8 @@ def write(predictedFeatures):
       print('IOError while writing JSON output: %s' % error.strerror)
 
 # main
-predictedFeatures = map(featurePrediction, featureList)
-predictedFeatures = [x for x in predictedFeatures if x is not None]
+predicted_list = map(featurePrediction, feature_list)
+predicted_list = [x for x in predicted_list if x is not None]
 # sort by intensity so that D3 draws largest symbols first
-predictedFeatures.sort(key=lambda x: x.intensity, reverse=True)
-write(predictedFeatures)
+predicted_list.sort(key=lambda x: x.intensity, reverse=True)
+write(predicted_list)
