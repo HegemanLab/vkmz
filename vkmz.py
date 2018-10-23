@@ -38,14 +38,14 @@ class Feature(object):
 
 class Prediction(object):
   '''Prediction Class'''
-  def __init__(self, mass, formula, delta, elementCount, hc, nc, oc):
+  def __init__(self, mass, formula, delta, elementCount, hc, oc, nc):
     self.formula = formula
     self.mass = mass
     self.delta = delta
-    self.elementCount = {}
-    self.hc = float()
-    self.nc = float()
-    self.oc = float()
+    self.elementCount = elementCount
+    self.hc = hc
+    self.oc = oc
+    self.nc = nc
 
 # input constants
 MODE = getattr(args, "mode")
@@ -286,8 +286,8 @@ def featurePrediction(feature):
   By default, features with multiple predictions are thrown out unless the
   --alternate flag is set. Alternate matches are sorted by absolute delta.
 
-  For each match an elementCount dictionary is parsed and elemental ratios for
-  H:C, O:C, and N:C are calculated.
+  For each match an elementCount dictionary is parsed and elemental ratios are
+  calculated.
 
   Prediction objects are made for each match and added to the features
   predictions list before returning the feature object.
@@ -377,7 +377,8 @@ def write(predictedFeatures):
                 ",\n       \"oc\": "+str(a.oc)+\
                 ",\n       \"nc\": "+str(a.nc)+"\n     },\n"
           tsvRow = tsvRow[:-1]+'\t'+str(tsvAppend)+'\n'
-          jsonElement = jsonElement[:-4]+",\n  \"alternate_predictions\": [\n"+jsonAppend[:-2]+"\n  ]\n},\n"
+          jsonElement = jsonElement[:-4]+",\n  \"alternate_predictions\": [\n"\
+                        +jsonAppend[:-2]+"\n  ]\n},\n"
         tsvFile.writelines(tsvRow)
         json += jsonElement
     json = json[:-2] # remove final comma # [:-1] ??
@@ -387,10 +388,11 @@ def write(predictedFeatures):
     with open(DIRECTORY+'d3.html','r',encoding='utf-8') as htmlTemplate,\
          open(OUTPUT+'.html','w',encoding='utf-8') as htmlFile:
       for line in htmlTemplate:
-        line = re.sub('^var data.*$', 'var data = ['+json+']', line, flags=re.M)
+        line = re.sub('^var data.*$','var data = ['+json+']',line,flags=re.M)
         htmlFile.write(line)
   except IOError as error:
-    print('IOError while writing HTML output or reading HTML template: %s' % error.strerror)
+    print('IOError while writing HTML output or reading HTML template: %s'\
+          % error.strerror)
   if JSON:
     try: 
       with open(OUTPUT+'.json','w') as jsonFile:
