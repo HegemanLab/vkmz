@@ -4,6 +4,7 @@ import argparse
 import csv
 import math
 import re
+import sqlite3
 
 parser = argparse.ArgumentParser()
 inputSubparser = parser.add_subparsers(help='Select mode:', dest='mode')
@@ -17,7 +18,7 @@ for inputSubparser in [parse_tabular, parse_xcms]:
   inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
   inputSubparser.add_argument('--json',     '-j', action='store_true', help='Set JSON flag to save JSON output.')
   inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
-  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tabular', help='Define database of known fomrula-mass pairs.')
+  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Define database of known fomrula-mass pairs.')
   inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define tool directory path. Defaults to relative path.')
   inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
   inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
@@ -391,7 +392,7 @@ def write(samples):
         tabularHeader = tabularHeader[:-1]+"\talternate_predictions\n"
       tabular_file.writelines(tabularHeader)
       for s in samples.values():
-        for sf in sample.sample_features:
+        for sf in s.sample_features:
           f = sf.feature
           p = f.predictions[0]
           tabular_row = s.name+'\t'+\
@@ -455,7 +456,77 @@ def write(samples):
         jsonFile.write(json)
     except IOError as error:
       print('IOError while writing JSON output: %s' % error.strerror)
-
+  if True: # sql output
+    #con = sqlite3.connect(OUTPUT+'.db')
+    con = sqlite3.connect(':memory:')
+    c = con.cursor()
+    c.execute('''
+      CREATE TABLE Sample (
+        Id INTEGER PRIMARY KEY,
+        Name TEXT
+      )
+      ''')
+    c.execute('''
+      CREATE TABLE Feature (
+        Id INTEGER PRIMARY KEY,
+        Name TEXT,
+        Polarity TEXT,
+        Mz REAL,
+        Rt REAL,
+        Predictions INTEGER,
+        SampleIds INTEGER,
+        FOREIGN KEY(SampleIds) REFERENCES Sample(Id)
+      )
+      ''')
+    # Feature(Predictions) needs to be a set of ints
+    # Feature(SamplesId) needs to be a set of ints
+    # Should Feature(Polarity) be a bool or int?
+    # Add optional `Charge` column
+    c.execute('''
+      CREATE TABLE Prediction (
+        Id INTEGER PRIMARY KEY,
+        Formula TEXT,
+        Mass TEXT,
+        Delta REAL,
+        ElementCount TEXT,
+        Hc REAL,
+        Oc REAL,
+        Nc REAL,
+        FeatureId INTEGER,
+        FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
+      )
+      ''')
+    c.execute('''
+      CREATE TABLE SampleFeature (
+        Id BIGINTEGER PRIMARY KEY,
+        Intensity REAL,
+        SampleId INTEGER,
+        FeatureId INTEGER,
+        FOREIGN KEY(SampleId) REFERENCES Sample(Id),
+        FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
+      )
+      ''')
+    # implement this sort of for loop in samples.items() above
+    for sample_name, s in samples.items():
+      # make samples  
+      print(sample_name, type(sample_name))
+      print((sample_name,), type((sample_name,)))
+      c.execute('INSERT INTO Sample(Name) VALUES (?)', (Name: s.name,))
+      #c.execute('INSERT INTO Sample(Name) VALUES (?)', (sample_name,))
+    for feature_name, f in features.items():
+      # make features
+      for p in f.predictions:
+#        c.execute('INSERT INTO Sample(Name) VALUES (?)', (
+#            formula = formula.p))
+        # make features
+        pass
+    for sf in s.sample_features:
+       # make SampleFeatures
+       pass
+    con.commit()
+    for row in c.execute('SELECT * from Sample'):
+      print(row)
+    con.close()
 # main
 if MODE == "tabular":
   tabular_file = getattr(args, "input")
@@ -479,3 +550,5 @@ for sample in samples.values():
 # removed after object implementation
 #predicted_list.sort(key=lambda x: x.intensity, reverse=True)
 write(samples)
+
+
