@@ -15,25 +15,34 @@ parse_xcms.add_argument('--data-matrix', '-xd', required=True, nargs='?', type=s
 parse_xcms.add_argument('--sample-metadata', '-xs', required=True, nargs='?', type=str, help='Path to XCMS sample metadata file.')
 parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', type=str, help='Path to XCMS variable metadata file.')
 for inputSubparser in [parse_tabular, parse_xcms]:
-  inputSubparser.add_argument('--output',   '-o', nargs='?', type=str, required=True, help='Specify output file path.')
-  inputSubparser.add_argument('--json',     '-j', action='store_true', help='Set JSON flag to save JSON output.')
-  inputSubparser.add_argument('--error',    '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
+  inputSubparser.add_argument('--output', '-o', nargs='?', type=str, required=True, help='Specify output file path.')
+  inputSubparser.add_argument('--json', '-j', action='store_true', help='Set JSON flag to save JSON output.')
+  inputSubparser.add_argument('--sql', '-s', action='store_true', help='Set SQL flag to save SQL output.')
+  inputSubparser.add_argument('--metadata', '-m', action='store_true', help='Set metadata flag to save the tools metadata.')
+  inputSubparser.add_argument('--error', '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
   inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Define database of known fomrula-mass pairs.')
-  inputSubparser.add_argument('--directory','-dir', nargs='?', default='', type=str, help='Define tool directory path. Defaults to relative path.')
-  inputSubparser.add_argument('--polarity', '-p', choices=['positive','negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
-  inputSubparser.add_argument('--neutral',  '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
-  inputSubparser.add_argument('--alternate','-a', action='store_true', help='Set flag to keep features with multiple predictions.')
-  inputSubparser.add_argument('--charge','-c', action='store_true', help='Set flag if input data contains charge.')
+  inputSubparser.add_argument('--directory', '-dir', nargs='?', default='', type=str, help='Define tool directory path. Defaults to relative path.')
+  inputSubparser.add_argument('--polarity', '-p', choices=['positive', 'negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
+  inputSubparser.add_argument('--neutral', '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
+  inputSubparser.add_argument('--alternate', '-a', action='store_true', help='Set flag to keep features with multiple predictions.')
+  inputSubparser.add_argument('--charge', '-c', action='store_true', help='Set flag if input data contains charge.')
 args = parser.parse_args()
 
 class Sample(object):
-  '''Sample Class'''
+  '''Sample Class
+
+  Represents a single sample injection on a LC-MS. Stores the sample's name and
+  a list of SampleFeatureIntensity objects belonging to the sample.
+  '''
   def __init__(self, name):
     self.name = name
-    self.sample_features = []
+    self.sample_feature_intensities = []
 
-class SampleFeature(object):
-  '''SampleFeature Class'''
+class SampleFeatureIntensity(object):
+  '''SampleFeatureIntensity Class
+
+  Represents a feature's intensity from a single Sample.
+  '''
   def __init__(self, intensity, feature):
     self.intensity = intensity
     self.feature = feature
@@ -41,9 +50,12 @@ class SampleFeature(object):
 class Feature(object):
   '''Feature Class
 
-     CAUTION: a charge of one is assumed if not specified with --charge
+  Represents a feature from LC-MS data.
+
+  WARNING: If a feature's charge is not specified in the input data a charge of
+  1 is assumed to make predictions.
   '''
-  def __init__(self, name, samples, polarity, mz, rt, charge = 1):
+  def __init__(self, name, samples, polarity, mz, rt, charge = None):
     self.name = name
     self.samples = [samples]
     self.polarity = polarity
@@ -53,7 +65,12 @@ class Feature(object):
     self.charge = charge
 
 class Prediction(object):
-  '''Prediction Class'''
+  '''Prediction Class
+
+  Represents a prediction based on a given feature's mass, polarity and charge.
+
+  element_count is a dictionary of the formula with elemental symbols as keys.
+  '''
   def __init__(self, mass, formula, delta, element_count, hc, oc, nc):
     self.formula = formula
     self.mass = mass
@@ -64,59 +81,85 @@ class Prediction(object):
     self.nc = nc
 
 # parameter constants
-MODE = getattr(args, "mode")
-OUTPUT = getattr(args, "output")
-JSON = getattr(args, "json")
-# using charge not yet implemented
-CHARGE = getattr(args, "charge")
+MODE = getattr(args, 'mode')
+MASS_ERROR = getattr(args, 'error')
+OUTPUT = getattr(args, 'output')
+JSON = getattr(args, 'json')
+SQL = getattr(args, 'sql')
+POLARITY = getattr(args, 'polarity')
+ALTERNATE = getattr(args, 'alternate')
+NEUTRAL = getattr(args, 'neutral')
+DATABASE = getattr(args, 'database')
+DIRECTORY = getattr(args, 'directory')
+
+# DEV NOTE
+# parameter constants not fully implemented
+CHARGE = getattr(args, 'charge')
+METADATA = getattr(args, 'metadata')
+
+# generated constants
+# MASS and FORMULA are used as indexable key-value pairs
+MASS = []
+FORMULA = []
+try:
+  with open(DIRECTORY+DATABASE, 'r') as tabular:
+    next(tabular)
+    for row in tabular:
+      mass, formula = row.split()
+      MASS.append(float(mass))
+      FORMULA.append(formula)
+except ValueError:
+  print('The %s database could not be loaded.' % DATABASE)
+MAX_MASS_INDEX = len(MASS)-1
 
 def polaritySanitizer(polarity: str):
-  """Sanitize input polarity values.
+  '''Sanitize input polarity values.
 
   Renames the, case-insensitive, values 'positive', 'pos', or '+' to 'positive'
   and 'negative', 'neg', or '-' to 'negative'.
 
   Errors on unrecognized polarity value.
-  """
-  if polarity.lower() in ['positive','pos','+']:
+  '''
+  if polarity.lower() in ['positive', 'pos', '+']:
     polarity = 'positive'
   elif polarity.lower() in ['negative', 'neg', '-']:
     polarity = 'negative'
   else:
-    raise ValueError("%s is an unknown polarity type." % polarity)
+    raise ValueError('%s is an unknown polarity type.' % polarity)
   return polarity
 
 def readTabular(tabular_file):
-  """Read a tabular file and create objects.
+  '''Read a tabular file and create objects.
 
   Reads columns named "sample_name", "polarity", "mz", "rt", "intensity", and
-  optionally "charge" to create Sample, SampleFeature, and Feature objects.
+  optionally "charge" to create Sample, SampleFeatureIntensity, and Feature
+  objects.
 
   Results in two dictionaries which are name-object pairs for samples and
   objects.
 
   Should check for feature name in tabular.
-  """
+  '''
   samples = {}
   features = {}
   try:
     with open(tabular_file, 'r') as f:
       tabular_data = csv.reader(f, delimiter='\t')
       header = next(tabular_data)
-      sample_name_index = header.index("sample_name")
-      polarity_index = header.index("polarity")
-      mz_index = header.index("mz")
-      rt_index = header.index("rt")
-      intensity_index = header.index("intensity")
+      sample_name_index = header.index('sample_name')
+      polarity_index = header.index('polarity')
+      mz_index = header.index('mz')
+      rt_index = header.index('rt')
+      intensity_index = header.index('intensity')
       if CHARGE:
-        charge_index = header.index("charge")
+        charge_index = header.index('charge')
       for row in tabular_data:
         sample_name = row[sample_name_index]
         polarity = polaritySanitizer(row[polarity_index])
         mz = float(row[mz_index])
         rt = float(row[rt_index])
         intensity = float(row[intensity_index])
-        feature_name = polarity+'-'+str(rt)+'-'+str(mz)
+        feature_name = polarity + '-' + str(rt) + '-' + str(mz)
         if sample_name not in samples:
           samples[sample_name] = Sample(sample_name)
         if feature_name not in features:
@@ -128,14 +171,16 @@ def readTabular(tabular_file):
         # CHARGE untested
         if CHARGE:
           feature.charge = row[charge_index]
-        samples[sample_name].sample_features.append(SampleFeature(intensity,
-                                                                  feature))
+        samples[sample_name].sample_feature_intensities.append(
+                                              SampleFeatureIntensity(intensity,
+                                                                     feature)
+                                                             )
   except IOError:
     print('Error while reading %s.' % tabular_file)
   return samples, features
 
 def readXcmsTabular(sample_file, variable_file, matrix_file):
-  """Read W4M's XCMS tabular files and return a list of features.
+  '''Read W4M's XCMS tabular files and return a list of features.
 
   Reads sample metadata to create a dictionary of sample ids keys with,
   sanitized, polarity values.
@@ -144,13 +189,13 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
   and either mass to charge or retention time as values.
 
   Finally, read data matrix and create all Feature objects and append to list.
-  """
+  '''
   samples = {}
   features = {}
   # extract sample polarities
   try:
     polarity = {}
-    with open(sample_file,'r') as f:
+    with open(sample_file, 'r') as f:
       sample_data = csv.reader(f, delimiter='\t')
       next(sample_data) # skip header
       for row in sample_data:
@@ -166,19 +211,19 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
     mz_rt = {}
     mz_index = int()
     rt_index = int()
-    with open(variable_file,'r') as f:
-      variable_data = csv.reader(f, delimiter='\t')
+    with open(variable_file, 'r') as f:
+      variable_data = csv.reader(f, delimiter = '\t')
       header = next(variable_data)
-      mz_index = header.index("mz")
-      rt_index = header.index("rt")
+      mz_index = header.index('mz')
+      rt_index = header.index('rt')
       for row in variable_data:
         mz_rt[row[0]] = (float(row[mz_index]), float(row[rt_index]))
   except IOError:
     print('Error while reading the XCMS tabular file %s.' % variable_file)
   # extract intensity and build Feature objects
   try:
-    with open(matrix_file,'r') as f:
-      matrix_data = csv.reader(f, delimiter='\t')
+    with open(matrix_file, 'r') as f:
+      matrix_data = csv.reader(f, delimiter = '\t')
       header = next(matrix_data) # list of samples
       # remove empty columns
       # check w/ fresh input
@@ -190,7 +235,7 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
         i = 1
         while(i < len(row)):
           intensity = row[i] # keep type string for test
-          if intensity not in {"NA", "#DIV/0!", '0'}:
+          if intensity not in {'NA', '#DIV/0!', '0'}:
             sample_name = header[i]
             if sample_name not in samples:
               samples[sample_name] = Sample(sample_name)
@@ -200,47 +245,35 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
               feature_rt = mz_rt[feature_name][1]
               intensity = float(intensity)
               feature = Feature(feature_name, sample_name, feature_polarity,
-                                feature_mz, feature_rt)
+                                feature_mz, feature_rt
+                               )
               features[feature_name] = feature
             else:
               feature = features[feature_name]
               feature.samples.append(sample_name)
-            samples[sample_name].sample_features.append(SampleFeature\
-                                                         (intensity, feature))
+            samples[sample_name].sample_feature_intensities.append(
+                                     SampleFeatureIntensity(intensity, feature)
+                                                                 )
           i+=1
   except IOError:
     print('Error while reading the XCMS tabular file %s.' % matrix_file)
   return samples, features
 
-POLARITY = getattr(args, "polarity")
-# store or generate remaining constants
-MASS_ERROR = getattr(args, "error")
-ALTERNATE = getattr(args, "alternate")
-NEUTRAL = getattr(args, "neutral")
-DATABASE = getattr(args, "database")
-DIRECTORY = getattr(args, "directory")
-MASS = []
-FORMULA = []
-try:
-  with open(DIRECTORY+DATABASE, 'r') as tabular:
-    next(tabular)
-    for row in tabular:
-      mass, formula = row.split()
-      MASS.append(float(mass))
-      FORMULA.append(formula)
-except ValueError:
-  print('The %s database could not be loaded.' % DATABASE)
-MAX_MASS_INDEX = len(MASS)-1
-
 def adjust(mass, polarity, charge):
-  """
+  '''
   Adjust a charged mass to a neutral mass.
 
   Mass of an electrons (1.007276) is multiplied from the charge and subtracted
   from positively charged ions and added to negatively charged ions.
-  """
+
+  WARNING: If a feature's charge is not specified in the input data a charge of
+  1 is assumed.
+  '''
   # value to adjust by
   proton = 1.007276
+  # if charge is not given, assume 1
+  if charge == None:
+    charge = 1
   if polarity == 'positive':
     mass -= (proton * charge)
   else: # sanitized to negative
@@ -248,13 +281,13 @@ def adjust(mass, polarity, charge):
   return mass
 
 def predict(mass, uncertainty, left, right):
-  """Search for a matching mass within the known-mass list.
+  '''Search for a matching mass within the known-mass list.
 
   Uses binary search to match a given mass to a known mass within a given
   uncertainty. Upon match returns known mass index.
 
   If no match is made returns -1.
-  """
+  '''
   mid = int(((right - left) / 2) + left)
   if left <= mid <= right and mid <= MAX_MASS_INDEX:
     delta = mass - MASS[mid]
@@ -267,15 +300,15 @@ def predict(mass, uncertainty, left, right):
   return -1
 
 def predictAll(mass, uncertainty, init_index):
-  """Search for all matching masses within the known-mass list.
+  '''Search for all matching masses within the known-mass list.
 
   Checks adjacent indexes from a given index of known-masses which are within a
   given uncertinty of a given mass.
-  """
+  '''
   matches = [init_index]
   i = 0
-  while init_index+i+1 <= MAX_MASS_INDEX:
-    m = init_index+i+1
+  while init_index + i + 1 <= MAX_MASS_INDEX:
+    m = init_index + i + 1
     delta = mass - MASS[m]
     if uncertainty >= abs(delta):
       matches.append(m)
@@ -283,8 +316,8 @@ def predictAll(mass, uncertainty, init_index):
     else:
       break
   i = 0
-  while init_index+i-1 >= 0:
-    m = init_index+i-1
+  while init_index + i - 1 >= 0:
+    m = init_index + i - 1
     delta = float(MASS[m]) - mass
     if uncertainty >= abs(delta):
       matches.append(m)
@@ -309,18 +342,17 @@ def parseFormula(formula):
     if i+1 == len(formula_list) or formula_list[i+1].isalpha():
       element_count[formula_list[i]] += 1
     else:
-      element_count[formula_list[i]] += int(formula_list[i+1])
-      i+=1
-    i+=1
+      element_count[formula_list[i]] += int(formula_list[i + 1])
+      i += 1
+    i += 1
   if 'C' in element_count:
     if 'H' in element_count : hc = element_count['H']/float(element_count['C'])
     if 'O' in element_count : oc = element_count['O']/float(element_count['C'])
     if 'N' in element_count : nc = element_count['N']/float(element_count['C'])
   return element_count, hc, oc, nc
 
-
 def featurePrediction(feature):
-  """Make predictions for a feature.
+  '''Make predictions for a feature.
 
   Reads a Feature as input and, if possible, returns it with a list of
   Prediction objects.
@@ -343,12 +375,12 @@ def featurePrediction(feature):
 
   Prediction objects are made for each match and added to the features
   predictions list before returning the feature object.
-  """
+  '''
   if NEUTRAL:
     mass = feature.mz
   else:
     mass = adjust(feature.mz, feature.polarity, feature.charge)
-  # mass error in parts per million
+  # uncertainty is the mass error in parts per million
   uncertainty = mass * MASS_ERROR / 1e6
   init_index = predict(mass, uncertainty, 0, MAX_MASS_INDEX) 
   if init_index != -1:
@@ -361,7 +393,8 @@ def featurePrediction(feature):
       formula = FORMULA[m]
       element_count, hc, oc, nc = parseFormula(formula)
       feature.predictions.append(Prediction(MASS[m], formula, delta,\
-                                 element_count, hc, oc, nc))
+                                 element_count, hc, oc, nc)
+                                )
     # sort alternate matches by lowest absolute delta
     if not ALTERNATE and len(matches) > 1:
       feature.predictions.sort(key=lambda m: abs(m.delta))
@@ -374,91 +407,102 @@ def featurePrediction(feature):
 def write(samples):
   json = ''
   try: 
-    with open(OUTPUT+'.tabular', 'w') as tabular_file:
-      tabularHeader = "sample_name\t\
-                       variable_id\t\
-                       polarity\t\
-                       mz\t\
-                       rt\t\
-                       intensity\t\
-                       predicted_mass\t\
-                       predicted_delta\t\
-                       predicted_formula\t\
-                       predicted_element_count\t\
-                       predicted_hc\t\
-                       predicted_oc\t\
-                       predicted_nc\n"
+    with open(OUTPUT + '.tabular', 'w') as tabular_file:
+      tabularHeader = ('sample_name\t'
+                       'feature_name\t'
+                       'polarity\t'
+                       'mz\t'
+                       'rt\t'
+                       'intensity\t'
+                       'predicted_mass\t'
+                       'predicted_delta\t'
+                       'predicted_formula\t'
+                       'predicted_element_count\t'
+                       'predicted_hc\t'
+                       'predicted_oc\t'
+                       'predicted_nc\n'
+                      )
       if ALTERNATE:
-        tabularHeader = tabularHeader[:-1]+"\talternate_predictions\n"
+        tabularHeader = tabularHeader[:-1] + '\talternate_predictions\n'
       tabular_file.writelines(tabularHeader)
       for s in samples.values():
-        for sf in s.sample_features:
-          f = sf.feature
+        for sfi in s.sample_feature_intensities:
+          f = sfi.feature
           p = f.predictions[0]
-          tabular_row = s.name+'\t'+\
-                    f.name+'\t'+\
-                    f.polarity+'\t'+\
-                    str(f.mz)+'\t'+\
-                    str(f.rt)+'\t'+\
-                    str(sf.intensity)+'\t'+\
-                    str(p.mass)+'\t'+\
-                    str(p.delta)+'\t'+\
-                    p.formula+'\t'+\
-                    str(p.element_count)+'\t'+\
-                    str(p.hc)+'\t'+\
-                    str(p.oc)+'\t'+\
-                    str(p.nc)+'\n'
-          json_element = "{\n  \"sample_name\": \""+s.name+\
-                    "\",\n  \"variable_id\": \""+f.name+\
-                    "\",\n  \"polarity\": \""+f.polarity+\
-                    "\",\n  \"mz\": "+str(f.mz)+\
-                    ",\n  \"rt\": "+str(f.rt)+\
-                    ",\n  \"intensity\": "+ str(sf.intensity)+\
-                    ",\n  \"prediction\": {\n    \"mass\": "+str(p.mass)+\
-                    ",\n    \"delta\": \""+str(p.delta)+\
-                    ",\n    \"formula\": \""+p.formula+\
-                    "\",\n    \"element_count\": \""+str(p.element_count)+\
-                    "\",\n    \"hc\": "+str(p.hc)+\
-                    ",\n    \"oc\": "+str(p.oc)+\
-                    ",\n    \"nc\": "+str(p.nc)+"\n  }\n},\n"
+          tabular_row = (f'{f.name}\t{f.polarity}\t{f.mz}\t{f.rt}\t'
+                         f'{sfi.intensity}\t{p.mass}\t{p.delta}\t'
+                         f'{p.formula}\t{p.element_count}\t{p.hc}\t'
+                         f'{p.oc}\t{p.nc}\n'
+                        )
+          json_element = (f'{{\n'
+                          f'  "sample_name": "{s.name}",\n'
+                          f'  "feature_name": "{f.name}",\n'
+                          f'  "polarity": "{f.polarity}",\n'
+                          f'  "mz": {f.mz},\n'
+                          f'  "rt": {f.rt},\n'
+                          f'  "intensity": {sfi.intensity},\n'
+                          f'  "prediction": {{\n'
+                          f'    "mass": {p.mass},\n'
+                          f'    "delta": {p.delta},\n'
+                          f'    "formula": "{p.formula}",\n'
+                          f'    "element_count": "{p.element_count}",\n'
+                          f'    "hc": {p.hc},\n'
+                          f'    "oc": {p.oc},\n'
+                          f'    "nc": {p.nc}\n'
+                          f'  }}\n'
+                          f'}},\n'
+                         )
           if ALTERNATE and len(f.predictions) > 1:
             tabular_append = []
             json_append = str()
             for a in f.predictions[1:]:
               tabular_append.append((a.mass, a.formula, a.delta))
-              json_append += "     {\n       \"mass\": "+str(a.mass)+\
-                  ",\n       \"delta\": \""+str(a.delta)+\
-                  ",\n       \"formula\": \""+a.formula+\
-                  "\",\n       \"element_count\": \""+str(a.element_count)+\
-                  "\",\n       \"hc\": "+str(a.hc)+\
-                  ",\n       \"oc\": "+str(a.oc)+\
-                  ",\n       \"nc\": "+str(a.nc)+"\n     },\n"
-            tabular_row = tabular_row[:-1]+'\t'+str(tabular_append)+'\n'
-            json_element = json_element[:-4]+ ",\n  \"alternate_predictions\"\
-                             : [\n"+json_append[:-2]+"\n  ]\n},\n"
+              json_append += (f'    {{\n'
+                              f'      "mass": {a.mass},\n'
+                              f'      "delta": {a.delta},\n'
+                              f'      "formula": "{a.formula}",\n'
+                              f'      "element_count": "{a.element_count}",\n'
+                              f'      "hc": {a.hc},\n'
+                              f'      "oc": {a.oc},\n'
+                              f'      "nc": {a.nc}\n'
+                              f'    }},\n'
+                             )
+            tabular_row = tabular_row[:-1] + '\t' + str(tabular_append) + '\n'
+            json_element = json_element[:-4] + ',\n  "alternate_predictions"'+ \
+                           ': [\n' + json_append[:-2] + '\n  ]\n},\n'
           tabular_file.writelines(tabular_row)
           json += json_element
     json = json[:-2] # remove final comma # [:-1] ??
   except IOError as error:
     print('IOError while writing tabular output: %s' % error.strerror)
   try: 
-    with open(DIRECTORY+'d3.html','r',encoding='utf-8') as htmlTemplate,\
-         open(OUTPUT+'.html','w',encoding='utf-8') as htmlFile:
+    with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as htmlTemplate,\
+         open(OUTPUT+'.html', 'w', encoding='utf-8') as htmlFile:
       for line in htmlTemplate:
-        line = re.sub('^var data.*$','var data = ['+json+']',line,flags=re.M)
+        line = re.sub('^var data.*$','var data = ['+json+']', line, flags=re.M)
         htmlFile.write(line)
   except IOError as error:
     print('IOError while writing HTML output or reading HTML template: %s'\
           % error.strerror)
+  if METADATA:
+    try: 
+      with open(OUTPUT + '_metadata.tabular', 'w') as metadataFile:
+        metadata = (f'Mode\tMass\tOutput\tJSON\tSQL\tPolarity\t'
+                    f'Neutral\tDatabase\tDirectory\tCharge\n'
+                    f'{MODE}\t{MASS_ERROR}\t{OUTPUT}\t{SQL}\t{POLARITY}\t'
+                    f'{NEUTRAL}\t{DATABASE}\t{DIRECTORY}\t{CHARGE}\n'
+                   )
+        metadataFile.write(metadata)
+    except IOError as error:
+      print('IOError while writing metadata output: %s' % error.strerror)
   if JSON:
     try: 
-      with open(OUTPUT+'.json','w') as jsonFile:
+      with open(OUTPUT + '.json', 'w') as jsonFile:
         jsonFile.write(json)
     except IOError as error:
       print('IOError while writing JSON output: %s' % error.strerror)
-  if True: # sql output
-    #con = sqlite3.connect(OUTPUT+'.db')
-    con = sqlite3.connect(':memory:')
+  if SQL:
+    con = sqlite3.connect(OUTPUT + '.db')
     c = con.cursor()
     c.execute('''
       CREATE TABLE Sample (
@@ -473,18 +517,12 @@ def write(samples):
         Polarity TEXT,
         Mz REAL,
         Rt REAL,
-        Predictions INTEGER,
-        SampleIds INTEGER,
-        FOREIGN KEY(SampleIds) REFERENCES Sample(Id)
+        Charge INTEGER
       )
       ''')
-    # Feature(Predictions) needs to be a set of ints
-    # Feature(SamplesId) needs to be a set of ints
-    # Should Feature(Polarity) be a bool or int?
-    # Add optional `Charge` column
     c.execute('''
       CREATE TABLE Prediction (
-        Id INTEGER PRIMARY KEY,
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
         Formula TEXT,
         Mass TEXT,
         Delta REAL,
@@ -497,8 +535,8 @@ def write(samples):
       )
       ''')
     c.execute('''
-      CREATE TABLE SampleFeature (
-        Id BIGINTEGER PRIMARY KEY,
+      CREATE TABLE SampleFeatureIntensity (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
         Intensity REAL,
         SampleId INTEGER,
         FeatureId INTEGER,
@@ -506,27 +544,70 @@ def write(samples):
         FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
       )
       ''')
-    # implement this sort of for loop in samples.items() above
-    for sample_name, s in samples.items():
-      # make samples  
-      print(sample_name, type(sample_name))
-      print((sample_name,), type((sample_name,)))
-      c.execute('INSERT INTO Sample(Name) VALUES (?)', (Name: s.name,))
-      #c.execute('INSERT INTO Sample(Name) VALUES (?)', (sample_name,))
-    for feature_name, f in features.items():
-      # make features
+    sample_sql = []
+    i = 1 # unique Id
+    for sample_name in samples.keys():
+      sample_sql.append((i, sample_name))
+      i += 1
+    c.executemany('INSERT INTO Sample VALUES (?, ?)', (sample_sql))
+    feature_sql = []
+    prediction_sql = []
+    i = 1
+    for f in features.values():
+      feature_sql.append((i, f.name, f.polarity, f.mz, f.rt, f.charge))
       for p in f.predictions:
-#        c.execute('INSERT INTO Sample(Name) VALUES (?)', (
-#            formula = formula.p))
-        # make features
-        pass
-    for sf in s.sample_features:
-       # make SampleFeatures
-       pass
+        prediction_sql.append((p.formula, p.mass, p.delta, str(p.element_count),
+                               p.hc, p.oc, p.nc, i)
+                             )
+      i += 1
+    c.executemany('INSERT INTO Feature \
+                   VALUES (?, ?, ?, ?, ?, ?)',
+                  (feature_sql)
+                 )
+    c.executemany('INSERT INTO Prediction(Formula, Mass, Delta, ElementCount, \
+                   Hc, Oc, Nc, FeatureId) \
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                  (prediction_sql)
+                 )
+    sample_feature_intensity_sql = []
+    sample_key = 1
+    for sample in samples.values():
+      for sfi in sample.sample_feature_intensities:
+        feature_key = list(features).index(sfi.feature.name) + 1
+        sample_feature_intensity_sql.append(
+                                            (sfi.intensity, sample_key,
+                                             feature_key)
+                                           )
+      sample_key += 1
+    c.executemany('INSERT INTO SampleFeatureIntensity(Intensity, SampleId, \
+                   FeatureId) \
+                   VALUES (?,  ?, ?)',
+                  (sample_feature_intensity_sql)
+                 )
+    if METADATA:
+      c.execute('''
+        CREATE TABLE Metadata (
+          Mode,
+          MassError,
+          Output,
+          Json,
+          Sql,
+          Polarity,
+          Neutral,
+          Database,
+          Directory,
+          Charge
+        )
+        ''')
+      c.execute('INSERT INTO Metadata(Mode, MassError, Output, Json, Sql, \
+                 Polarity, Neutral, Database, Directory, Charge) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (MODE, MASS_ERROR, OUTPUT, JSON, SQL, POLARITY, NEUTRAL,
+                 DATABASE, DIRECTORY, CHARGE)
+               )
     con.commit()
-    for row in c.execute('SELECT * from Sample'):
-      print(row)
     con.close()
+
 # main
 if MODE == "tabular":
   tabular_file = getattr(args, "input")
@@ -543,12 +624,13 @@ features = {k: v for k, v in features.items() if v is not None}
 
 # remove sample features without predictions
 for sample in samples.values():
-  sample.sample_features = [x for x in sample.sample_features if
-                                 len(x.feature.predictions) > 0] 
+  sample.sample_feature_intensities = [x for x in \
+                                       sample.sample_feature_intensities if
+                                       len(x.feature.predictions) > 0
+                                      ] 
  
 # sort by intensity so that D3 draws largest symbols first
 # removed after object implementation
 #predicted_list.sort(key=lambda x: x.intensity, reverse=True)
+
 write(samples)
-
-
