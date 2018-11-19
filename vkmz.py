@@ -7,25 +7,80 @@ import re
 import sqlite3
 
 parser = argparse.ArgumentParser()
-inputSubparser = parser.add_subparsers(help='Select mode:', dest='mode')
-parse_tabular = inputSubparser.add_parser('tabular', help='Use tabular data as input.')
-parse_tabular.add_argument('--input', '-i', required=True, help='Path to tabular file. Must include columns: sample ID, mz, polarity, intensity, & retention time.')
-parse_xcms = inputSubparser.add_parser('xcms', help='Use XCMS data as input.')
-parse_xcms.add_argument('--data-matrix', '-xd', required=True, nargs='?', type=str, help='Path to XCMS data matrix file.')
-parse_xcms.add_argument('--sample-metadata', '-xs', required=True, nargs='?', type=str, help='Path to XCMS sample metadata file.')
-parse_xcms.add_argument('--variable-metadata', '-xv', required=True, nargs='?', type=str, help='Path to XCMS variable metadata file.')
-for inputSubparser in [parse_tabular, parse_xcms]:
-  inputSubparser.add_argument('--output', '-o', nargs='?', type=str, required=True, help='Specify output file path.')
-  inputSubparser.add_argument('--json', '-j', action='store_true', help='Set JSON flag to save JSON output.')
-  inputSubparser.add_argument('--sql', '-s', action='store_true', help='Set SQL flag to save SQL output.')
-  inputSubparser.add_argument('--metadata', '-m', action='store_true', help='Set metadata flag to save the tools metadata.')
-  inputSubparser.add_argument('--error', '-e', nargs='?', type=float, required=True, help='Mass error of mass spectrometer in parts-per-million.')
-  inputSubparser.add_argument('--database', '-db', nargs='?', default='databases/bmrb-light.tsv', help='Define database of known fomrula-mass pairs.')
-  inputSubparser.add_argument('--directory', '-dir', nargs='?', default='', type=str, help='Define tool directory path. Defaults to relative path.')
-  inputSubparser.add_argument('--polarity', '-p', choices=['positive', 'negative'], help='Force polarity mode to positive or negative. Overrides variables in input file.')
-  inputSubparser.add_argument('--neutral', '-n', action='store_true', help='Set neutral flag if masses in input data are neutral. No mass adjustmnet will be made.')
-  inputSubparser.add_argument('--alternate', '-a', action='store_true', help='Set flag to keep features with multiple predictions.')
-  inputSubparser.add_argument('--charge', '-c', action='store_true', help='Set flag if input data contains charge.')
+sub_parser = parser.add_subparsers(help='Select mode:', dest='mode')
+
+# Tabular mode arguments
+parse_tabular = sub_parser.add_parser('tabular',
+                                      help='Use tabular data as input.'
+                                     )
+parse_tabular.add_argument('--input', '-i',
+                           required=True,
+                           help='Path to tabular file.'
+                          )
+
+# XCMS-tabular mode arguments
+parse_xcms = sub_parser.add_parser('xcms',
+                                   help='Use XCMS data as input.'
+                                  )
+parse_xcms.add_argument('--data-matrix', '-xd',
+                        required=True, nargs='?', type=str,
+                        help='Path to XCMS data matrix file.'
+                       )
+parse_xcms.add_argument('--sample-metadata', '-xs',
+                        required=True, nargs='?', type=str,
+                        help='Path to XCMS sample metadata file.'
+                       )
+parse_xcms.add_argument('--variable-metadata', '-xv',
+                        required=True, nargs='?', type=str,
+                        help='Path to XCMS variable metadata file.'
+                       )
+
+# All modes arguments
+for sub_parser in [parse_tabular, parse_xcms]:
+  sub_parser.add_argument('--output', '-o',
+                          required=True, nargs='?', type=str,
+                          help='Specify output file path.'
+                         )
+  sub_parser.add_argument('--error', '-e',
+                          required=True, nargs='?', type=float,
+                          help='Mass error of MS data in parts-per-million.'
+                         )
+  sub_parser.add_argument('--json', '-j',
+                          action='store_true',
+                          help='Set JSON flag to save JSON output.'
+                         )
+  sub_parser.add_argument('--sql', '-s',
+                          action='store_true',
+                          help='Set SQL flag to save SQL output.'
+                         )
+  sub_parser.add_argument('--metadata', '-m',
+                          action='store_true',
+                          help='Set metadata flag to save the tools metadata.'
+                         )
+  sub_parser.add_argument('--database', '-db',
+                          nargs='?', default='databases/bmrb-light.tsv',
+                          help='Define database of known formula-mass pairs.'
+                         )
+  sub_parser.add_argument('--directory', '-dir',
+                          nargs='?', default='', type=str,
+                          help='Define tool directory path.'
+                         ) # default to '.' ?
+  sub_parser.add_argument('--polarity', '-p',
+                          choices=['positive', 'negative'],
+                          help='Set all polarities to positive or negative.'
+                         )
+  sub_parser.add_argument('--neutral', '-n',
+                          action='store_true',
+                          help='Set masses in input data are neutral.'
+                         )
+  sub_parser.add_argument('--alternate', '-a',
+                          action='store_true',
+                          help='Set to keep features with multiple predictions.'
+                         )
+  sub_parser.add_argument('--charge', '-c',
+                          action='store_true',
+                          help='Set if input data contains charge.'
+                         )
 args = parser.parse_args()
 
 class Sample(object):
@@ -108,8 +163,9 @@ try:
       mass, formula = row.split()
       MASS.append(float(mass))
       FORMULA.append(formula)
-except ValueError:
-  print('The %s database could not be loaded.' % DATABASE)
+except:
+  print(f'An error occured while reading the {DATABASE} database.')
+  raise
 MAX_MASS_INDEX = len(MASS)-1
 
 def polaritySanitizer(polarity: str):
@@ -125,7 +181,7 @@ def polaritySanitizer(polarity: str):
   elif polarity.lower() in ['negative', 'neg', '-']:
     polarity = 'negative'
   else:
-    raise ValueError('%s is an unknown polarity type.' % polarity)
+    raise ValueError(f'{polarity} is not recognized as a polarity type.')
   return polarity
 
 def readTabular(tabular_file):
@@ -146,13 +202,22 @@ def readTabular(tabular_file):
     with open(tabular_file, 'r') as f:
       tabular_data = csv.reader(f, delimiter='\t')
       header = next(tabular_data)
-      sample_name_index = header.index('sample_name')
-      polarity_index = header.index('polarity')
-      mz_index = header.index('mz')
-      rt_index = header.index('rt')
-      intensity_index = header.index('intensity')
-      if CHARGE:
-        charge_index = header.index('charge')
+      try:
+        sample_name_index = header.index('sample_name')
+        polarity_index = header.index('polarity')
+        mz_index = header.index('mz')
+        rt_index = header.index('rt')
+        intensity_index = header.index('intensity')
+        if CHARGE:
+          charge_index = header.index('charge')
+      except ValueError:
+        print('An expected column was not found in the tabular file.\n'
+              'The tabular file must contain columns named: "sample_name",  '
+              '"polarity", "mz", and "rt".\n'
+              'The tabular file must include a "charge" column if the --charge'
+              ' argument was used.'
+             )
+        raise
       for row in tabular_data:
         sample_name = row[sample_name_index]
         polarity = polaritySanitizer(row[polarity_index])
@@ -176,7 +241,8 @@ def readTabular(tabular_file):
                                                                      feature)
                                                              )
   except IOError:
-    print('Error while reading %s.' % tabular_file)
+    print(f'Error while reading {tabular_file}.')
+    raise
   return samples, features
 
 def readXcmsTabular(sample_file, variable_file, matrix_file):
@@ -205,7 +271,8 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
         else:
           polarity[sample] = polaritySanitizer(row[2])
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % sample_file)
+    print(f'Error while reading the XCMS tabular file {sample_file}')
+    raise
   # extract variable mz & rt
   try:
     mz_rt = {}
@@ -219,7 +286,8 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
       for row in variable_data:
         mz_rt[row[0]] = (float(row[mz_index]), float(row[rt_index]))
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % variable_file)
+    print(f'Error while reading the XCMS tabular file {variable_file}.')
+    raise
   # extract intensity and build Feature objects
   try:
     with open(matrix_file, 'r') as f:
@@ -256,14 +324,15 @@ def readXcmsTabular(sample_file, variable_file, matrix_file):
                                                                  )
           i+=1
   except IOError:
-    print('Error while reading the XCMS tabular file %s.' % matrix_file)
+    print(f'Error while reading the XCMS tabular file {matrix_file}.')
+    raise
   return samples, features
 
 def adjust(mass, polarity, charge):
   '''
   Adjust a charged mass to a neutral mass.
 
-  Mass of an electrons (1.007276) is multiplied from the charge and subtracted
+  Mass of an electrons (1.007276) is multiplied by the charge and subtracted
   from positively charged ions and added to negatively charged ions.
 
   WARNING: If a feature's charge is not specified in the input data a charge of
@@ -327,7 +396,14 @@ def predictAll(mass, uncertainty, init_index):
   return matches
 
 def parseFormula(formula):
-  # calculate elemental ratios
+  '''Parse molecular formula by it's constituent elements.
+
+  Parses formula into a list of element symbols and integers of element count.
+  From this list a dictionary, element_count, is created and returned with
+  element symbol keys and element count values.
+
+  Ratios for H:C, O:C, N:C are calculated and also returned.
+  '''
   formula_list = re.findall('[A-Z][a-z]?|[0-9]+', formula)
   element_count = {}
   hc = float()
@@ -400,8 +476,7 @@ def featurePrediction(feature):
       feature.predictions.sort(key=lambda m: abs(m.delta))
     return(feature)
   # no prediction was made
-  else:
-    return
+  return
  
 # write output file
 def write(samples):
@@ -434,6 +509,10 @@ def write(samples):
                          f'{p.formula}\t{p.element_count}\t{p.hc}\t'
                          f'{p.oc}\t{p.nc}\n'
                         )
+          json_element_count = ''
+          for e in p.element_count:
+            json_element_count += f'      "{e}": {p.element_count[e]},\n'
+          json_element_count = json_element_count[:-2]
           json_element = (f'{{\n'
                           f'  "sample_name": "{s.name}",\n'
                           f'  "feature_name": "{f.name}",\n'
@@ -445,7 +524,8 @@ def write(samples):
                           f'    "mass": {p.mass},\n'
                           f'    "delta": {p.delta},\n'
                           f'    "formula": "{p.formula}",\n'
-                          f'    "element_count": "{p.element_count}",\n'
+                          f'    "element_count": {{\n{json_element_count}\n'
+                          f'    }},\n'
                           f'    "hc": {p.hc},\n'
                           f'    "oc": {p.oc},\n'
                           f'    "nc": {p.nc}\n'
@@ -474,7 +554,8 @@ def write(samples):
           json += json_element
     json = json[:-2] # remove final comma # [:-1] ??
   except IOError as error:
-    print('IOError while writing tabular output: %s' % error.strerror)
+    print('IOError while writing tabular output')
+    raise
   try: 
     with open(DIRECTORY+'d3.html', 'r', encoding='utf-8') as htmlTemplate,\
          open(OUTPUT+'.html', 'w', encoding='utf-8') as htmlFile:
@@ -482,8 +563,8 @@ def write(samples):
         line = re.sub('^var data.*$','var data = ['+json+']', line, flags=re.M)
         htmlFile.write(line)
   except IOError as error:
-    print('IOError while writing HTML output or reading HTML template: %s'\
-          % error.strerror)
+    print('IOError while writing HTML output or reading HTML template')
+    raise
   if METADATA:
     try: 
       with open(OUTPUT + '_metadata.tabular', 'w') as metadataFile:
@@ -504,6 +585,7 @@ def write(samples):
   if SQL:
     con = sqlite3.connect(OUTPUT + '.db')
     c = con.cursor()
+    # create tables
     c.execute('''
       CREATE TABLE Sample (
         Id INTEGER PRIMARY KEY,
@@ -544,12 +626,14 @@ def write(samples):
         FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
       )
       ''')
+    # add Sample values
     sample_sql = []
     i = 1 # unique Id
     for sample_name in samples.keys():
       sample_sql.append((i, sample_name))
       i += 1
     c.executemany('INSERT INTO Sample VALUES (?, ?)', (sample_sql))
+    # add Feature and Prediction values
     feature_sql = []
     prediction_sql = []
     i = 1
@@ -569,6 +653,7 @@ def write(samples):
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                   (prediction_sql)
                  )
+    # add SampleFeatureIntensity values
     sample_feature_intensity_sql = []
     sample_key = 1
     for sample in samples.values():
@@ -585,6 +670,7 @@ def write(samples):
                   (sample_feature_intensity_sql)
                  )
     if METADATA:
+      # add Metadata table and values
       c.execute('''
         CREATE TABLE Metadata (
           Mode,
@@ -608,7 +694,7 @@ def write(samples):
     con.commit()
     con.close()
 
-# main
+# read input
 if MODE == "tabular":
   tabular_file = getattr(args, "input")
   samples, features = readTabular(tabular_file)
