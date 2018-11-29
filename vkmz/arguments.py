@@ -1,9 +1,17 @@
 #!/usr/bin/env python
+"""vkmz.arguments
+
+foo bar
+"""
+
 
 import argparse
+import os
+
 
 parser = argparse.ArgumentParser()
 sub_parser = parser.add_subparsers(help="Select mode:", dest="mode")
+sub_parser.required = True
 
 # Tabular mode arguments
 parse_tabular = sub_parser.add_parser("tabular", help="Use tabular data as input.")
@@ -36,9 +44,9 @@ parse_xcms.add_argument(
     help="Path to XCMS variable metadata file.",
 )
 
-# All modes arguments
-for sub_parser in [parse_tabular, parse_xcms]:
-    sub_parser.add_argument(
+# Arguments for all modes
+for mode in [parse_tabular, parse_xcms]:
+    mode.add_argument(
         "--output",
         "-o",
         required=True,
@@ -46,7 +54,7 @@ for sub_parser in [parse_tabular, parse_xcms]:
         type=str,
         help="Specify output file path.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--error",
         "-e",
         required=True,
@@ -54,62 +62,54 @@ for sub_parser in [parse_tabular, parse_xcms]:
         type=float,
         help="Mass error of MS data in parts-per-million.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--json", "-j", action="store_true", help="Set JSON flag to save JSON output."
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--sql", "-s", action="store_true", help="Set SQL flag to save SQL output."
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--metadata",
         "-m",
         action="store_true",
         help="Set metadata flag to save the tools metadata.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--database",
         "-db",
         nargs="?",
         default="databases/bmrb-light.tsv",
         help="Define database of known formula-mass pairs.",
     )
-    # NOTE: The name --prefix may be more appropriate
-    #       Variables affected by this argumnet should be double checked
-    sub_parser.add_argument(
-        "--directory",
-        "-dir",
-        nargs="?",
-        default=".",
-        type=str,
-        help="Define tool directory path.",
+    mode.add_argument(
+        "--prefix", nargs="?", type=str, help="Define tool directory path."
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--polarity",
         "-p",
         choices=["positive", "negative"],
         help="Set all polarities to positive or negative.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--neutral",
         "-n",
         action="store_true",
         help="Set masses in input data are neutral.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--alternate",
         "-a",
         action="store_true",
         help="Set to keep features with multiple predictions.",
     )
-    sub_parser.add_argument(
+    mode.add_argument(
         "--charge", "-c", action="store_true", help="Set if input data contains charge."
     )
-args = parser.parse_args()
 
-# constants
+# create constants
+args = parser.parse_args()
 ALTERNATE = getattr(args, "alternate")
 DATABASE = getattr(args, "database")
-DIRECTORY = getattr(args, "directory")
 CHARGE = getattr(args, "charge")
 JSON = getattr(args, "json")
 MASS_ERROR = getattr(args, "error")
@@ -118,14 +118,16 @@ MODE = getattr(args, "mode")
 NEUTRAL = getattr(args, "neutral")
 OUTPUT = getattr(args, "output")
 POLARITY = getattr(args, "polarity")
+PREFIX = getattr(args, "prefix")
+# TODO: check if not against PEP8
+if not PREFIX:
+    PREFIX = os.path.abspath(os.path.dirname(__file__))
 SQL = getattr(args, "sql")
-
-# generated constants
 # MASS and FORMULA are used as indexable dictionaries
 MASS = []
 FORMULA = []
 try:
-    with open(DIRECTORY + DATABASE, "r") as tabular:
+    with open(os.path.join(PREFIX, DATABASE), "r") as tabular:
         next(tabular)  # skip header
         for row in tabular:
             mass, formula = row.split()
@@ -135,3 +137,10 @@ except:
     print(f"An error occured while reading the {DATABASE} database.")
     raise
 MAX_MASS_INDEX = len(MASS) - 1
+#!/usr/bin/env python
+
+import os
+from vkmz.arguments import args, JSON, METADATA, MODE, parser, SQL
+from vkmz.read import tabular as readTabular, xcmsTabular as readXcmsTabular
+from vkmz.predict import predict
+import vkmz.write as write

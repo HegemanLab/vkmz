@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
+
 import csv
+import os
 import re
 import sqlite3
-
-from arguments import (
+from vkmz.arguments import (
     ALTERNATE,
     CHARGE,
     DATABASE,
-    DIRECTORY,
     JSON,
     MASS_ERROR,
     METADATA,
@@ -16,6 +16,7 @@ from arguments import (
     NEUTRAL,
     OUTPUT,
     POLARITY,
+    PREFIX,
     SQL,
 )
 
@@ -67,22 +68,22 @@ def generateJson(samples):
             j_element_count = j_element_count[:-2]
             j_element = (
                 f"{{\n"
-                f'  "sample_name": "{s.name}",\n'
-                f'  "feature_name": "{f.name}",\n'
-                f'  "polarity": "{f.polarity}",\n'
-                f'  "mz": {f.mz},\n'
-                f'  "rt": {f.rt},\n'
-                f'  "intensity": {sfi.intensity},\n'
-                f'  "prediction": {{\n'
-                f'    "mass": {p.mass},\n'
-                f'    "delta": {p.delta},\n'
-                f'    "formula": "{p.formula}",\n'
-                f'    "element_count": {{\n{j_element_count}\n'
-                f"    }},\n"
-                f'    "hc": {p.hc},\n'
-                f'    "oc": {p.oc},\n'
-                f'    "nc": {p.nc}\n'
-                f"  }}\n"
+                f'    "sample_name": "{s.name}",\n'
+                f'    "feature_name": "{f.name}",\n'
+                f'    "polarity": "{f.polarity}",\n'
+                f'    "mz": {f.mz},\n'
+                f'    "rt": {f.rt},\n'
+                f'    "intensity": {sfi.intensity},\n'
+                f'    "prediction": {{\n'
+                f'        "mass": {p.mass},\n'
+                f'        "delta": {p.delta},\n'
+                f'        "formula": "{p.formula}",\n'
+                f'        "element_count": {{\n{j_element_count}\n'
+                f"        }},\n"
+                f'        "hc": {p.hc},\n'
+                f'        "oc": {p.oc},\n'
+                f'        "nc": {p.nc}\n'
+                f"    }}\n"
                 f"}},\n"
             )
             if ALTERNATE and len(f.predictions) > 1:
@@ -123,9 +124,9 @@ def json(json):
 def html(json):
     """Write results to html webpage"""
     try:
-        with open(DIRECTORY + "d3.html", "r", encoding="utf-8") as h_template, open(
-            OUTPUT + ".html", "w", encoding="utf-8"
-        ) as h_file:
+        with open(
+            os.path.join(PREFIX, "d3.html"), "r", encoding="utf-8"
+        ) as h_template, open(OUTPUT + ".html", "w", encoding="utf-8") as h_file:
             for line in h_template:
                 line = re.sub(
                     "^var data.*$", "var data = [" + json + "]", line, flags=re.M
@@ -143,9 +144,9 @@ def metadata():
             with open(OUTPUT + "_metadata.tabular", "w") as m_file:
                 metadata = (
                     f"Mode\tMass\tOutput\tJSON\tSQL\tPolarity\t"
-                    f"Neutral\tDatabase\tDirectory\tCharge\n"
+                    f"Neutral\tDatabase\tPrefix\tCharge\n"
                     f"{MODE}\t{MASS_ERROR}\t{OUTPUT}\t{SQL}\t{POLARITY}\t"
-                    f"{NEUTRAL}\t{DATABASE}\t{DIRECTORY}\t{CHARGE}\n"
+                    f"{NEUTRAL}\t{DATABASE}\t{PREFIX}\t{CHARGE}\n"
                 )
                 m_file.write(metadata)
         except IOError as error:
@@ -159,51 +160,51 @@ def sql(samples, features):
     # create tables
     c.execute(
         """
-            CREATE TABLE Sample (
-              Id INTEGER PRIMARY KEY,
-              Name TEXT
+        CREATE TABLE Sample (
+            Id INTEGER PRIMARY KEY,
+            Name TEXT
             )
-            """
+        """
     )
     c.execute(
         """
-            CREATE TABLE Feature (
-              Id INTEGER PRIMARY KEY,
-              Name TEXT,
-              Polarity TEXT,
-              Mz REAL,
-              Rt REAL,
-              Charge INTEGER
+        CREATE TABLE Feature (
+            Id INTEGER PRIMARY KEY,
+            Name TEXT,
+            Polarity TEXT,
+            Mz REAL,
+            Rt REAL,
+            Charge INTEGER
             )
-            """
+        """
     )
     c.execute(
         """
-            CREATE TABLE Prediction (
-              Id INTEGER PRIMARY KEY AUTOINCREMENT,
-              Formula TEXT,
-              Mass TEXT,
-              Delta REAL,
-              ElementCount TEXT,
-              Hc REAL,
-              Oc REAL,
-              Nc REAL,
-              FeatureId INTEGER,
-              FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
+        CREATE TABLE Prediction (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Formula TEXT,
+            Mass TEXT,
+            Delta REAL,
+            ElementCount TEXT,
+            Hc REAL,
+            Oc REAL,
+            Nc REAL,
+            FeatureId INTEGER,
+            FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
             )
-            """
+        """
     )
     c.execute(
         """
-            CREATE TABLE SampleFeatureIntensity (
-              Id INTEGER PRIMARY KEY AUTOINCREMENT,
-              Intensity REAL,
-              SampleId INTEGER,
-              FeatureId INTEGER,
-              FOREIGN KEY(SampleId) REFERENCES Sample(Id),
-              FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
+        CREATE TABLE SampleFeatureIntensity (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Intensity REAL,
+            SampleId INTEGER,
+            FeatureId INTEGER,
+            FOREIGN KEY(SampleId) REFERENCES Sample(Id),
+            FOREIGN KEY(FeatureId) REFERENCES Feature(Id)
             )
-            """
+        """
     )
     # add Sample values
     s_sql = []
@@ -211,7 +212,16 @@ def sql(samples, features):
     for sample_name in samples.keys():
         s_sql.append((i, sample_name))
         i += 1
-    c.executemany("INSERT INTO Sample VALUES (?, ?)", (s_sql))
+    c.executemany(
+        """
+        INSERT INTO Sample (
+            Id,
+            Name
+            )
+        VALUES (?, ?)
+        """,
+        (s_sql),
+    )
     # add Feature and Prediction values
     f_sql = []
     p_sql = []
@@ -224,14 +234,33 @@ def sql(samples, features):
             )
         i += 1
     c.executemany(
-        "INSERT INTO Feature \
-                 VALUES (?, ?, ?, ?, ?, ?)",
+        """
+        INSERT INTO Feature (
+            Id,
+            Name,
+            Polarity,
+            Mz,
+            Rt,
+            Charge
+            )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
         (f_sql),
     )
     c.executemany(
-        "INSERT INTO Prediction(Formula, Mass, Delta, ElementCount, \
-                 Hc, Oc, Nc, FeatureId) \
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        """
+        INSERT INTO Prediction (
+            Formula,
+            Mass,
+            Delta,
+            ElementCount,
+            Hc,
+            Oc,
+            Nc,
+            FeatureId
+            )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
         (p_sql),
     )
     # add SampleFeatureIntensity values
@@ -243,16 +272,21 @@ def sql(samples, features):
             sfi_sql.append((sfi.intensity, s_id, f_id))
         s_id += 1
     c.executemany(
-        "INSERT INTO SampleFeatureIntensity(Intensity, SampleId, \
-                 FeatureId) \
-                 VALUES (?,  ?, ?)",
+        """
+        INSERT INTO SampleFeatureIntensity (
+             Intensity,
+             SampleId,
+             FeatureId
+             )
+        VALUES (?,  ?, ?)
+        """,
         (sfi_sql),
     )
     if METADATA:
         # add Metadata table and values
         c.execute(
             """
-              CREATE TABLE Metadata (
+            CREATE TABLE Metadata (
                 Mode,
                 MassError,
                 Output,
@@ -261,14 +295,27 @@ def sql(samples, features):
                 Polarity,
                 Neutral,
                 Database,
-                Directory,
+                Prefix,
                 Charge
-              )"""
+                )
+            """
         )
         c.execute(
-            "INSERT INTO Metadata(Mode, MassError, Output, Json, Sql, \
-               Polarity, Neutral, Database, Directory, Charge) \
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO Metadata (
+                 Mode,
+                 MassError,
+                 Output,
+                 Json,
+                 Sql,
+                 Polarity,
+                 Neutral,
+                 Database,
+                 Directory,
+                 Charge
+                 )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             (
                 MODE,
                 MASS_ERROR,
@@ -278,7 +325,7 @@ def sql(samples, features):
                 POLARITY,
                 NEUTRAL,
                 DATABASE,
-                DIRECTORY,
+                PREFIX,
                 CHARGE,
             ),
         )

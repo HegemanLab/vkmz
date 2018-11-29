@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-
-import csv
-from objects import Sample, SampleFeatureIntensity, Feature
-from arguments import POLARITY
-
 """Convert input data into objects
 
- Can either parse a tabular file or W4M's XCMS tabular as input.
+Can either parse a tabular file or W4M's XCMS tabular as input.
 """
+
+
+import csv
+from vkmz.arguments import POLARITY
+from vkmz.objects import Sample, SampleFeatureIntensity, Feature
 
 
 def polaritySanitizer(polarity: str):
     """Sanitize input polarity values.
 
-  Renames the, case-insensitive, values 'positive', 'pos', or '+' to 'positive'
-  and 'negative', 'neg', or '-' to 'negative'.
+    Renames the, case-insensitive, values 'positive', 'pos', or '+' to 'positive'
+    and 'negative', 'neg', or '-' to 'negative'.
 
-  Errors on unrecognized polarity value.
-  """
+    Errors on unrecognized polarity value.
+    """
     if polarity.lower() in ["positive", "pos", "+"]:
         polarity = "positive"
     elif polarity.lower() in ["negative", "neg", "-"]:
@@ -30,16 +30,16 @@ def polaritySanitizer(polarity: str):
 def tabular(tabular_file):
     """Read a tabular file and create objects.
 
-  Reads columns named "sample_name", "polarity", "mz", "rt", and "intensity"
-  to create Sample, SampleFeatureIntensity, and Feature objects. If these
-  required columns do not exist function will error.
+    Reads columns named "sample_name", "polarity", "mz", "rt", and "intensity"
+    to create Sample, SampleFeatureIntensity, and Feature objects. If these
+    required columns do not exist function will error.
 
-  Optionally reads a charge column.
+    Optionally reads a charge column.
 
-  Results in two name-object dictionaries for samples and features.
+    Results in two name-object dictionaries for samples and features.
 
-  Should check for feature name in tabular.
-  """
+    Should check for feature name in tabular.
+    """
     samples = {}
     features = {}
     try:
@@ -48,13 +48,14 @@ def tabular(tabular_file):
             header = next(tabular_data)
             try:
                 sample_name_index = header.index("sample_name")
-                if not POLARITY:
+                # TODO: check against PEP8
+                if POLARITY is not False:
                     polarity_index = header.index("polarity")
                 mz_index = header.index("mz")
                 rt_index = header.index("rt")
                 intensity_index = header.index("intensity")
-            # NOTE: THIS IS BROKEN
-            #        charge_index = header.index('charge')
+                # TODO: implement charge index
+                # charge_index = header.index('charge')
             except ValueError:
                 print(
                     "An expected column was not found in the tabular file.\n"
@@ -97,14 +98,14 @@ def tabular(tabular_file):
 def xcmsTabular(sample_file, variable_file, matrix_file):
     """Read W4M's XCMS tabular files and return a list of features.
 
-  Reads sample metadata to create a dictionary of sample ids keys with,
-  sanitized, polarity values.
+    Reads sample metadata to create a dictionary of sample ids keys with,
+    sanitized, polarity values.
 
-  Reads variable metadata to create two dictionaries with variable ids as keys
-  and either mass to charge or retention time as values.
+    Reads variable metadata to create two dictionaries with variable ids as keys
+    and either mass to charge or retention time as values.
 
-  Finally, read data matrix and create all Feature objects and append to list.
-  """
+    Finally, read data matrix and create all Feature objects and append to list.
+    """
     samples = {}
     features = {}
     # extract sample polarities
@@ -115,6 +116,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
             next(sample_data)  # skip header
             for row in sample_data:
                 sample = row[0]
+                # TODO: check against PEP8
                 if POLARITY:
                     polarity[sample] = POLARITY
                 else:
@@ -172,7 +174,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
                         else:
                             feature = features[feature_name]
                             feature.samples.append(sample_name)
-                        samples[sample_name].sfi.append(
+                        samples[sample_name].sfis.append(
                             SampleFeatureIntensity(intensity, feature)
                         )
                     i += 1

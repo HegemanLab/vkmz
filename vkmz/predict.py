@@ -1,19 +1,29 @@
 #!/usr/bin/env python
+"""vkmz.predict module
+
+Functions to predict a MS feature's molecular structure.
+"""
+
 
 import re
-from arguments import ALTERNATE, FORMULA, MASS, MASS_ERROR, MAX_MASS_INDEX, NEUTRAL
-from objects import Prediction
+from vkmz.arguments import ALTERNATE, FORMULA, MASS, MASS_ERROR, MAX_MASS_INDEX, NEUTRAL
+from vkmz.objects import Prediction
 
 
 def adjust(mass, polarity, charge):
     """Adjust a charged mass to a neutral mass.
 
-  Mass of an electrons (1.007276) is multiplied by the charge and subtracted
-  from positively charged ions and added to negatively charged ions.
+    Mass of an electrons (1.007276) is multiplied by the charge and subtracted
+    from positively charged ions and added to negatively charged ions.
 
-  WARNING: If a feature's charge is not specified in the input data a charge of
-  1 is assumed.
-  """
+    WARNING:
+    If a feature's charge is not specified a charge of 1 is assumed.
+
+    Keyword arguments:
+    mass -- a charged molecular mass (float)
+    polarity -- molecule's charge state ("negative" or "positive")
+    charge -- number of charges (int)
+    """
     # value to adjust by
     proton = 1.007276
     # if charge is not given, assume 1
@@ -29,11 +39,17 @@ def adjust(mass, polarity, charge):
 def predictInit(mass, uncertainty, left, right):
     """Search for a matching mass within the known-mass list.
 
-  Uses binary search to match a given mass to a known mass within a given
-  uncertainty. Upon match returns known mass index.
+    Uses binary search to match a given mass to a known mass within a given
+    uncertainty. Upon match returns known mass index.
 
-  If no match is made returns -1.
-  """
+    If no match is made returns -1.
+
+    Keyword arguments:
+    mass -- observerd neutral molecular mass in daltons (float)
+    uncertainty -- mass error range in daltons (float)
+    left -- left bst index of MASS list (int)
+    right -- right bst index of MASS list (int)
+    """
     mid = int(((right - left) / 2) + left)
     if left <= mid <= right and mid <= MAX_MASS_INDEX:
         delta = mass - MASS[mid]
@@ -49,9 +65,14 @@ def predictInit(mass, uncertainty, left, right):
 def predictAll(mass, uncertainty, init_index):
     """Search for all matching masses within the known-mass list.
 
-  Checks adjacent indexes from a given index of known-masses which are within a
-  given uncertinty of a given mass.
-  """
+    Checks adjacent indexes from a given index of known-masses which are within a
+    given uncertinty of a given mass.
+
+    Keyword arguments:
+    mass -- observed neutral molecular mass in daltons(float
+    uncertainty -- mass error range in daltons (float)
+    init_index -- initial index in MASS list to search from (int)
+    """
     matches = [init_index]
     i = 0
     while init_index + i + 1 <= MAX_MASS_INDEX:
@@ -77,12 +98,18 @@ def predictAll(mass, uncertainty, init_index):
 def parseFormula(formula):
     """Parse molecular formula by it's constituent elements.
 
-  Parses formula into a list of element symbols and integers of element count.
-  From this list a dictionary, element_count, is created and returned with
-  element symbol keys and element count values.
+    Parses formula into a list of element symbols and integers of element count.
+    From this list a dictionary, element_count, is created and returned with
+    element symbol keys and element count values.
 
-  Ratios for H:C, O:C, N:C are calculated and also returned.
-  """
+    Ratios for H:C, O:C, N:C are calculated and also returned.
+
+    Formula's must use proper, case-sensitive, chemical symbols.
+        (e.g., Copper is 'Cu', not 'CU')
+
+    Keyword arguments:
+    formula -- molecular formula (string)
+    """
     formula_list = re.findall("[A-Z][a-z]?|[0-9]+", formula)
     element_count = {}
     hc = float()
@@ -113,28 +140,31 @@ def parseFormula(formula):
 def predict(feature):
     """Make predictions for a feature.
 
-  Reads a Feature as input and, if possible, returns it with a list of
-  Prediction objects.
+    Reads a Feature as input and, if possible, returns it with a list of
+    Prediction objects.
 
-  A feature is assumed to be charged by default. The observed charged mass of
-  the feature is converted to a neutral mass through adjust(). The --neutral
-  flag disables adjustment.
+    A feature is assumed to be charged by default. The observed charged mass of
+    the feature is converted to a neutral mass through adjust(). The --neutral
+    flag disables adjustment.
 
-  predictInit() returns an index for the MASS/FORMULA lists  if a known mass is
-  within the mass error uncertainty of the observed, neutral, mass.  Features
-  without a prediction are thrown out.
+    predictInit() returns an index for the MASS/FORMULA lists  if a known mass is
+    within the mass error uncertainty of the observed, neutral, mass.  Features
+    without a prediction are thrown out.
 
-  On match, predictAll() searches for matches adjacent to the initial match.
+    On match, predictAll() searches for matches adjacent to the initial match.
 
-  By default, features with multiple predictions are thrown out unless the
-  --alternate flag is set. Alternate matches are sorted by absolute delta.
+    By default, features with multiple predictions are thrown out unless the
+    --alternate flag is set. Alternate matches are sorted by absolute delta.
 
-  For each match an element_count dictionary is parsed and elemental ratios are
-  calculated.
+    For each match an element_count dictionary is parsed and elemental ratios are
+    calculated.
 
-  Prediction objects are made for each match and added to the features
-  predictions list before returning the feature object.
-  """
+    Prediction objects are made for each match and added to the features
+    predictions list before returning the feature object.
+
+    Keyword Arguments:
+    feature -- feature object to make a prediction for
+    """
     if NEUTRAL:
         mass = feature.mz
     else:
