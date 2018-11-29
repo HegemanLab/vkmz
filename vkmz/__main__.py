@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-
 def main():
     """Main flow control of vkmz
   
@@ -86,14 +85,14 @@ def main():
     foo_sfis = 0
     for s in samples.values():
         foo_s += 1
-        j = 0
-        y = []
+        # j = 0
+        # y = []
         for sfi in s.sfis:
             foo_sfis += 1
-            j += 1
-            y.append(sfi.feature)
-            print(sfi.intensity)
-        print(s.name, j, len(y), len(set(y)))
+            # j += 1
+            # y.append(sfi.feature)
+            # print(sfi.intensity)
+        # print(s.name, j, len(y), len(set(y)))
     print("s:\t", foo_s)
     print("sfis:\t", foo_sfis)
     foo_f = 0
