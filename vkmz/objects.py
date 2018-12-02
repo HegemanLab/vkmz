@@ -2,11 +2,12 @@
 
 
 class Sample(object):
-    """Sample Class
+    """A MS sample.
 
-  Represents a single LC-MS sample injection. Object stores the sample's name
-  and a list of SampleFeatureIntensity objects from the sample.
-  """
+    Attributes:
+        name (str): samples name
+        sfis (list): SampleFeatureIntensity objects
+    """
 
     def __init__(self, name):
         self.name = name
@@ -14,10 +15,12 @@ class Sample(object):
 
 
 class SampleFeatureIntensity(object):
-    """SampleFeatureIntensity Class
+    """A feature's intensity observed by a sample.
 
-  Represents a feature's intensity from a single Sample.
-  """
+    Attributes:
+        intensity (float): intensity of a feature for a sample
+        feature (Feature): feature with the observed intensity
+    """
 
     def __init__(self, intensity, feature):
         self.intensity = intensity
@@ -25,10 +28,17 @@ class SampleFeatureIntensity(object):
 
 
 class Feature(object):
-    """Feature Class
+    """A feature from a MS dataset.
 
-  Represents a feature from LC-MS data.
-  """
+    Attributes:
+        name (str): feature's name
+        samples (list): Samples feature was observed in
+        polarity (str): ionization mode
+        mz (float): observed mass-to-charge ratio
+        rt (float): retention time
+        charge (float): electric charge
+        predictions (list): Prediction objects
+    """
 
     def __init__(self, name, samples, polarity, mz, rt, charge=None):
         self.name = name
@@ -41,13 +51,19 @@ class Feature(object):
 
 
 class Prediction(object):
-    """Prediction Class
+    """Prediction of a feature.
 
-  Represents a prediction based on a given feature's mass, polarity and charge.
-
-  element_count attribute is a dictionary of the formula with elemental symbols
-  as keys.
-  """
+    Attributes:
+        mass (float): neutral mass of predicted formula
+        formula (str): molecular formula
+        delta (float): absolute differnece between neutral mass of observed and
+                       predicted mass
+        element_count (dict): molecular formula as element symbol keys with
+                              element count values
+        hc (float): hydrogen to carbon ratio
+        oc (float): oxygen to carbon ratio
+        nc (float): nitrogen to carbon ratio
+    """
 
     def __init__(self, mass, formula, delta, element_count, hc, oc, nc):
         self.formula = formula

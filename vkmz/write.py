@@ -22,7 +22,11 @@ from vkmz.arguments import (
 
 
 def tabular(samples):
-    """Write results to tabular"""
+    """Write results to tabular
+
+    Arguments:
+        samples (dict): predicted-Samples
+    """
     try:
         with open(OUTPUT + ".tabular", "w") as t_file:
             t_header = (
@@ -55,16 +59,26 @@ def tabular(samples):
 
 
 def generateJson(samples):
-    """Convert results to JSON"""
+    """Convert results to JSON
+
+    Creates a JSON object as a sting for each feature.
+
+    At the end of the function, JSON objects are concatenated and the resulting
+    string is returned.
+
+    Arguments:
+        samples (dict): of predicted-Samples
+    """
     json = ""
     for s in samples.values():
+        json_objects = []
         for sfi in s.sfis:
             f = sfi.feature
             p = f.predictions[0]
             j_element_count = ""
             for e in p.element_count:
-                j_element_count += f'      "{e}": {p.element_count[e]},\n'
-            # remove ',\n'
+                j_element_count += f'            "{e}": {p.element_count[e]},\n'
+            # remove the final comma and new line characters
             j_element_count = j_element_count[:-2]
             j_element = (
                 f"{{\n"
@@ -90,30 +104,36 @@ def generateJson(samples):
                 j_append = str()
                 for a in f.predictions[1:]:
                     j_append += (
-                        f"    {{\n"
-                        f'      "mass": {a.mass},\n'
-                        f'      "delta": {a.delta},\n'
-                        f'      "formula": "{a.formula}",\n'
-                        f'      "element_count": "{a.element_count}",\n'
-                        f'      "hc": {a.hc},\n'
-                        f'      "oc": {a.oc},\n'
-                        f'      "nc": {a.nc}\n'
-                        f"    }},\n"
+                        f"        {{\n"
+                        f'            "mass": {a.mass},\n'
+                        f'            "delta": {a.delta},\n'
+                        f'            "formula": "{a.formula}",\n'
+                        f'            "element_count": "{a.element_count}",\n'
+                        f'            "hc": {a.hc},\n'
+                        f'            "oc": {a.oc},\n'
+                        f'            "nc": {a.nc}\n'
+                        f"        }},\n"
                     )
                 j_element = (
-                    j_element[:-4]
-                    + ',\n  "alternate_predictions"'
-                    + ": [\n"
-                    + j_append[:-2]
-                    + "\n  ]\n},\n"
+                    f"{j_element[:-4]},\n"
+                    f'    "alternate_predictions": [\n'
+                    f"{j_append[:-2]}\n"
+                    f"    ]\n"
+                    f"}},\n"
                 )
-            json += j_element
-    json = json[:-2]
+            json_objects.append(j_element)
+    # remove the final comma and new line characters
+    json_objects[-1] = json_objects[-1][:-2]
+    json = "".join(json_objects)
     return json
 
 
 def json(json):
-    """Write results to JSON"""
+    """Write results to JSON
+
+    Arguments:
+        json (str): predicted-features in json format
+    """
     try:
         with open(OUTPUT + ".json", "w") as jsonFile:
             jsonFile.write(json)
@@ -122,7 +142,11 @@ def json(json):
 
 
 def html(json):
-    """Write results to html webpage"""
+    """Write results to html webpage
+
+    Arguments:
+        json (str): predicted-features in json format
+    """
     try:
         with open(
             os.path.join(PREFIX, "d3.html"), "r", encoding="utf-8"
@@ -138,7 +162,10 @@ def html(json):
 
 
 def metadata():
-    """Write VKMZ parameters to tabular file"""
+    """Write VKMZ parameters to tabular file
+
+    Saves argument-generated constants from vkmz.arguments
+    """
     if METADATA:
         try:
             with open(OUTPUT + "_metadata.tabular", "w") as m_file:
@@ -154,7 +181,15 @@ def metadata():
 
 
 def sql(samples, features):
-    """Write results to sqlit3 database"""
+    """Write results to sqlit3 database
+
+    If the --metadata flag is set, vkmz.argument constands will be written to a
+    table.
+
+    Arguments:
+        samples (dict): predicted-Samples
+        features (dict): predicted-Features
+    """
     con = sqlite3.connect(OUTPUT + ".db")
     c = con.cursor()
     # create tables

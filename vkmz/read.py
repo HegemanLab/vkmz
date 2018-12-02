@@ -10,13 +10,16 @@ from vkmz.arguments import POLARITY
 from vkmz.objects import Sample, SampleFeatureIntensity, Feature
 
 
-def polaritySanitizer(polarity: str):
+def polaritySanitizer(polarity):
     """Sanitize input polarity values.
 
     Renames the, case-insensitive, values 'positive', 'pos', or '+' to 'positive'
     and 'negative', 'neg', or '-' to 'negative'.
 
     Errors on unrecognized polarity value.
+
+    Arguments:
+        polarity (str): unsanitized polarity type
     """
     if polarity.lower() in ["positive", "pos", "+"]:
         polarity = "positive"
@@ -39,6 +42,9 @@ def tabular(tabular_file):
     Results in two name-object dictionaries for samples and features.
 
     Should check for feature name in tabular.
+
+    Arguments:
+        tabular_file (str): path to input tabular file
     """
     samples = {}
     features = {}
@@ -48,33 +54,31 @@ def tabular(tabular_file):
             header = next(tabular_data)
             try:
                 sample_name_index = header.index("sample_name")
-                # TODO: check against PEP8
-                if POLARITY is not False:
+                if not POLARITY:  # --polarity argument is not used
                     polarity_index = header.index("polarity")
                 mz_index = header.index("mz")
                 rt_index = header.index("rt")
                 intensity_index = header.index("intensity")
-                # TODO: implement charge index
-                # charge_index = header.index('charge')
+                charge_index = header.index("charge")
             except ValueError:
                 print(
-                    "An expected column was not found in the tabular file.\n"
-                    'The tabular file must contain columns named: "sample_name",  '
-                    '"polarity", "mz", and "rt".\n'
-                    'The tabular file must include a "charge" column if the --charge'
-                    " argument was used."
+                    """An expected column was not found in the tabular file.
+                    The tabular file must contain columns named: "sample_name",
+                    "polarity", "mz", "rt", "intensity", and "charge".'
+                    """
                 )
                 raise
             for row in tabular_data:
                 sample_name = row[sample_name_index]
-                if POLARITY:
+                if POLARITY:  # --polarity argument is used
                     polarity = POLARITY
                 else:
                     polarity = polaritySanitizer(row[polarity_index])
                 mz = float(row[mz_index])
                 rt = float(row[rt_index])
+                feature_name = f"{polarity}-{rt}-{mz}"
                 intensity = float(row[intensity_index])
-                feature_name = polarity + "-" + str(rt) + "-" + str(mz)
+                charge = row[charge_index]
                 if sample_name not in samples:
                     samples[sample_name] = Sample(sample_name)
                 if feature_name not in features:
@@ -83,12 +87,8 @@ def tabular(tabular_file):
                 else:
                     feature = features[feature_name]
                     feature.samples.append(sample_name)
-                # NOTE: CHARGE untested
-                #        if CHARGE:
-                #          feature.charge = row[charge_index]
-                samples[sample_name].sfis.append(
-                    SampleFeatureIntensity(intensity, feature)
-                )
+                sfi = SampleFeatureIntensity(intensity, feature)
+                samples[sample_name].sfis.append(sfi)
     except IOError:
         print(f"Error while reading {tabular_file}.")
         raise
@@ -105,6 +105,11 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
     and either mass to charge or retention time as values.
 
     Finally, read data matrix and create all Feature objects and append to list.
+
+    Arguments:
+        sample_file (str): path to input sample metadata file
+        variable_file (str): path to input variable metadata file
+        matrix_file (str): path to input data matrix file
     """
     samples = {}
     features = {}
@@ -116,7 +121,6 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
             next(sample_data)  # skip header
             for row in sample_data:
                 sample = row[0]
-                # TODO: check against PEP8
                 if POLARITY:
                     polarity[sample] = POLARITY
                 else:
@@ -145,7 +149,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
             matrix_data = csv.reader(f, delimiter="\t")
             header = next(matrix_data)  # list of samples
             # remove empty columns
-            # check w/ fresh input
+            # required for W4M-XCMS 1.7, 3.0 not checked
             header = [x for x in header if x is not ""]
             for row in matrix_data:
                 # remove empty columns
@@ -153,7 +157,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
                 feature_name = row[0]
                 i = 1
                 while i < len(row):
-                    intensity = row[i]  # keep type string for test
+                    intensity = row[i]  # keep as string type for test
                     if intensity not in {"NA", "#DIV/0!", "0"}:
                         sample_name = header[i]
                         if sample_name not in samples:

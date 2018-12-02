@@ -9,30 +9,30 @@ import re
 from vkmz.arguments import ALTERNATE, FORMULA, MASS, MASS_ERROR, MAX_MASS_INDEX, NEUTRAL
 from vkmz.objects import Prediction
 
+PROTON = 1.00727646677
+
 
 def adjust(mass, polarity, charge):
     """Adjust a charged mass to a neutral mass.
 
-    Mass of an electrons (1.007276) is multiplied by the charge and subtracted
-    from positively charged ions and added to negatively charged ions.
+    Observerd charge mass is adjusted by adding or removing the mass of protons
+    based on polarity and charge of feature.
 
     WARNING:
-    If a feature's charge is not specified a charge of 1 is assumed.
+        If a feature's charge is not specified a charge of 1 is imputed.
 
-    Keyword arguments:
-    mass -- a charged molecular mass (float)
-    polarity -- molecule's charge state ("negative" or "positive")
-    charge -- number of charges (int)
+    Arguments:
+        mass (float): a charged feature's mass
+        polarity (str): ionization mode
+        charge (float): electric charge
     """
-    # value to adjust by
-    proton = 1.007276
-    # if charge is not given, assume 1
+    # if charge is not given, impute 1
     if charge == None:
         charge = 1
     if polarity == "positive":
-        mass -= proton * charge
-    else:  # sanitized to negative
-        mass += proton * charge
+        mass -= PROTON * charge
+    else:  # polarity == "negative"
+        mass += PROTON * charge
     return mass
 
 
@@ -44,11 +44,11 @@ def predictInit(mass, uncertainty, left, right):
 
     If no match is made returns -1.
 
-    Keyword arguments:
-    mass -- observerd neutral molecular mass in daltons (float)
-    uncertainty -- mass error range in daltons (float)
-    left -- left bst index of MASS list (int)
-    right -- right bst index of MASS list (int)
+    Arguments:
+        mass (float): observerd neutral molecular mass in daltons
+        uncertainty (float): mass error range in daltons
+        left (int): left index of MASS list
+        right (int): right index of MASS list
     """
     mid = int(((right - left) / 2) + left)
     if left <= mid <= right and mid <= MAX_MASS_INDEX:
@@ -68,10 +68,10 @@ def predictAll(mass, uncertainty, init_index):
     Checks adjacent indexes from a given index of known-masses which are within a
     given uncertinty of a given mass.
 
-    Keyword arguments:
-    mass -- observed neutral molecular mass in daltons(float
-    uncertainty -- mass error range in daltons (float)
-    init_index -- initial index in MASS list to search from (int)
+    Arguments:
+        mass (float): observed neutral mass
+        uncertainty (float): mass error range
+        init_index (int): initial index in MASS list to begin search
     """
     matches = [init_index]
     i = 0
@@ -107,8 +107,8 @@ def parseFormula(formula):
     Formula's must use proper, case-sensitive, chemical symbols.
         (e.g., Copper is 'Cu', not 'CU')
 
-    Keyword arguments:
-    formula -- molecular formula (string)
+    Arguments:
+        formula (string): molecular formula
     """
     formula_list = re.findall("[A-Z][a-z]?|[0-9]+", formula)
     element_count = {}
@@ -162,8 +162,8 @@ def predict(feature):
     Prediction objects are made for each match and added to the features
     predictions list before returning the feature object.
 
-    Keyword Arguments:
-    feature -- feature object to make a prediction for
+    Arguments:
+        feature (Feature): feature to make a prediction for
     """
     if NEUTRAL:
         mass = feature.mz

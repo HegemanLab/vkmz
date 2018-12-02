@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""vkmz.arguments
+"""read vkmz arguments
 
-foo bar
+Creates constants used by modules.
 """
 
 
@@ -119,7 +119,6 @@ NEUTRAL = getattr(args, "neutral")
 OUTPUT = getattr(args, "output")
 POLARITY = getattr(args, "polarity")
 PREFIX = getattr(args, "prefix")
-# TODO: check if not against PEP8
 if not PREFIX:
     PREFIX = os.path.abspath(os.path.dirname(__file__))
 SQL = getattr(args, "sql")
@@ -137,10 +136,3 @@ except:
     print(f"An error occured while reading the {DATABASE} database.")
     raise
 MAX_MASS_INDEX = len(MASS) - 1
-#!/usr/bin/env python
-
-import os
-from vkmz.arguments import args, JSON, METADATA, MODE, parser, SQL
-from vkmz.read import tabular as readTabular, xcmsTabular as readXcmsTabular
-from vkmz.predict import predict
-import vkmz.write as write
