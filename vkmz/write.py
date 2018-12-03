@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""output modes
+
+vkmz always outputs tabular and html files. Optionally, vkmz can output JSON
+and SQL as well.
+"""
 
 
 import csv
@@ -7,7 +12,7 @@ import re
 import sqlite3
 from vkmz.arguments import (
     ALTERNATE,
-    CHARGE,
+    IMPUTE,
     DATABASE,
     JSON,
     MASS_ERROR,
@@ -69,9 +74,8 @@ def generateJson(samples):
     Arguments:
         samples (dict): of predicted-Samples
     """
-    json = ""
+    json_objects = []
     for s in samples.values():
-        json_objects = []
         for sfi in s.sfis:
             f = sfi.feature
             p = f.predictions[0]
@@ -173,7 +177,7 @@ def metadata():
                     f"Mode\tMass\tOutput\tJSON\tSQL\tPolarity\t"
                     f"Neutral\tDatabase\tPrefix\tCharge\n"
                     f"{MODE}\t{MASS_ERROR}\t{OUTPUT}\t{SQL}\t{POLARITY}\t"
-                    f"{NEUTRAL}\t{DATABASE}\t{PREFIX}\t{CHARGE}\n"
+                    f"{NEUTRAL}\t{DATABASE}\t{PREFIX}\t{IMPUTE}\n"
                 )
                 m_file.write(metadata)
         except IOError as error:
@@ -347,7 +351,7 @@ def sql(samples, features):
                  Neutral,
                  Database,
                  Directory,
-                 Charge
+                 Impute
                  )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -361,7 +365,7 @@ def sql(samples, features):
                 NEUTRAL,
                 DATABASE,
                 PREFIX,
-                CHARGE,
+                IMPUTE,
             ),
         )
     con.commit()
