@@ -188,20 +188,17 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
         camera_pattern = re.compile(r"^\[\d+\]\[M\+1\]")
         for c in charges:
             charge = charges[c]
-            if charge is "":
-                charges[c] = "remove"
-            # CAMERA identified feature as part of an isotopic envelope
+            monoisotopic = bool(camera_pattern.search(charge))
+            if monoisotopic:
+                # TODO: extract correct charge
+                #       currently impute 1
+                #       need multi-charge, + &, - test data
+                # parse monoisotopic charge
+                charges[c] = 1
+            elif IMPUTE:
+                charges[c] = 1
             else:
-                monoisotopic = bool(camera_pattern.search(charge))
-                if monoisotopic:
-                    # TODO: extract correct charge
-                    #       currently impute 1
-                    #       need multi-charge, + &, - test data
-                    # parse monoisotopic charge
-                    charges[c] = 1
-                else:
-                    # remove isotopic envelope
-                    charges[c] = "remove"
+                charges[c] = "remove"
     # extract intensity and build Feature objects
     try:
         with open(matrix_file, "r") as f:

@@ -62,6 +62,7 @@ and SQL as well.
 
 ```
 vkmz tabular --input test-data/tabular.tabular --output foo --error 10
+vkmz xcms -xd test-data/datamatrix.tabular -xv test-data/variableMetadata.tabular -xs test-data/sampleMetadata.tabular -o foo -e 10 --impute
 ```
 
 ### All Arguments
