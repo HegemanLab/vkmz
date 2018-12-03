@@ -78,13 +78,28 @@ def generateJson(samples):
     for s in samples.values():
         for sfi in s.sfis:
             f = sfi.feature
-            p = f.predictions[0]
-            j_element_count = ""
-            for e in p.element_count:
-                j_element_count += f'            "{e}": {p.element_count[e]},\n'
+            j_prediction = ""
+            for p in f.predictions:
+                element_count = ""
+                for e in p.element_count:
+                    element_count += f'                "{e}": {p.element_count[e]},\n'
+                element_count = element_count[:-2]
+                j_prediction += (
+                    f"        {{\n"
+                    f'            "mass": {p.mass},\n'
+                    f'            "delta": {p.delta},\n'
+                    f'            "formula": "{p.formula}",\n'
+                    f'            "element_count": {{\n'
+                    f'{element_count}\n'
+                    f"            }},\n"
+                    f'            "hc": {p.hc},\n'
+                    f'            "oc": {p.oc},\n'
+                    f'            "nc": {p.nc}\n'
+                    f"        }},\n"
+                )
             # remove the final comma and new line characters
-            j_element_count = j_element_count[:-2]
-            j_element = (
+            j_prediction = j_prediction[:-2]
+            j_object = (
                 f"{{\n"
                 f'    "sample_name": "{s.name}",\n'
                 f'    "feature_name": "{f.name}",\n'
@@ -92,40 +107,12 @@ def generateJson(samples):
                 f'    "mz": {f.mz},\n'
                 f'    "rt": {f.rt},\n'
                 f'    "intensity": {sfi.intensity},\n'
-                f'    "prediction": {{\n'
-                f'        "mass": {p.mass},\n'
-                f'        "delta": {p.delta},\n'
-                f'        "formula": "{p.formula}",\n'
-                f'        "element_count": {{\n{j_element_count}\n'
-                f"        }},\n"
-                f'        "hc": {p.hc},\n'
-                f'        "oc": {p.oc},\n'
-                f'        "nc": {p.nc}\n'
-                f"    }}\n"
+                f'    "prediction": [\n'
+                f"{j_prediction}\n"
+                f"    ]\n"
                 f"}},\n"
             )
-            if ALTERNATE and len(f.predictions) > 1:
-                j_append = str()
-                for a in f.predictions[1:]:
-                    j_append += (
-                        f"        {{\n"
-                        f'            "mass": {a.mass},\n'
-                        f'            "delta": {a.delta},\n'
-                        f'            "formula": "{a.formula}",\n'
-                        f'            "element_count": "{a.element_count}",\n'
-                        f'            "hc": {a.hc},\n'
-                        f'            "oc": {a.oc},\n'
-                        f'            "nc": {a.nc}\n'
-                        f"        }},\n"
-                    )
-                j_element = (
-                    f"{j_element[:-4]},\n"
-                    f'    "alternate_predictions": [\n'
-                    f"{j_append[:-2]}\n"
-                    f"    ]\n"
-                    f"}},\n"
-                )
-            json_objects.append(j_element)
+            json_objects.append(j_object)
     # remove the final comma and new line characters
     json_objects[-1] = json_objects[-1][:-2]
     json = "".join(json_objects)

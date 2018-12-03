@@ -207,7 +207,9 @@ function draw() {
   var x_axis = document.getElementById("x-axis").selectedIndex;
   var y_axis = document.getElementById("y-axis").selectedIndex;
 
+
   data_visible.forEach(function(d) {
+
     if(size_algorithm == 0) {
       temp = size_max*(1/Math.PI);
     } else if (size_algorithm == 1) {
@@ -222,18 +224,18 @@ function draw() {
     }
 
     if(x_axis == 0) {
-      d.x = d.prediction.hc;
+      d.x = d.prediction[0].hc;
     } else if (x_axis == 1) {
-      d.x = d.prediction.nc;
+      d.x = d.prediction[0].nc;
     } else {
-      d.x = d.prediction.oc;
+      d.x = d.prediction[0].oc;
     }
     if(y_axis == 0) {
-      d.y = d.prediction.hc;
+      d.y = d.prediction[0].hc;
     } else if (y_axis == 1) {
-      d.y = d.prediction.nc;
+      d.y = d.prediction[0].nc;
     } else {
-      d.y = d.prediction.oc;
+      d.y = d.prediction[0].oc;
     }
   });
 
@@ -296,7 +298,7 @@ function draw() {
       document.getElementById("mz").innerHTML = selected.mz;
       document.getElementById("intensity").innerHTML = selected.intensity;
       document.getElementById("rt").innerHTML = selected.rt;
-      document.getElementById("predictions").innerHTML = selected.prediction.formula + " " + selected.prediction.mass.toString() + " " + selected.prediction.delta.toString();
+      document.getElementById("predictions").innerHTML = selected.prediction[0].formula + " " + selected.prediction[0].mass.toString() + " " + selected.prediction[0].delta.toString();
     }
   });
 };
