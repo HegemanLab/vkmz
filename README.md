@@ -1,10 +1,10 @@
 # vkmz v1.4dev0
 
 vkmz predicts molecular formulas by searching a known mass-formula dictionary
-for a feature observed by a mass spectrometer. Elemental ratios forpredicted-features
+for a feature observed by a mass spectrometer. Elemental ratios for predicted-features
 are calculated to create the carbon-to-oxygen and carbon-to-hydrogen axis of a
 van Krevelen Diagram (VKD). VKD's are a convenient visualization tool for
-briefly conveying the constituence of a complex MS mixture (e.g., untargetted
+briefly conveying the constituents of a complex MS mixture (e.g., untargeted
 plant metabolomics). As output predicted-feature are saved to a tabular file,
 an interactive VKD web page, and other optional formats.
 
@@ -40,7 +40,7 @@ Tabular mode requires a single tabular file as input and  must include the colum
 feature. Optionally a "charge" column can exist.
 
 W4M-XCMS mode requires the sample metadata, variable metadata, and data matrix
-files generated with W4M-XCMS. Feature charge infomration can be read from the
+files generated with W4M-XCMS. Feature charge information can be read from the
 variable metadata file if it has been annotated with CAMERA.
 
 Polarity values should be either "positive" or "negative".
