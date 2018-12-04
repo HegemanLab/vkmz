@@ -195,6 +195,6 @@ try:
             MASS.append(float(mass))
             FORMULA.append(formula)
 except:
-    print(f"An error occured while reading the {DATABASE} database.")
+    print(f"An error occurred while reading the {DATABASE} database.")
     raise
 MAX_MASS_INDEX = len(MASS) - 1

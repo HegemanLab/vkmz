@@ -10,7 +10,7 @@ Tabular mode requires a single tabular file as input and  must include the colum
 feature. Optionally a "charge" column can exist.
 
 W4M-XCMS mode requires the sample metadata, variable metadata, and data matrix
-files generated with W4M-XCMS. Feature charge infomration can be read from the
+files generated with W4M-XCMS. Feature charge information can be read from the
 variable metadata file if it has been annotated with CAMERA.
 
 If feature charge information is present, features without charge information
@@ -183,7 +183,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
     except IOError:
         print(f"Error while reading the XCMS tabular file {variable_file}.")
         raise
-    # if CAMEARA data exists
+    # if CAMERA data exists
     if isotopes_index:
         camera_pattern = re.compile(r"^\[\d+\]\[M\+1\]")
         for c in charges:
