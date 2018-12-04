@@ -160,8 +160,6 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
     # extract variable mz & rt
     try:
         mz_rt = {}
-        mz_index = int()
-        rt_index = int()
         charges = {}
         with open(variable_file, "r") as f:
             variable_data = csv.reader(f, delimiter="\t")
