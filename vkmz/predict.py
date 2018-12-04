@@ -15,7 +15,7 @@ PROTON = 1.00727646677
 def adjust(mass, polarity, charge):
     """Adjust a charged mass to a neutral mass.
 
-    Observerd charge mass is adjusted by adding or removing the mass of protons
+    Observed charge mass is adjusted by adding or removing the mass of protons
     based on polarity and charge of feature.
 
     WARNING:
@@ -45,7 +45,7 @@ def predictInit(mass, uncertainty, left, right):
     If no match is made returns -1.
 
     Arguments:
-        mass (float): observerd neutral molecular mass in daltons
+        mass (float): observed neutral molecular mass in daltons
         uncertainty (float): mass error range in daltons
         left (int): left index of MASS list
         right (int): right index of MASS list
@@ -66,7 +66,7 @@ def predictAll(mass, uncertainty, init_index):
     """Search for all matching masses within the known-mass list.
 
     Checks adjacent indexes from a given index of known-masses which are within a
-    given uncertinty of a given mass.
+    given uncertainty of a given mass.
 
     Arguments:
         mass (float): observed neutral mass
