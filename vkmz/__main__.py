@@ -12,7 +12,6 @@ def main():
 
     Finally, write results.
     """
-    import os
     from vkmz.arguments import args, JSON, METADATA, MODE, SQL
     from vkmz.read import tabular as readTabular, xcmsTabular as readXcmsTabular
     from vkmz.predict import predict
