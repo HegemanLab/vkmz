@@ -6,7 +6,6 @@ and SQL as well.
 """
 
 
-import csv
 import os
 import re
 import sqlite3
