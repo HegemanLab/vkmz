@@ -27,7 +27,7 @@ def adjust(mass, polarity, charge):
         charge (float): electric charge
     """
     # if charge is not given, impute 1
-    if charge == None:
+    if charge is None:
         charge = 1
     if polarity == "positive":
         mass -= PROTON * charge
