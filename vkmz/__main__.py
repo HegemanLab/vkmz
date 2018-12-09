@@ -42,10 +42,10 @@ def main():
 
     # write results
     write.tabular(samples)
-    json = write.generateJson(samples)
+    j_objs = write.generateJson(samples)
     if JSON:
-        write.json(json)
-    write.html(json)
+        write.json_write(j_objs)
+    write.html(j_objs)
     if SQL:
         write.sql(samples, features)
     if METADATA:

@@ -7,6 +7,7 @@ and SQL as well.
 
 
 import csv
+import json
 import os
 import re
 import sqlite3
@@ -63,6 +64,8 @@ def tabular(samples):
         raise
 
 
+# TODO: write JSON per feature instead of per feature intensity
+#       requires js update
 def generateJson(samples):
     """Convert results to JSON
 
@@ -74,78 +77,63 @@ def generateJson(samples):
     Arguments:
         samples (dict): of predicted-Samples
     """
-    json_objects = []
+    j_objs = []
     for s in samples.values():
+        j_obj = []
         for sfi in s.sfis:
             f = sfi.feature
-            j_prediction = ""
+            j_obj = {}
+            j_obj["sample_name"] = s.name
+            j_obj["feature_name"] = f.name
+            j_obj["polarity"] = f.polarity
+            j_obj["mz"] = f.mz
+            j_obj["rt"] = f.rt
+            j_obj["intensity"] = float(sfi.intensity)
+            j_obj["prediction"] = []
             for p in f.predictions:
-                element_count = ""
-                for e in p.element_count:
-                    element_count += f'                "{e}": {p.element_count[e]},\n'
-                element_count = element_count[:-2]
-                j_prediction += (
-                    f"        {{\n"
-                    f'            "mass": {p.mass},\n'
-                    f'            "delta": {p.delta},\n'
-                    f'            "formula": "{p.formula}",\n'
-                    f'            "element_count": {{\n'
-                    f'{element_count}\n'
-                    f"            }},\n"
-                    f'            "hc": {p.hc},\n'
-                    f'            "oc": {p.oc},\n'
-                    f'            "nc": {p.nc}\n'
-                    f"        }},\n"
-                )
-            # remove the final comma and new line characters
-            j_prediction = j_prediction[:-2]
-            j_object = (
-                f"{{\n"
-                f'    "sample_name": "{s.name}",\n'
-                f'    "feature_name": "{f.name}",\n'
-                f'    "polarity": "{f.polarity}",\n'
-                f'    "mz": {f.mz},\n'
-                f'    "rt": {f.rt},\n'
-                f'    "intensity": {sfi.intensity},\n'
-                f'    "prediction": [\n'
-                f"{j_prediction}\n"
-                f"    ]\n"
-                f"}},\n"
-            )
-            json_objects.append(j_object)
-    # remove the final comma and new line characters
-    json_objects[-1] = json_objects[-1][:-2]
-    json = "".join(json_objects)
-    return json
+                prediction = {}
+                prediction["mass"] = p.mass
+                prediction["delta"] = p.delta
+                prediction["formula"] = p.formula
+                prediction["hc"] = p.hc
+                prediction["oc"] = p.oc
+                prediction["nc"] = p.nc
+                element_count = {}
+                prediction["element_count"] = p.element_count
+                j_obj["prediction"].append(prediction)
+            j_objs.append(j_obj)
+    return j_objs
 
 
-def json(json):
+def json_write(j_objs):
     """Write results to JSON
 
     Arguments:
         json (str): predicted-features in json format
     """
     try:
-        with open(OUTPUT + ".json", "w") as jsonFile:
-            jsonFile.write(json)
+        with open(OUTPUT + ".json", "w") as j_file:
+            json.dump(j_objs, j_file, indent=4)
     except IOError as error:
         print("IOError while writing JSON output: %s" % error.strerror)
 
 
-def html(json):
+def html(j_objs):
     """Write results to html webpage
 
     Arguments:
         json (str): predicted-features in json format
     """
+    # sort list by intensity
+    # reduces overlap by drawing large features first
+    j_objs = sorted(j_objs, key=lambda k: k["intensity"], reverse=True)
     try:
         with open(
             os.path.join(PREFIX, "d3.html"), "r", encoding="utf-8"
         ) as h_template, open(OUTPUT + ".html", "w", encoding="utf-8") as h_file:
+            j_utf8 = "var data = " + json.dumps(j_objs)
             for line in h_template:
-                line = re.sub(
-                    "^var data.*$", "var data = [" + json + "]", line, flags=re.M
-                )
+                line = re.sub("^var data.*$", j_utf8, line, flags=re.M)
                 h_file.write(line)
     except IOError as error:
         print("IOError while writing HTML output or reading HTML template")
