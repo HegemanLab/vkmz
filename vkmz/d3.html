@@ -108,7 +108,7 @@
     <p><strong>mz:</strong> <span id="mz">NA</span></p>
     <p><strong>intensity:</strong> <span id="intensity">NA</span></p>
     <p><strong>retention time:</strong> <span id="rt">NA</span></p>
-    <p><strong>predictions: </strong><span id="predictions">NA</span></p>
+    <p><strong>prediction: </strong><span id="prediction">NA</span></p>
   </div>
 </div>
 
@@ -129,7 +129,6 @@ d3.select("#checkboxes").selectAll("option")
         .attr("type", "checkbox")
         .property("checked", true)
 	.style("float", "left");
-
 
 var chartDiv = document.getElementById("chart");
 
@@ -211,7 +210,7 @@ function draw() {
   data_visible.forEach(function(d) {
 
     if(size_algorithm == 0) {
-      temp = size_max*(1/Math.PI);
+      temp = size_max/Math.PI;
     } else if (size_algorithm == 1) {
       temp = size_max*((d.intensity/intensity_max)/Math.PI);
     } else {
@@ -298,7 +297,7 @@ function draw() {
       document.getElementById("mz").innerHTML = selected.mz;
       document.getElementById("intensity").innerHTML = selected.intensity;
       document.getElementById("rt").innerHTML = selected.rt;
-      document.getElementById("predictions").innerHTML = selected.prediction[0].formula + " " + selected.prediction[0].mass.toString() + " " + selected.prediction[0].delta.toString();
+      document.getElementById("prediction").innerHTML = selected.prediction[0].formula + " " + selected.prediction[0].mass.toString() + " " + selected.prediction[0].delta.toString();
     }
   });
 };
