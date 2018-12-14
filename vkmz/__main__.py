@@ -12,7 +12,6 @@ def main():
 
     Finally, write results.
     """
-    import os
     from vkmz.arguments import args, JSON, METADATA, MODE, SQL
     from vkmz.read import tabular as readTabular, xcmsTabular as readXcmsTabular
     from vkmz.predict import predict
@@ -20,7 +19,7 @@ def main():
 
     # read input
     if MODE == "tabular":
-        # read arguments here incase "input" is undeclared
+        # read arguments here in case "input" is undeclared
         tabular_f = getattr(args, "input")
         samples, features = readTabular(tabular_f)
     else:  # MODE == "xcms"

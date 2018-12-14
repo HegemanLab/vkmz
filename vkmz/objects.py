@@ -56,7 +56,7 @@ class Prediction(object):
     Attributes:
         mass (float): neutral mass of predicted formula
         formula (str): molecular formula
-        delta (float): absolute differnece between neutral mass of observed and
+        delta (float): absolute difference between neutral mass of observed and
                        predicted mass
         element_count (dict): molecular formula as element symbol keys with
                               element count values

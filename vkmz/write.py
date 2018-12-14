@@ -5,7 +5,6 @@ vkmz always outputs tabular and html files. Optionally, vkmz can output JSON
 and SQL as well.
 """
 
-
 import csv
 import json
 import os
@@ -162,7 +161,7 @@ def metadata():
 def sql(samples, features):
     """Write results to sqlit3 database
 
-    If the --metadata flag is set, vkmz.argument constands will be written to a
+    If the --metadata flag is set, vkmz.argument constants will be written to a
     table.
 
     Arguments:
