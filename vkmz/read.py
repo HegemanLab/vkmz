@@ -183,7 +183,7 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
         raise
     # if CAMERA data exists
     if isotopes_index:
-        camera_pattern = re.compile(r"^\[\d+\]\[M\+1\]")
+        camera_pattern = re.compile(r"^\[\d+\]\[M\]")
         for c in charges:
             charge = charges[c]
             monoisotopic = bool(camera_pattern.search(charge))
