@@ -1,10 +1,10 @@
-<tool id="vkmz" name="VKMZ" version="1.3.1">
+<tool id="vkmz" name="VKMZ" version="1.4dev1">
 
   <description>Metabolomics formula prediction and van Krevelen diagram generation</description>
   
   <requirements>
     <requirement type="package" version="3.6">python</requirement>
-    <requirement type="package">vkmz</requirement>
+    <requirement type="package" version="1.4dev1">vkmz</requirement>
   </requirements>
   
   <stdio>
@@ -12,47 +12,56 @@
   </stdio>
 
   <command detect_errors="aggressive"><![CDATA[
-    vkmz.py
-    #if str( $mode.mode_selector ) == "xcms":
+    vkmz
+    #if str( $mode.mode_selector ) == "w4m":a
       xcms
       --data-matrix $mode.datamatrix
       --sample-metadata $mode.samplemetadata
       --variable-metadata $mode.variablemetadata
-    #elif str( $mode.mode_selector ) == "tsv":
-      tsv
+    #elif str( $mode.mode_selector ) == "tabular":
+      tabular
       --input $mode.input
     #end if
+    --error $prediction.error
+    --output vkmz
     #if $advanced_input.polarity=="negative":
       --polarity negative
     #else if $advanced_input.polarity=="positive":
       --polarity positive
     #end if
-    #if $advanced_input.no_adjustment=="True":
-      --no-adjustment
+    #if $advanced_input.impute_charge=="True":
+      --impute_charge
     #end if
-    --output vkmz
-    --error $prediction.error
+    #if $advanced_input.neutral=="True":
+      --neutral
+    #end if
+    #if $advanced_input.alternate=="True":
+      --alternate
+    #end if
     #if $prediction.database_type.database_type_selector=="heuristic":
-      --directory \$CONDA_PREFIX/share/
+      --directory \$CONDA_PREFIX/
     #end if
     --database $prediction.database_type.database
-    #if $prediction.unique=="True":
-      --unique
+    #if $advanced_output.json="True":
+      --json
+    #end if
+    #if $advanced_output.sql="True":
+      --sql
     #end if
   ]]></command>
 
   <inputs>
     <conditional name="mode">
       <param name="mode_selector" type="select" label="Input Data">
-        <option value="xcms">xcms</option>
-        <option value="tsv">tsv</option>
+        <option value="w4m">w4m</option>
+        <option value="tabular">tabular</option>
       </param>
-      <when value="xcms">
-        <param name="datamatrix" label="XCMS Data Matrix" type="data" format="tabular" help="Select XCMS data matrix" />
-        <param name="samplemetadata" label="XCMS Sample Metadata" type="data" format="tabular" help="Select XCMS sample metadata" />
-        <param name="variablemetadata" label="XCMS Variable Metadata" type="data" format="tabular" help="Select XCMS variable metadata" />
+      <when value="w4m">
+        <param name="datamatrix" label="W4M-XCMS Data Matrix" type="data" format="tabular" help="Select W4M-XCMS data matrix" />
+        <param name="samplemetadata" label="W4M-XCMS Sample Metadata" type="data" format="tabular" help="Select W4M-XCMS sample metadata" />
+        <param name="variablemetadata" label="W4M-XCMS Variable Metadata" type="data" format="tabular" help="Select W4M-XCMS variable metadata" />
       </when>
-      <when value="tsv">
+      <when value="tabular">
         <param name="input" label="Tabular input" type="data" format="tabular" help="Select tabular data" />
       </when>
     </conditional>
@@ -62,7 +71,9 @@
         <option value="negative">Negative</option>
         <option value="positive">Positive</option>
       </param>
-      <param name="no_adjustment" label="Disable polarity based mass adjustment" type="boolean" truevalue="True" help="Use this option if data contains neutral masses." />
+      <param name="neutral" label="Disable polarity based mass adjustment" type="boolean" truevalue="True" help="Use this option if data contains neutral masses." />
+      <param name="alternate" label="Keep feature's with more than one prediction" type="boolean" truevalue="False" help="Keeping features with multiple predictions raises the false discovery rate." />
+      <param name="impute-charge" label="Impute Charge" type="boolean" truevalue="True" help="If impute data in annotated with charge information, features with no (null) charge valeus are removed. Setting Impute Charge to True imputes a charge for all of these features instead.." />
     </section>
     <section name="prediction" title="Prediction Options" expanded="true">
       <param name="error" label="Mass Error (PPM)" type="float" value="10.0" min="0" help="Set according to expected mass error in parts-per-million" />
@@ -73,61 +84,50 @@
         </param>
 	<when value="heuristic">
           <param name="database" label="Database" type="select" help="Select heuriestically generated database">
-            <option value="databases/bmrb-light.tsv">Monoisotopic</option>
-            <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
-            <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
-            <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
+            <option value="databases/bmrb-light.tabular">Monoisotopic</option>
+            <option value="databases/bmrb-heavy_carbon.tabular">C13 Labeled</option>
+            <option value="databases/bmrb-heavy_nitrogen.tabular">N15 Labeled</option>
+            <option value="databases/bmrb-heavy.tabular">C13 and C15 Labeled</option>
           </param>
         </when>
         <when value="custom">
           <param name="database" label="Database" type="data" format="tabular" help="Select a custom tabular database" />
         </when>
       </conditional>
-      <param name="unique" label="Unique matches" type="boolean" truevalue="True" help="Only output features with a single prediction" />
+    </section>
+    <section name="advanced_output" title="Advanced Output Options" expanded="false">
+      <param name="json" label="JSON" type="boolean" truevalue="False" help="Save results to JSON." />
+      <param name="sql" label="SQL" type="boolean" truevalue="False" help="Save results to sqlite." />
     </section>
   </inputs>
   <outputs>
-    <data format="tabular" name="output" from_work_dir="vkmz.tsv" label="${tool.name}_${mode.mode_selector}_tabular" />
-    <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}_html" />
+    <data format="tabular" name="output_tabular" from_work_dir="vkmz.tabular" label="${tool.name}_${mode.mode_selector}" />
+    <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}" />
+    <data format="json" name="output_json" from_work_dir="vkmz.json" label="${tool.name}_${mode.mode_selector}" />
+    <data format="sqlite" name="output_sqlite" from_work_dir="vkmz.db" label="${tool.name}_${mode.mode_selector}" />
   </outputs>
 
   <tests>
     <test>
       <conditional name="mode">
-        <param name="mode_selector" value="xcms" />
+        <param name="mode_selector" value="w4m" />
         <param name="datamatrix" value="datamatrix.tabular" />
         <param name="samplemetadata" value="sampleMetadata.tabular" />
         <param name="variablemetadata" value="variableMetadata.tabular" />
       </conditional>
       <param name="error" value="10" />
-      <param name="database" value="databases/bmrb-light.tsv" />
-      <output name="output">
+      <param name="database" value="databases/bmrb-light.tabular" />
+      <output name="output_tabular">
         <assert_contents>
-          <has_text text="0.00016357" />
+      	  <has_text text="-0.00104667722999352" />
         </assert_contents>
       </output>
     </test>
-    <test>
-      <conditional name="mode">
-        <param name="mode_selector" value="tsv" />
-        <param name="input" value="tabular.tabular" />
-      </conditional>
-      <param name="error" value="10" />
-      <conditional name="database_type">
-        <param name="database" value="databases/bmrb-light.tsv" />
-      </conditional>
-      <output name="output">
-        <assert_contents>
-          <has_text text="0.00016357" />
-        </assert_contents>
-      </output>
-    </test>
-
   </tests>
 
   <help><![CDATA[
 ==========
-VKMZ 1.3.1
+VKMZ 1.4dev1
 ==========
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD briefly conveys untargeted metabolomics data.
@@ -138,9 +138,9 @@ Documentation
 
 **Input Data**
 
-VKMZ is designed to use XCMS [1] or tabular data as input.
+VKMZ is designed to use W4M-XCMS [1] or tabular data as input.
 
-*XCMS* mode requires three files which XCMS generates: the data matrix, sample metadata, and variable metadata files.
+*W4M* mode requires three files which W4M's XCMS wrapper generates: the data matrix, sample metadata, and variable metadata files.
 
 *Tabular* mode requires a tab delimited file with the first five columns being: sample_id, polarity, mz, retention_time, and intensity.
 
@@ -148,7 +148,7 @@ VKMZ is designed to use XCMS [1] or tabular data as input.
 
 *Override polarity* allows users to set the polarity of all features to either *Positive* or *Negative*. Set this if input does not contain the correct polarity information. This option should not be used if data contains both positive and negative polarity.
 
-*Disable mass adjustment* prevents converting charged masses to neutral masses.
+*Neutral* disable mass adjustment of features in case nominal exact mass information is present instead of m/z.
 
 **Prediction Options**
 
@@ -157,8 +157,6 @@ For each feature VKMZ attempts to predict a molecular formula by comparing the f
 *Mass error* sets the mass error in parts per million. Mass error will be specific to your mass spectrometer, calibration and other methods. Mass error can be approximated by running similar methods with targeted standards with a range in mass.
 
 *Database* can be set to the provided heuristically generated databases for unlabeled and labeled molecules [2] or to a custom database.
-
-*Unique matches* removes features from the output which have multiple predictions. High mass molecules are affected by this filter more than low mass molecules. This is due to the increased number of possible elemental combinations at a higher mass.
 
 **Tabular Output**
 
@@ -198,3 +196,4 @@ The *Sizer* dropdown sets the algorithm to size each symbol.
   </citations>
 
 </tool>
+
