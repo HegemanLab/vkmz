@@ -1,4 +1,4 @@
-# vkmz v1.4dev0
+# vkmz v1.4dev1
 
 vkmz predicts molecular formulas by searching a known mass-formula dictionary
 for a feature observed by a mass spectrometer. Elemental ratios for predicted-features
@@ -20,13 +20,13 @@ python package:
 python3 setup.py install
 ```
 
-### Conda
+### Bioconda
 
-Version 1.4dev0 has not been wrapped for conda.
+Version 1.4dev1 has a [conda recipe](https://github.com/bioconda/bioconda-recipes/tree/master/recipes/vkmz).
 
 ### Galaxy
 
-Version 1.4dev0 has not been wrapped for Galaxy.
+Version 1.4dev1 has a [Galaxy wrapper](https://toolshed.g2.bx.psu.edu/view/eslerm/vkmz/).
 
 ## Input Data
 
@@ -49,7 +49,8 @@ If feature charge information is present, features without charge information
 will be removed. If CAMERA annotation is present, only monoisotopic features
 will be kept. An argument flag (`--impute-charge`) can be set to disable removing
 features without charge annotation. Users should be wary of false results when
-using this non-default option.
+using this non-default option. **Currently W4M-XCMS mode imputes a charge of one
+for all annotated charges. This will be addressed in v1.4.**
 
 ## Output
 
