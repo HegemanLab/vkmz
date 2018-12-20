@@ -1,4 +1,4 @@
-<tool id="vkmz" name="VKMZ" version="1.4dev1">
+<tool id="vkmz" name="vkmz" version="1.4dev1">
 
   <description>Metabolomics formula prediction and van Krevelen diagram generation</description>
   
@@ -13,7 +13,7 @@
 
   <command detect_errors="aggressive"><![CDATA[
     vkmz
-    #if str( $mode.mode_selector ) == "w4m":a
+    #if str( $mode.mode_selector ) == "w4m":
       xcms
       --data-matrix $mode.datamatrix
       --sample-metadata $mode.samplemetadata
@@ -23,29 +23,26 @@
       --input $mode.input
     #end if
     --error $prediction.error
+    --database $prediction.database_type.database
     --output vkmz
-    #if $advanced_input.polarity=="negative":
+    #if $advanced_input.polarity == "negative":
       --polarity negative
-    #else if $advanced_input.polarity=="positive":
+    #else if $advanced_input.polarity == "positive":
       --polarity positive
     #end if
-    #if $advanced_input.impute_charge=="True":
+    #if $advanced_input.impute_charge == "True":
       --impute_charge
     #end if
-    #if $advanced_input.neutral=="True":
+    #if $advanced_input.neutral == "True":
       --neutral
     #end if
-    #if $advanced_input.alternate=="True":
+    #if $advanced_input.alternate == "True":
       --alternate
     #end if
-    #if $prediction.database_type.database_type_selector=="heuristic":
-      --directory \$CONDA_PREFIX/
-    #end if
-    --database $prediction.database_type.database
-    #if $advanced_output.json="True":
+    #if $advanced_output.json == "True":
       --json
     #end if
-    #if $advanced_output.sql="True":
+    #if $advanced_output.sql == "True":
       --sql
     #end if
   ]]></command>
@@ -73,7 +70,7 @@
       </param>
       <param name="neutral" label="Disable polarity based mass adjustment" type="boolean" truevalue="True" help="Use this option if data contains neutral masses." />
       <param name="alternate" label="Keep feature's with more than one prediction" type="boolean" truevalue="False" help="Keeping features with multiple predictions raises the false discovery rate." />
-      <param name="impute-charge" label="Impute Charge" type="boolean" truevalue="True" help="If impute data in annotated with charge information, features with no (null) charge valeus are removed. Setting Impute Charge to True imputes a charge for all of these features instead.." />
+      <param name="impute_charge" label="Impute Charge" type="boolean" truevalue="True" help="If impute data in annotated with charge information, features with no (null) charge valeus are removed. Setting Impute Charge to True imputes a charge for all of these features instead." />
     </section>
     <section name="prediction" title="Prediction Options" expanded="true">
       <param name="error" label="Mass Error (PPM)" type="float" value="10.0" min="0" help="Set according to expected mass error in parts-per-million" />
@@ -84,10 +81,10 @@
         </param>
 	<when value="heuristic">
           <param name="database" label="Database" type="select" help="Select heuriestically generated database">
-            <option value="databases/bmrb-light.tabular">Monoisotopic</option>
-            <option value="databases/bmrb-heavy_carbon.tabular">C13 Labeled</option>
-            <option value="databases/bmrb-heavy_nitrogen.tabular">N15 Labeled</option>
-            <option value="databases/bmrb-heavy.tabular">C13 and C15 Labeled</option>
+            <option value="databases/bmrb-light.tsv">Monoisotopic</option>
+            <option value="databases/bmrb-heavy_carbon.tsv">C13 Labeled</option>
+            <option value="databases/bmrb-heavy_nitrogen.tsv">N15 Labeled</option>
+            <option value="databases/bmrb-heavy.tsv">C13 and C15 Labeled</option>
           </param>
         </when>
         <when value="custom">
@@ -101,10 +98,10 @@
     </section>
   </inputs>
   <outputs>
-    <data format="tabular" name="output_tabular" from_work_dir="vkmz.tabular" label="${tool.name}_${mode.mode_selector}" />
-    <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}" />
-    <data format="json" name="output_json" from_work_dir="vkmz.json" label="${tool.name}_${mode.mode_selector}" />
-    <data format="sqlite" name="output_sqlite" from_work_dir="vkmz.db" label="${tool.name}_${mode.mode_selector}" />
+    <data format="tabular" name="output_tabular" from_work_dir="vkmz.tabular" label="${tool.name}_${mode.mode_selector}_tabular" />
+    <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}_html" />
+    <data format="json" name="output_json" from_work_dir="vkmz.json" label="${tool.name}_${mode.mode_selector}_json" />
+    <data format="sqlite" name="output_sqlite" from_work_dir="vkmz.db" label="${tool.name}_${mode.mode_selector}_sqlite" />
   </outputs>
 
   <tests>
@@ -116,19 +113,19 @@
         <param name="variablemetadata" value="variableMetadata.tabular" />
       </conditional>
       <param name="error" value="10" />
-      <param name="database" value="databases/bmrb-light.tabular" />
+      <param name="database" value="databases/bmrb-light.tsv" />
       <output name="output_tabular">
         <assert_contents>
-      	  <has_text text="-0.00104667722999352" />
+      	  <has_text text="C6H7NO2" />
         </assert_contents>
       </output>
     </test>
   </tests>
 
   <help><![CDATA[
-==========
+============
 VKMZ 1.4dev1
-==========
+============
 
 VKMZ is a metabolomics prediction and vizualization tool which creates van Krevelen diagrams from mass spectrometry data. A van Krevelen diagram (VKD) plots a molecule on a scatterplot by the molecules oxygen to carbon ratio (O:C) against it's hydrogen to carbon ratio (H:C). Classes of metabolites cluster together on a VKD [0]. Plotting a complex mixture of metabolites on a VKD briefly conveys untargeted metabolomics data.
 
