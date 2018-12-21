@@ -184,8 +184,8 @@ def predict(feature):
             feature.predictions.append(
                 Prediction(MASS[m], formula, delta, element_count, hc, oc, nc)
             )
-        # sort alternate matches by lowest absolute delta
-        if not ALTERNATE and len(matches) > 1:
+        # sort by lowest absolute delta
+        if len(matches) > 1:
             feature.predictions.sort(key=lambda m: abs(m.delta))
         return feature
     # no prediction was made
