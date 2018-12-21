@@ -4,7 +4,7 @@
   
   <requirements>
     <requirement type="package" version="3.6">python</requirement>
-    <requirement type="package" version="1.4dev1">vkmz</requirement>
+    <requirement type="package" version="1.4dev2">vkmz</requirement>
   </requirements>
   
   <stdio>
@@ -22,29 +22,23 @@
       tabular
       --input $mode.input
     #end if
-    --error $prediction.error
-    --database $prediction.database_type.database
-    --output vkmz
     #if $advanced_input.polarity == "negative":
       --polarity negative
     #else if $advanced_input.polarity == "positive":
       --polarity positive
     #end if
     #if $advanced_input.impute_charge == "True":
-      --impute_charge
-    #end if
-    #if $advanced_input.neutral == "True":
-      --neutral
+      --impute-charge
     #end if
     #if $advanced_input.alternate == "True":
       --alternate
     #end if
-    #if $advanced_output.json == "True":
-      --json
+    #if $advanced_input.neutral == "True":
+      --neutral
     #end if
-    #if $advanced_output.sql == "True":
-      --sql
-    #end if
+    --error $prediction.error
+    --database $prediction.database_type.database
+    --output vkmz
   ]]></command>
 
   <inputs>
@@ -69,7 +63,7 @@
         <option value="positive">Positive</option>
       </param>
       <param name="neutral" label="Disable polarity based mass adjustment" type="boolean" truevalue="True" help="Use this option if data contains neutral masses." />
-      <param name="alternate" label="Keep feature's with more than one prediction" type="boolean" truevalue="False" help="Keeping features with multiple predictions raises the false discovery rate." />
+      <param name="alternate" label="Keep features with more than one prediction" type="boolean" truevalue="True" help="Keeping features with multiple predictions raises the false discovery rate." />
       <param name="impute_charge" label="Impute Charge" type="boolean" truevalue="True" help="If impute data in annotated with charge information, features with no (null) charge valeus are removed. Setting Impute Charge to True imputes a charge for all of these features instead." />
     </section>
     <section name="prediction" title="Prediction Options" expanded="true">
@@ -92,16 +86,10 @@
         </when>
       </conditional>
     </section>
-    <section name="advanced_output" title="Advanced Output Options" expanded="false">
-      <param name="json" label="JSON" type="boolean" truevalue="False" help="Save results to JSON." />
-      <param name="sql" label="SQL" type="boolean" truevalue="False" help="Save results to sqlite." />
-    </section>
   </inputs>
   <outputs>
     <data format="tabular" name="output_tabular" from_work_dir="vkmz.tabular" label="${tool.name}_${mode.mode_selector}_tabular" />
     <data format="html" name="output_html" from_work_dir="vkmz.html" label="${tool.name}_${mode.mode_selector}_html" />
-    <data format="json" name="output_json" from_work_dir="vkmz.json" label="${tool.name}_${mode.mode_selector}_json" />
-    <data format="sqlite" name="output_sqlite" from_work_dir="vkmz.db" label="${tool.name}_${mode.mode_selector}_sqlite" />
   </outputs>
 
   <tests>
