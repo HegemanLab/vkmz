@@ -12,14 +12,14 @@ from vkmz.objects import Prediction
 PROTON = 1.00727646677
 
 
-def adjust(mass, polarity, charge):
-    """Adjust a charged mass to a neutral mass.
+def adjust(mz, polarity, charge):
+    """Convert a feature's mz to a neutral mass.
 
-    Observed charge mass is adjusted by adding or removing the mass of protons
-    based on polarity and charge of feature.
+    Charged mass is calculated by dividing mz by charge.
+    Neutral mass is calculated by adding or removing protons from charged mass.
 
-    WARNING:
-        If a feature's charge is not specified a charge of 1 is imputed.
+    Positively charged features have been protenated.
+    Negatively charged features have been deprotenated.
 
     Arguments:
         mass (float): a charged feature's mass
@@ -27,12 +27,14 @@ def adjust(mass, polarity, charge):
         charge (float): electric charge
     """
     # if charge is not given, impute 1
+    # for --impute see vkmz.read
     if charge is None:
         charge = 1
+    charged_mass = mz / charge
     if polarity == "positive":
-        mass -= PROTON * charge
+        mass = charged_mass - (PROTON * charge)
     else:  # polarity == "negative"
-        mass += PROTON * charge
+        mass = charged_mass + (PROTON * charge)
     return mass
 
 
@@ -184,8 +186,8 @@ def predict(feature):
             feature.predictions.append(
                 Prediction(MASS[m], formula, delta, element_count, hc, oc, nc)
             )
-        # sort by lowest absolute delta
-        if len(matches) > 1:
+        # sort alternate matches by lowest absolute delta
+        if not ALTERNATE and len(matches) > 1:
             feature.predictions.sort(key=lambda m: abs(m.delta))
         return feature
     # no prediction was made
