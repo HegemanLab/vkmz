@@ -82,40 +82,44 @@ def tabular(tabular_file):
                 print(
                     """An expected column was not found in the tabular file.
                     The tabular file must contain columns named: "sample_name",
-                    "polarity", "mz", "rt", "intensity", and "charge".'
+                    "polarity", "mz", "rt", and "intensity".'
                     """
                 )
                 raise
             for row in tabular_data:
-                sample_name = row[sample_name_index]
-                if POLARITY:  # --polarity argument is used
-                    polarity = POLARITY
-                else:
-                    polarity = polaritySanitizer(row[polarity_index])
-                mz = float(row[mz_index])
-                rt = float(row[rt_index])
-                feature_name = f"{polarity}-{rt}-{mz}"
-                intensity = float(row[intensity_index])
+                # TODO: add charge sanitization function
+                keep = True
                 charge = None
                 if charge_index:
                     charge = row[charge_index]
-                    # charge data is null and impute flag is set
-                    if not charge and IMPUTE:
-                        charge = 1
+                    if charge is "" and IMPUTE is False:
+                        keep = False
+                    elif charge is "" and IMPUTE is True:
+                        charge = None
+                    else: # convert from string
+                        charge = int(charge)
+                if keep:
+                    sample_name = row[sample_name_index]
+                    if POLARITY:
+                        polarity = POLARITY
                     else:
-                        break
-                if sample_name not in samples:
-                    samples[sample_name] = Sample(sample_name)
-                if feature_name not in features:
-                    feature = Feature(
-                        feature_name, sample_name, polarity, mz, rt, charge
-                    )
-                    features[feature_name] = feature
-                else:
-                    feature = features[feature_name]
-                    feature.samples.append(sample_name)
-                sfi = SampleFeatureIntensity(intensity, feature)
-                samples[sample_name].sfis.append(sfi)
+                        polarity = polaritySanitizer(row[polarity_index])
+                    mz = float(row[mz_index])
+                    rt = float(row[rt_index])
+                    feature_name = f"{polarity}-{rt}-{mz}"
+                    intensity = float(row[intensity_index])
+                    if sample_name not in samples:
+                        samples[sample_name] = Sample(sample_name)
+                    if feature_name not in features:
+                        feature = Feature(
+                            feature_name, sample_name, polarity, mz, rt, charge
+                        )
+                        features[feature_name] = feature
+                    else:
+                        feature = features[feature_name]
+                        feature.samples.append(sample_name)
+                    sfi = SampleFeatureIntensity(intensity, feature)
+                    samples[sample_name].sfis.append(sfi)
     except IOError:
         print(f"Error while reading {tabular_file}.")
         raise
