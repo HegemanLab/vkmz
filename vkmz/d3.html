@@ -8,19 +8,23 @@
 </script>
 <style>
   .clearfix::after { content: ""; clear: both; display: table; }
+  html, body {height:100%}
   body { background-color: #FFF; margin: 0; padding: 0; font: 12px sans-serif; }
-  .sidebar {float: left; width: 280px; height: 100%;  position:fixed; top:0; height:100%; }
-  .header { display:block;clear:both;  }
+  #wrapper { height:100%; display:flex; display: -webkit-flex; flex-direction: row; -webkit-flex-direction: row; -webkit-align-content: stretch; align-content: stretch;}
+  #sidebar { min-width: 200px; height: 100%; top:0; resize:both; overflow:auto; float:left; }
+  #chart { flex-grow:1; }
+  .header { display:block; clear:both;  }
   .header a { font-size: 1em; color: #000; text-decoration: none; }
   #h1, h3 { margin: 0.25em 0em; }
-  #infobar {word-wrap: break-word; padding:10px; }
-  #controlbar { background-color: #f5f5f5; padding:10px; display: none;}
+  .subbar { padding: 0 2.5% 0 2.5%; float:left; width:95%; height:100%; } 
+  #infobar {word-wrap: break-word; }
+  #controlbar { background-color: #f5f5f5; display: none;}
   .menu {float: right; }
-  #update { height:46px; font-size:2em; margin: 5px 0px 15px 0px; }
+  #update { height:46px; font-size:2em; }
   .halved { width:47.5%; }
   .left { float:left; }
   .right { float:right; }
-
+  .control { margin:10px 0px; overflow:hidden;}
   path, line { shape-rendering: crispEdges; }
   svg { pointer-events: none; }
   .axis path, .axis line { fill: none; stroke: #000; stroke-width: 1px; }
@@ -35,7 +39,6 @@
   .mainControl:hover { opacity: 1; }
   #checkboxes label { display: block; height: 2em; line-height: 1.5em; }
   #checkboxes label:hover { background-color: #1e90ff; }
-//  #chart { margin-right: 50px; margin-bottom: 50px; }
   .clearfix { background-color: #FFF; border-bottom: 0.5em solid #FFFFFF; }
   .slider { -webkit-appearance: none; margin: 2px 0px 0px 0px; height: 12px; -webkit-transition: .2s; transition: opacity .2s; }
   .slider::-webkit-slider-thumb:hover { background: #FFF; }
@@ -45,102 +48,104 @@
 </style>
 </head>
 <body>
-<div id="infobar" class="sidebar">
-  <div class="header">
-    <h1>
-      <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
-      <a class="menu" onclick="control_open()">&#9776</a>
-    </h1>
-  </div>
-  <h3>Feature Info:</h3>
-  <p><strong>sample:</strong> <span id="sample_name">NA</span></p>
-  <p><strong>feature:</strong> <span id="feature_name">NA</span></p>
-  <p><strong>polarity:</strong> <span id="polarity">NA</span></p>
-  <p><strong>mz:</strong> <span id="mz">NA</span></p>
-  <p><strong>intensity:</strong> <span id="intensity">NA</span></p>
-  <p><strong>retention time:</strong> <span id="rt">NA</span></p>
-  <p><strong>prediction: </strong><span id="prediction">NA</span></p>
-</div>
-<div id="controlbar" class="sidebar">
-  <div class="header">
-    <h1>
-      <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
-      <a class="menu" onclick="control_close()">&times</a>
-    </h1>
-  </div>
-  <div>
-    <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update VKD"/>
-  </div>
-  <div id="sample_names">
-    <h3>Visible Samples</h3>
-    <form>
-      <div class="selectBox" onclick="showCheckboxes()">
-        <select class="mainControl">
-          <option>Select Visible Samples</option>
+<div id="wrapper">
+  <div id="sidebar" style="width:250px" onmouseout="redraw()">
+    <div id="infobar" class="subbar" cchttps://developer.mozilla.org/en-US/docs/Web/API/Console/debug">
+      <div class="header">
+        <h1>
+          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
+          <a class="menu" onclick="control_open()">&#9776</a>
+        </h1>
+      </div>
+      <h3>Feature Info:</h3>
+      <p><strong>sample:</strong> <span id="sample_name">NA</span></p>
+      <p><strong>feature:</strong> <span id="feature_name">NA</span></p>
+      <p><strong>polarity:</strong> <span id="polarity">NA</span></p>
+      <p><strong>mz:</strong> <span id="mz">NA</span></p>
+      <p><strong>intensity:</strong> <span id="intensity">NA</span></p>
+      <p><strong>retention time:</strong> <span id="rt">NA</span></p>
+      <p><strong>prediction: </strong><span id="prediction">NA</span></p>
+    </div>
+    <div id="controlbar" class="subbar">
+      <div class="header">
+        <h1>
+          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
+          <a class="menu" onclick="control_close()">&times</a>
+        </h1>
+      </div>
+      <div class="control">
+        <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update VKD"/>
+      </div>
+      <div id="sample_names" class="control">
+        <h3>Visible Samples</h3>
+        <form>
+          <div class="selectBox" onclick="showCheckboxes()">
+            <select class="mainControl">
+              <option>Select Visible Samples</option>
+            </select>
+            <div class="overSelect"></div>
+          </div>
+          <div id="checkboxes">
+          </div>
+        </form>
+      </div>
+      <div class="control">
+        <h3>Opacity</h3>
+        <input id="opacity" class="mainControl slider" type="range" min="1" max="100" value="25">
+      </div>
+      <div class="control">
+        <div class="halved left"> 
+          <h3>X-Axis</h3>
+          <select id="x-axis" class="mainControl">
+            <option value="hc">H:C</option>
+            <option value="nc">N:C</option>
+            <option value="oc" selected="selected">O:C</option>
+          </select>
+         </div>
+         <div class="halved right">
+          <h3>Y-Axis</h3>
+          <select id="y-axis" class="mainControl">
+            <option value="hc" selected="selected">H:C</option>
+            <option value="nc">N:C</option>
+            <option value="oc">O:C</option>
+          </select>
+        </div>
+      </div>
+      <div class="control">
+        <h3>Threshold</h3>
+        <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="500" value="0">
+      </div>
+      <div class="control">
+        <div class="halved left">
+          <h3>Min Size</h3>
+          <input id="size-min" class="mainControl" type="number" min="0" value="1" />
+        </div>
+        <div class="halved right">
+          <h3>Max Size</h3>
+          <input id="size-max" class="mainControl" type="number" min="1" value="500" />
+        </div>
+      </div>
+      <div class="control">
+        <h3>Sizing Algorithm</h3>
+        <select id="size-algorithm" class="mainControl">
+          <option value="uniform">Uniform</option>
+          <option value="relative-intensity" selected="selected">Relative Intensity</option>
+          <option value="relative-log-intensity">Relative Log Intensity</option>
         </select>
-        <div class="overSelect"></div>
       </div>
-      <div id="checkboxes">
-      </div>
-    </form>
-  </div>
-  <div>
-    <h3>Opacity</h3>
-    <input id="opacity" class="mainControl slider" type="range" min="1" max="100" value="25">
-  </div>
-  <div>
-    <div class="halved left"> 
-      <h3>x-axis</h3>
-      <select id="x-axis" class="mainControl">
-        <option value="hc">H:C</option>
-        <option value="nc">N:C</option>
-        <option value="oc" selected="selected">O:C</option>
-      </select>
-     </div>
-     <div class="halved right">
-      <h3>y-axis</h3>
-      <select id="y-axis" class="mainControl">
-        <option value="hc" selected="selected">H:C</option>
-        <option value="nc">N:C</option>
-        <option value="oc">O:C</option>
-      </select>
     </div>
   </div>
-  <div>
-    <h3>Threshold</h3>
-    <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="500" value="0">
-  </div>
-  <div>
-    <div class="halved left">
-      <h3>Min Size</h3>
-      <input id="size-min" class="mainControl" type="number" min="0" value="1" />
-    </div>
-    <div class="halved right">
-      <h3>Max Size</h3>
-      <input id="size-max" class="mainControl" type="number" min="1" value="500" />
-    </div>
-  </div>
-  <div>
-    <h3>Sizer</h3>
-    <select id="size-algorithm" class="mainControl">
-      <option value="uniform">Uniform</option>
-      <option value="relative-intensity" selected="selected">Relative Intensity</option>
-      <option value="relative-log-intensity">Relative Log Intensity</option>
-    </select>
-  </div>
+  <div id="chart"></div>
 </div>
-</div>
-<div class="clearfix">
-  <div id="chart" style="margin-left:300px; height: 500px;"></div>
-</div>
-
 <script>
 function control_open() {
   document.getElementById("controlbar").style.display = "block";
+  document.getElementById("infobar").style.display = "none";
 }
 
 function control_close() {
   document.getElementById("controlbar").style.display = "none";
+  document.getElementById("infobar").style.display = "block";
 }
 </script>
 
@@ -161,13 +166,14 @@ d3.select("#checkboxes").selectAll("option")
         .property("checked", true)
 	.style("float", "left");
 
-var chartDiv = document.getElementById("chart");
 
 var margin = {top: 20, right: 10, bottom: 30, left: 40};
 
 function draw() {
-  var width = chartDiv.clientWidth - 50;
-  var height = chartDiv.clientHeight;
+  var chartWidth = document.getElementById("chart").clientWidth;
+  var sidebarHeight = document.getElementById("sidebar").clientHeight;
+  var width = chartWidth - 50;
+  var height = sidebarHeight - 50;
 
   var svg = d3.select("#chart").append("svg")
     .attr("width", width + margin.left + margin.right)
