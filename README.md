@@ -1,4 +1,4 @@
-# vkmz v1.4dev1
+# vkmz v1.4.2
 
 vkmz predicts molecular formulas by searching a known mass-formula dictionary
 for a feature observed by a mass spectrometer. Elemental ratios for predicted-features

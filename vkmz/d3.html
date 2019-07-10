@@ -33,7 +33,11 @@
   .multiselect { width: 200px; }
   .selectBox { position: relative; }
   .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-  #checkboxes { display: none; border: 1px #dadada solid; position:absolute; z-index:1; background-color: #FFF; }
+  #checkboxes { display: none; border: 1px #dadada solid; position:relative; width:100%; z-index:1; background-color: #FFF; }
+
+  #opacityNumber, #thresholdNumber {width:15%; -webkit-appearance: textfield; -moz-appearance: textfield; appearance: textfield; }
+  #opacityRange, #thresholdRange {width: 80%}
+
   .mainControl { opacity: 0.9; width: 100%; background-color: #dcdcdc; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #000; }
 
   .mainControl:hover { opacity: 1; }
@@ -49,8 +53,8 @@
 </head>
 <body>
 <div id="wrapper">
-  <div id="sidebar" style="width:250px" onmouseout="redraw()">
-    <div id="infobar" class="subbar" cchttps://developer.mozilla.org/en-US/docs/Web/API/Console/debug">
+  <div id="sidebar" style="height: 75%; width:250px" onmouseout="redraw()">
+    <div id="infobar" class="subbar">
       <div class="header">
         <h1>
           <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
@@ -73,9 +77,6 @@
           <a class="menu" onclick="control_close()">&times</a>
         </h1>
       </div>
-      <div class="control">
-        <input type="button" id="update" class="mainControl" onclick="redraw()" value="Update VKD"/>
-      </div>
       <div id="sample_names" class="control">
         <h3>Visible Samples</h3>
         <form>
@@ -88,10 +89,6 @@
           <div id="checkboxes">
           </div>
         </form>
-      </div>
-      <div class="control">
-        <h3>Opacity</h3>
-        <input id="opacity" class="mainControl slider" type="range" min="1" max="100" value="25">
       </div>
       <div class="control">
         <div class="halved left"> 
@@ -112,8 +109,14 @@
         </div>
       </div>
       <div class="control">
-        <h3>Threshold</h3>
-        <input id="intensity-threshold" class="mainControl slider" type="range" min="0" max="500" value="0">
+        <h3>Opacity</h3>
+        <input id="opacityNumber" class="left mainControl" min="0" max="100" type="number" value="25">
+        <input id="opacityRange" class="mainControl right" type="range" min="1" max="100" value="25">
+      </div>
+      <div class="control">
+        <h3>Intensity Threshold</h3>
+        <input id="thresholdNumber" class="left mainControl" min="0" max="100" type="number" value="0" step="0.1"/>
+        <input id="thresholdRange" class="mainControl right" type="range" min="0" max="100" value="0" step="0.1">
       </div>
       <div class="control">
         <div class="halved left">
@@ -142,15 +145,27 @@ function control_open() {
   document.getElementById("controlbar").style.display = "block";
   document.getElementById("infobar").style.display = "none";
 }
-
 function control_close() {
   document.getElementById("controlbar").style.display = "none";
   document.getElementById("infobar").style.display = "block";
 }
+
+// document.getElementId('thresholdRange').addEventListener('input', updateValue);
+document.getElementById("opacityNumber").addEventListener('input', updateValue);
+document.getElementById("opacityRange").addEventListener('input', updateValue);
+document.getElementById("thresholdNumber").addEventListener('input', updateValue);
+document.getElementById("thresholdRange").addEventListener('input', updateValue);
+
+function updateValue (e) {
+  console.log("foobar")
+  var sibling = e.target.previousElementSibling || e.target.nextElementSibling;
+  sibling.value = e.target.value;
+  redraw();
+}
 </script>
 
 <script>
-var data = [{ "sample_name": "sample_a", "feature_name": "feature_a", "polarity": "negative", "mz": 32, "rt": 500, "intensity": 2000, "prediction": [ { "mass": 32.03, "delta": 0.03, "formula": "CH30H", "element_count": { "C": 1, "H": 4, "O": 1 }, "hc": 4, "oc": 1, "nc": 0 }]  }, { "sample_name": "sample_b", "feature_name": "feature_b", "polarity": "negative", "mz": 44, "rt": 1000, "intensity": 1000, "prediction": [ { "mass": 43.99, "delta": -0.01, "formula": "CO2", "element_count": { "C": 1, "O": 2 }, "hc": 0, "oc": 2, "nc": 0 } ] }, { "sample_name": "sample_a", "feature_name": "feature_c", "polarity": "negative", "mz": 46, "rt": 250, "intensity": 3000, "prediction": [ { "mass": 46.04, "delta": 0.04, "formula": "CH3CH2OH", "element_count": { "C": 2, "H": 6, "O": 1 }, "hc": 2.5, "oc": 0.5, "nc": 0 } ] }]
+var data = [{ "sample_name": "sample_a", "feature_name": "feature_a", "polarity": "negative", "mz": 32, "rt": 501, "intensity": 2000, "prediction": [ { "mass": 32.03, "delta": 0.03, "formula": "CH4O", "element_count": { "C": 1, "H": 4, "O": 1 }, "hc": 4, "oc": 1, "nc": 0 }]  }, { "sample_name": "sample_b", "feature_name": "feature_b", "polarity": "negative", "mz": 44, "rt": 1000, "intensity": 1000, "prediction": [ { "mass": 43.99, "delta": -0.01, "formula": "CO2", "element_count": { "C": 1, "O": 2 }, "hc": 0, "oc": 2, "nc": 0 } ] }, { "sample_name": "sample_a", "feature_name": "feature_c", "polarity": "negative", "mz": 46, "rt": 750, "intensity": 3000, "prediction": [ { "mass": 46.04, "delta": 0.04, "formula": "CH3CH2OH", "element_count": { "C": 2, "H": 6, "O": 1 }, "hc": 2.5, "oc": 0.5, "nc": 0 } ] }, { "sample_name": "sample_b", "feature_name": "feature_d", "polarity": "negative", "mz": 31, "rt": 50, "intensity": 1300, "prediction": [ { "mass": 31.06, "delta": 0.06, "formula": "CH5N", "element_count": { "C": 1, "H": 5, "N": 1 }, "hc": 0.2, "oc": 0, "nc": 1 }] } ]
 
 d3.select("#checkboxes").selectAll("option")
   .data(d3.map(data, d => d.sample_name).keys())
@@ -230,13 +245,13 @@ function draw() {
   });
 
   var intensity_max = d3.max(data, d=> d.intensity);
-  var intensity_threshold = document.getElementById("intensity-threshold").value;
-  var data_visible = data.filter(d => samples_active.indexOf(d.sample_name) >= 0).filter(d => d.intensity / intensity_max >= Math.pow(intensity_threshold,2) / Math.pow(500, 2));
+  var intensity_threshold = document.getElementById("thresholdRange").value;
+  var data_visible = data.filter(d => samples_active.indexOf(d.sample_name) >= 0).filter(d => d.intensity / intensity_max >= Math.pow(intensity_threshold,2) / Math.pow(100, 2));
 
   var size_max = document.getElementById("size-max").value;
   var size_min = document.getElementById("size-min").value;
 
-  var opacity = document.getElementById("opacity").value;
+  var opacity = document.getElementById("opacityRange").value;
 
   var size_algorithm = document.getElementById("size-algorithm").selectedIndex;
 
@@ -335,6 +350,7 @@ function draw() {
       document.getElementById("intensity").innerHTML = selected.intensity;
       document.getElementById("rt").innerHTML = selected.rt;
       document.getElementById("prediction").innerHTML = selected.prediction[0].formula + " " + selected.prediction[0].mass.toString() + " " + selected.prediction[0].delta.toString();
+      control_close();
     }
   });
 };
