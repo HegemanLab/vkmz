@@ -141,6 +141,7 @@
   <div id="chart"></div>
 </div>
 <script>
+// controls js
 function control_open() {
   document.getElementById("controlbar").style.display = "block";
   document.getElementById("infobar").style.display = "none";
@@ -150,21 +151,28 @@ function control_close() {
   document.getElementById("infobar").style.display = "block";
 }
 
-// document.getElementId('thresholdRange').addEventListener('input', updateValue);
-document.getElementById("opacityNumber").addEventListener('input', updateValue);
-document.getElementById("opacityRange").addEventListener('input', updateValue);
-document.getElementById("thresholdNumber").addEventListener('input', updateValue);
-document.getElementById("thresholdRange").addEventListener('input', updateValue);
+document.getElementById("opacityNumber").addEventListener('input', updateValueRight);
+document.getElementById("opacityRange").addEventListener('input', updateValueLeft);
+document.getElementById("thresholdNumber").addEventListener('input', updateValueRight);
+document.getElementById("thresholdRange").addEventListener('input', updateValueLeft);
 
-function updateValue (e) {
-  console.log("foobar")
-  var sibling = e.target.previousElementSibling || e.target.nextElementSibling;
+function updateValueRight (e) {
+  var sibling = e.target.nextElementSibling;
+  sibling.value = e.target.value;
+  redraw();
+}
+
+function updateValueLeft (e) {
+  var sibling = e.target.previousElementSibling;
   sibling.value = e.target.value;
   redraw();
 }
 </script>
 
 <script>
+// d3 js
+
+// vkmz overwrites the next line
 var data = [{ "sample_name": "sample_a", "feature_name": "feature_a", "polarity": "negative", "mz": 32, "rt": 501, "intensity": 2000, "prediction": [ { "mass": 32.03, "delta": 0.03, "formula": "CH4O", "element_count": { "C": 1, "H": 4, "O": 1 }, "hc": 4, "oc": 1, "nc": 0 }]  }, { "sample_name": "sample_b", "feature_name": "feature_b", "polarity": "negative", "mz": 44, "rt": 1000, "intensity": 1000, "prediction": [ { "mass": 43.99, "delta": -0.01, "formula": "CO2", "element_count": { "C": 1, "O": 2 }, "hc": 0, "oc": 2, "nc": 0 } ] }, { "sample_name": "sample_a", "feature_name": "feature_c", "polarity": "negative", "mz": 46, "rt": 750, "intensity": 3000, "prediction": [ { "mass": 46.04, "delta": 0.04, "formula": "CH3CH2OH", "element_count": { "C": 2, "H": 6, "O": 1 }, "hc": 2.5, "oc": 0.5, "nc": 0 } ] }, { "sample_name": "sample_b", "feature_name": "feature_d", "polarity": "negative", "mz": 31, "rt": 50, "intensity": 1300, "prediction": [ { "mass": 31.06, "delta": 0.06, "formula": "CH5N", "element_count": { "C": 1, "H": 5, "N": 1 }, "hc": 0.2, "oc": 0, "nc": 1 }] } ]
 
 d3.select("#checkboxes").selectAll("option")
