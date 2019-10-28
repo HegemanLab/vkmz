@@ -22,7 +22,8 @@ will be kept.
 import csv
 import re
 from vkmz.arguments import IMPUTE, POLARITY
-from vkmz.objects import Sample, SampleFeatureIntensity, Feature
+from vkmz.objects import Sample, SampleFeatureIntensity, Feature, Prediction
+from vkmz.predict import parseFormula
 
 
 def polaritySanitizer(polarity):
@@ -44,6 +45,79 @@ def polaritySanitizer(polarity):
         raise ValueError(f"{polarity} is not recognized as a polarity type.")
     return polarity
 
+
+def formulas(formulas_file):
+    samples = {}
+    features = {}
+    try:
+        with open(formulas_file, "r") as f:
+            tabular_data = csv.reader(f, delimiter="\t")
+            header = next(tabular_data)
+            sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index = indexTabular(header)
+            formula_index = header.index("formula")
+            for row in tabular_data:
+                charge = None
+                if charge_index:
+                    charge = row[charge_index]
+                    if charge is "" and IMPUTE is False:
+                        keep = False
+                    elif charge is "" and IMPUTE is True:
+                        charge = None
+                    else: # convert from string
+                        charge = int(charge)
+                sample_name = row[sample_name_index]
+                if POLARITY:
+                    polarity = POLARITY
+                else:
+                    polarity = polaritySanitizer(row[polarity_index])
+                mz = float(row[mz_index])
+                rt = float(row[rt_index])
+                feature_name = f"{polarity}-{rt}-{mz}"
+                intensity = float(row[intensity_index])
+                if sample_name not in samples:
+                    samples[sample_name] = Sample(sample_name)
+                if feature_name not in features:
+                    feature = Feature(
+                        feature_name, sample_name, polarity, mz, rt, charge
+                    )
+                    features[feature_name] = feature
+                else:
+                    feature = features[feature_name]
+                    feature.samples.append(sample_name)
+                sfi = SampleFeatureIntensity(intensity, feature)
+                formula = row[formula_index]
+                element_count, hc, oc, nc = parseFormula(formula)
+                delta = 0
+                feature.predictions.append(
+                  Prediction(mz, formula, delta, element_count, hc, oc, nc)
+                )
+                samples[sample_name].sfis.append(sfi)
+    except IOError:
+        print(f"Error while reading {formulas_file}.")
+        raise
+    return samples, features
+
+def indexTabular(header):
+    try:
+        sample_name_index = header.index("sample_name")
+        if not POLARITY:  # --polarity argument is not used
+            polarity_index = header.index("polarity")
+        mz_index = header.index("mz")
+        rt_index = header.index("rt")
+        intensity_index = header.index("intensity")
+        #
+        charge_index = bool("charge" in header)
+        if charge_index:
+            charge_index = header.index("charge")
+    except ValueError:
+        print(
+            """An expected column was not found in the tabular file.
+            The tabular file must contain columns named: "sample_name",
+            "polarity", "mz", "rt", and "intensity".'
+            """
+        )
+        raise
+    return sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index
 
 def tabular(tabular_file):
     """Read a tabular file and create objects.
@@ -67,25 +141,7 @@ def tabular(tabular_file):
         with open(tabular_file, "r") as f:
             tabular_data = csv.reader(f, delimiter="\t")
             header = next(tabular_data)
-            try:
-                sample_name_index = header.index("sample_name")
-                if not POLARITY:  # --polarity argument is not used
-                    polarity_index = header.index("polarity")
-                mz_index = header.index("mz")
-                rt_index = header.index("rt")
-                intensity_index = header.index("intensity")
-                #
-                charge_index = bool("charge" in header)
-                if charge_index:
-                    charge_index = header.index("charge")
-            except ValueError:
-                print(
-                    """An expected column was not found in the tabular file.
-                    The tabular file must contain columns named: "sample_name",
-                    "polarity", "mz", "rt", and "intensity".'
-                    """
-                )
-                raise
+            sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index = indexTabular(header)
             for row in tabular_data:
                 # TODO: add charge sanitization function
                 keep = True

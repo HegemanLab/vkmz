@@ -1,4 +1,4 @@
-# vkmz v1.4.2
+# vkmz v1.4.3
 
 vkmz predicts molecular formulas by searching a known mass-formula dictionary
 for a feature observed by a mass spectrometer. Elemental ratios for predicted-features
@@ -22,11 +22,11 @@ python3 setup.py install
 
 ### Bioconda
 
-Version 1.4dev1 has a [conda recipe](https://github.com/bioconda/bioconda-recipes/tree/master/recipes/vkmz).
+Version 1.4.3 has a [conda recipe](https://github.com/bioconda/bioconda-recipes/tree/master/recipes/vkmz).
 
 ### Galaxy
 
-Version 1.4dev1 has a [Galaxy wrapper](https://toolshed.g2.bx.psu.edu/view/eslerm/vkmz/).
+Version 1.4.3 has a [Galaxy wrapper](https://toolshed.g2.bx.psu.edu/view/eslerm/vkmz/).
 
 ## Input Data
 
