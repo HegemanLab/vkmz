@@ -9,9 +9,9 @@
 <style>
   .clearfix::after { content: ""; clear: both; display: table; }
   html, body {height:100%}
-  body { background-color: #FFF; margin: 0; padding: 0; font: 12px sans-serif; }
+  body { background-color: #FFF; margin: 0; padding: 0; font: 1em sans-serif; }
   #wrapper { height:100%; display:flex; display: -webkit-flex; flex-direction: row; -webkit-flex-direction: row; -webkit-align-content: stretch; align-content: stretch;}
-  #sidebar { min-width: 200px; height: 100%; top:0; resize:both; overflow:auto; float:left; }
+  #sidebar { min-width: 300px; height: 100%; top:0; resize:both; overflow:auto; float:left; }
   #chart { flex-grow:1; }
   .header { display:block; clear:both;  }
   .header a { font-size: 1em; color: #000; text-decoration: none; }
@@ -25,8 +25,10 @@
   .left { float:left; }
   .right { float:right; }
   .control { margin:10px 0px; overflow:hidden;}
+  .control a { text-decoration:none; }
   path, line { shape-rendering: crispEdges; }
   svg { pointer-events: none; }
+  g { font-size:1em; }
   .axis path, .axis line { fill: none; stroke: #000; stroke-width: 1px; }
   circle { stroke-width: 4px; stroke: #000; fill: none; }
   .hidden { display: none; }
@@ -34,30 +36,31 @@
   .selectBox { position: relative; }
   .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
   #checkboxes { display: none; border: 1px #dadada solid; position:relative; width:100%; z-index:1; background-color: #FFF; }
-
   #opacityNumber, #thresholdNumber {width:15%; -webkit-appearance: textfield; -moz-appearance: textfield; appearance: textfield; }
   #opacityRange, #thresholdRange {width: 80%}
-
   .mainControl { opacity: 0.9; width: 100%; background-color: #dcdcdc; border: 1px solid transparent; display:inline-block; border-radius: 3px; color: #000; }
-
   .mainControl:hover { opacity: 1; }
   #checkboxes label { display: block; height: 2em; line-height: 1.5em; }
   #checkboxes label:hover { background-color: #1e90ff; }
   .clearfix { background-color: #FFF; border-bottom: 0.5em solid #FFFFFF; }
-  .slider { -webkit-appearance: none; margin: 2px 0px 0px 0px; height: 12px; -webkit-transition: .2s; transition: opacity .2s; }
-  .slider::-webkit-slider-thumb:hover { background: #FFF; }
-  .slider::-moz-range-thumb:hover { background: #FFF; }
-  .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; background: #FFFFFF; cursor: pointer; }
-  .slider::-moz-range-thumb { width: 10px; height: 10px; background: #FFFFFF; cursor: pointer; }
+  .switch { position:relative; display:inline-block; width:3em; height:1.5em; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; -webkit-transition: .4s; transition: .4s; }
+  .slider:before { position: absolute; content: ""; height: 1em; width: 1em; left: 0.25em; bottom: 4px; background-color: white; -webkit-transition: .4s; transition: .4s; }
+  input:checked + .slider { background-color: #2196F3; }
+  input:focus + .slider { box-shadow: 0 0 1px #2196F3; }
+  input:checked + .slider:before { -webkit-transform: translateX(26px); -ms-transform: translateX(1em); transform: translateX(1.5em); }
+  .slider.round { border-radius: 0.75em; }
+  .slider.round:before { border-radius: 50%; }
 </style>
 </head>
 <body>
 <div id="wrapper">
-  <div id="sidebar" style="height: 75%; width:250px" onmouseout="redraw()">
+  <div id="sidebar" onmouseout="redraw()">
     <div id="infobar" class="subbar">
       <div class="header">
         <h1>
-          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
+          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.4</a>
           <a class="menu" onclick="control_open()">&#9776</a>
         </h1>
       </div>
@@ -73,7 +76,7 @@
     <div id="controlbar" class="subbar">
       <div class="header">
         <h1>
-          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.2</a>
+          <a href="https://github.com/HegemanLab/vkmz" target="_blank">vkmz 1.4.4</a>
           <a class="menu" onclick="control_close()">&times</a>
         </h1>
       </div>
@@ -136,6 +139,13 @@
           <option value="relative-log-intensity">Relative Log Intensity</option>
         </select>
       </div>
+      <div class="control">
+        <h3 class="left">Metabolic Overlay <a href="https://link.springer.com/article/10.1007/s11306-018-1343-y">*</a></h3>
+        <label class="switch right">
+          <input type="checkbox" onclick="setOverlay()">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </div>
   </div>
   <div id="chart"></div>
@@ -146,9 +156,21 @@ function control_open() {
   document.getElementById("controlbar").style.display = "block";
   document.getElementById("infobar").style.display = "none";
 }
+
 function control_close() {
   document.getElementById("controlbar").style.display = "none";
   document.getElementById("infobar").style.display = "block";
+}
+
+var overlayOn = false;
+
+function setOverlay() {
+  if (overlayOn == false) {
+    overlayOn = true;
+  } else {
+    overlayOn = false;
+  }
+  redraw()
 }
 
 document.getElementById("opacityNumber").addEventListener('input', updateValueRight);
@@ -167,6 +189,7 @@ function updateValueLeft (e) {
   sibling.value = e.target.value;
   redraw();
 }
+
 </script>
 
 <script>
@@ -198,7 +221,10 @@ function draw() {
   var width = chartWidth - 50;
   var height = sidebarHeight - 50;
 
+
+
   var svg = d3.select("#chart").append("svg")
+    .attr("id", "chartSVG")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .style("float", "left")
@@ -219,7 +245,52 @@ function draw() {
   var yg = svg.append("g")
     .attr("class", "y axis");
 
+  if ( overlayOn == true ) {
+    var overlayArea = d3.select("#chart").append("div")
+      .attr("id", "overlayArea");
+
+    var chartArea = d3.select("#overlayArea").append("img")
+      .attr("id", "overlay")
+      .attr("src", "overlay.png");
+
+    overlayWidthMax = 1.461;
+    overlayHeightMax = 2.438;
+
+    xMax = d3.max(data, d => d.x)
+    yMax = d3.max(data, d => d.y)
+
+    if( xMax > overlayWidthMax) {
+      overlayWidth = overlayWidthMax / xMax * width;
+    } else if ( xMax < overlayWidthMax) {
+       overlayWidth = xMax / overlayWidthMax * width;
+    } else { overlayWidth = width };
+
+    if( yMax > overlayHeightMax) {
+      overlayHeight = overlayHeightMax / yMax * height;
+    } else if ( yMax < overlayHeightMax) {
+       overlayHeight = yMax / overlayHeightMax * height;
+    } else { overlayHeight = height };
+
+    document.getElementById("overlayArea").setAttribute(
+      "style",
+        "position:absolute; " + 
+        "overflow:hidden; " +
+        "width:" + width + "px; " +
+        "height:" + height + "px; "+
+        "margin-left:" + margin.left + "px; " +
+        "margin-top:" + margin.top + "px; ");
+
+    var overlay = d3.select("#overlay")
+      .attr("width", overlayWidth) 
+      .attr("height", overlayHeight)
+      .style("position", "absolute")
+      .style("bottom", 0)
+      .style("opacity", 0.5);
+
+  };
+
   var chartArea = d3.select("#chart").append("div")
+    .attr("id", "chartArea")
     .style("margin-left", margin.left + "px")
     .style("margin-top", margin.top + "px")
     .style("float", "left")
@@ -229,6 +300,7 @@ function draw() {
     .attr("width", width)
     .attr("height", height)
     .style("position", "absolute");
+
 
   var offscreen = d3.select(document.createElement("canvas"))
     .attr("width", width)
@@ -371,8 +443,9 @@ function getColor(i) {
 draw(); 
 
 function redraw() {
-  d3.select("#chart svg").remove();
-  d3.select("#chart div").remove();
+  d3.select("#overlayArea").remove();
+  d3.select("#chartArea").remove();
+  d3.select("#chartSVG").remove();
   draw();
 }
 
