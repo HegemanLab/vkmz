@@ -38,10 +38,10 @@ vkmz --help
 
 vkmz is built to parse LC-MS data from a single tabular file or from Workflow4Metabolomics' XCMS (W4M-XCMS) tabular files. W4M-XCMS, a Galaxy tool, is the primary input type which vkmz was built around.
 
-Tabular mode requires a single tabular file as input and  must include the columns "sample_name", "polarity", "mz", "rt", and "intensity". Each row represents a feature. Polarity refers to voltage polarity. Optionally a "charge" column can exist if software, such as CAMERA, has annotated the charge of features.
+*Tabular* mode requires a single tabular file as input and  must include the columns "sample_name", "polarity", "mz", "rt", and "intensity". Each row represents a feature. Polarity refers to voltage polarity. Optionally a "charge" column can exist if software, such as CAMERA, has annotated the charge of features.
   - See [test-data/tabular.tabular](test-data/tabular.tabular) for tabular input example
 
-W4M-XCMS mode requires the sample metadata, variable metadata, and data matrix tabular files generated with W4M-XCMS. Alternatively, these files can be annotated by W4M-CAMERA first.
+*W4M-XCMS* mode requires the sample metadata, variable metadata, and data matrix tabular files generated with W4M-XCMS. Alternatively, these files can be annotated by W4M-CAMERA first.
   - See [test-data/datamatrix.tabular](test-data/datamatrix.tabular), [test-data/sampleMetadata.tabular](test-data/sampleMetadata.tabular), and [test-data/variableMetadata.tabular](test-data/variableMetadata.tabular) for W4M-XCMS data input example
 
 In either mode, polarity values should be either "positive" or "negative".
@@ -50,25 +50,27 @@ If feature charge annotation is present, features without charge information wil
 
 ### Data with Molecular Formulas
 
-Alternatively, vkmz can be given molecular structures to plot a VKD. See 
+Alternatively, *Formula* mode allows vkmz to read molecular structures from the input data. This is useful for workflows involving annotation software.
   - See [test-data/annotation.tabular](test-data/annotation.tabular) for annotated tabular input example
 
 ## Useage
 
-If you are using vkmz in Galaxy, please see the wrapper for more info.
+### Galaxy
+
+If you are using vkmz in Galaxy, please see the wrapper for useage info.
 
 ### Command Line Interface
 
 #### Quick Start
 
 ```
-# tabular mode
+# Tabular mode
 vkmz tabular --input test-data/tabular.tabular --output foo --error 10
 
 # W4M-XCMS mode
 vkmz w4m-xcms -xd test-data/datamatrix.tabular -xv test-data/variableMetadata.tabular -xs test-data/sampleMetadata.tabular -o foo -e 10 --impute
 
-# pre-annotated mode
+# Formula mode
 vkmz formula -i test-data/annotation.tabular -o foo
 ```
 
