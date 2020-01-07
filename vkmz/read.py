@@ -59,9 +59,9 @@ def formulas(formulas_file):
                 charge = None
                 if charge_index:
                     charge = row[charge_index]
-                    if charge is "" and IMPUTE is False:
+                    if charge == "" and IMPUTE == False:
                         keep = False
-                    elif charge is "" and IMPUTE is True:
+                    elif charge == "" and IMPUTE == True:
                         charge = None
                     else: # convert from string
                         charge = int(charge)
@@ -148,9 +148,9 @@ def tabular(tabular_file):
                 charge = None
                 if charge_index:
                     charge = row[charge_index]
-                    if charge is "" and IMPUTE is False:
+                    if charge == "" and IMPUTE == False:
                         keep = False
-                    elif charge is "" and IMPUTE is True:
+                    elif charge == "" and IMPUTE == True:
                         charge = None
                     else: # convert from string
                         charge = int(charge)
@@ -265,16 +265,16 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
             # remove empty columns
             # required for W4M-XCMS 1.7
             # TODO: check W4M-XCMS 3.0
-            header = [x for x in header if x is not ""]
+            header = [x for x in header if x != ""]
             for row in matrix_data:
                 # remove empty columns
-                row = [x for x in row if x is not ""]
+                row = [x for x in row if x != ""]
                 feature_name = row[0]
                 i = 1
                 while i < len(row):
                     feature_charge = charges[feature_name]
                     # if CAMERA data exists, remove non-monoisotopic features
-                    if feature_charge is "remove":
+                    if feature_charge == "remove":
                         break
                     intensity = row[i]  # keep as string type for test
                     if intensity not in {"NA", "#DIV/0!", "0"}:

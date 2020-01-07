@@ -7,16 +7,12 @@ parser = argparse.ArgumentParser()
 sub_parser = parser.add_subparsers(help="Select mode:", dest="mode")
 sub_parser.required = True
 
-# Formula mode arguments
-parse_formula = sub_parser.add_parser("formula", help="Use formula file as input")
-parse_formula.add_argument("--input", "-i", required=True, help="Path to tabular formula file.")
-
 # Tabular mode arguments
-parse_tabular = sub_parser.add_parser("tabular", help="Use tabular data as input")
+parse_tabular = sub_parser.add_parser("tabular", help="Tabular data mode")
 parse_tabular.add_argument("--input", "-i", required=True, help="Path to tabular file.")
 
 # XCMS-tabular mode arguments
-parse_xcms = sub_parser.add_parser("xcms", help="Use XCMS data as input")
+parse_xcms = sub_parser.add_parser("w4m-xcms", help="W4M-XCMS data mode")
 parse_xcms.add_argument(
     "--data-matrix",
     "-xd",
@@ -42,7 +38,7 @@ parse_xcms.add_argument(
     help="Path to XCMS variable metadata file",
 )
 
-# Required modes for tabular anc xcms
+# Required modes for tabular and xcms
 for mode in [parse_tabular, parse_xcms]:
     mode.add_argument(
         "--error",
@@ -52,6 +48,11 @@ for mode in [parse_tabular, parse_xcms]:
         type=float,
         help="Mass error of MS data in parts-per-million",
     )
+
+# Annotated molecular formula mode
+parse_formula = sub_parser.add_parser("formula", help="Annotated molecular formula mode")
+parse_formula.add_argument("--input", "-i", required=True, help="Path to tabular formula file.")
+
 # all modes
 for mode in [parse_formula, parse_tabular, parse_xcms]:
     mode.add_argument(

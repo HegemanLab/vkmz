@@ -1,0 +1,5 @@
+sample_name	polarity	mz	rt	intensity	formula
+"sample a"	positive	150.0076	95.471	1	C4H7O4P
+"sample a"	positive	386.1855	69.621	1	C19H31O6P
+"sample b"	positive	354.1874	49.718	1	C12H30N6O2S2
+"sample b"	positive	356.1656	60.771	1	C18H28O5S
