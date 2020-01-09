@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name="vkmz",
     version="1.4.4",
-    python_requires=">=3.8",
+    python_requires=">=3.6",
     description="metabolomics formula prediction and van Krevelen diagram generation",
     author="Mark Esler",
     author_email="eslerm@umn.edu",
