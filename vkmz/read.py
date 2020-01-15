@@ -53,7 +53,14 @@ def formulas(formulas_file):
         with open(formulas_file, "r") as f:
             tabular_data = csv.reader(f, delimiter="\t")
             header = next(tabular_data)
-            sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index = indexTabular(header)
+            (
+                sample_name_index,
+                polarity_index,
+                mz_index,
+                rt_index,
+                intensity_index,
+                charge_index,
+            ) = indexTabular(header)
             formula_index = header.index("formula")
             for row in tabular_data:
                 charge = None
@@ -63,7 +70,7 @@ def formulas(formulas_file):
                         keep = False
                     elif charge == "" and IMPUTE == True:
                         charge = None
-                    else: # convert from string
+                    else:  # convert from string
                         charge = int(charge)
                 sample_name = row[sample_name_index]
                 if POLARITY:
@@ -89,13 +96,15 @@ def formulas(formulas_file):
                 element_count, hc, oc, nc = parseFormula(formula)
                 delta = 0
                 feature.predictions.append(
-                  Prediction(mz, formula, delta, element_count, hc, oc, nc)
+                    Prediction(mz, formula, delta, element_count, hc, oc, nc)
                 )
+                print(feature.predictions)
                 samples[sample_name].sfis.append(sfi)
     except IOError:
         print(f"Error while reading {formulas_file}.")
         raise
     return samples, features
+
 
 def indexTabular(header):
     try:
@@ -105,7 +114,6 @@ def indexTabular(header):
         mz_index = header.index("mz")
         rt_index = header.index("rt")
         intensity_index = header.index("intensity")
-        #
         charge_index = bool("charge" in header)
         if charge_index:
             charge_index = header.index("charge")
@@ -117,7 +125,15 @@ def indexTabular(header):
             """
         )
         raise
-    return sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index
+    return (
+        sample_name_index,
+        polarity_index,
+        mz_index,
+        rt_index,
+        intensity_index,
+        charge_index,
+    )
+
 
 def tabular(tabular_file):
     """Read a tabular file and create objects.
@@ -141,7 +157,14 @@ def tabular(tabular_file):
         with open(tabular_file, "r") as f:
             tabular_data = csv.reader(f, delimiter="\t")
             header = next(tabular_data)
-            sample_name_index, polarity_index, mz_index, rt_index, intensity_index, charge_index = indexTabular(header)
+            (
+                sample_name_index,
+                polarity_index,
+                mz_index,
+                rt_index,
+                intensity_index,
+                charge_index,
+            ) = indexTabular(header)
             for row in tabular_data:
                 # TODO: add charge sanitization function
                 keep = True
@@ -152,7 +175,7 @@ def tabular(tabular_file):
                         keep = False
                     elif charge == "" and IMPUTE == True:
                         charge = None
-                    else: # convert from string
+                    else:  # convert from string
                         charge = int(charge)
                 if keep:
                     sample_name = row[sample_name_index]

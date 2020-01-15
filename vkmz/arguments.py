@@ -50,8 +50,12 @@ for mode in [parse_tabular, parse_xcms]:
     )
 
 # Annotated molecular formula mode
-parse_formula = sub_parser.add_parser("formula", help="Annotated molecular formula mode")
-parse_formula.add_argument("--input", "-i", required=True, help="Path to tabular formula file.")
+parse_formula = sub_parser.add_parser(
+    "formula", help="Annotated molecular formula mode"
+)
+parse_formula.add_argument(
+    "--input", "-i", required=True, help="Path to tabular formula file."
+)
 
 # all modes
 for mode in [parse_formula, parse_tabular, parse_xcms]:
@@ -115,7 +119,6 @@ for mode in [parse_formula, parse_tabular, parse_xcms]:
 
 # create constants
 args = parser.parse_args()
-print(args.mode == "formula")
 JSON = getattr(args, "json")
 METADATA = getattr(args, "metadata")
 MODE = getattr(args, "mode")
@@ -125,7 +128,7 @@ POLARITY = getattr(args, "polarity")
 ALTERNATE = getattr(args, "alternate")
 DATABASE = getattr(args, "database")
 if "error" in args:
-  MASS_ERROR = getattr(args, "error")
+    MASS_ERROR = getattr(args, "error")
 else:
     MASS_ERROR = "NA"
 NEUTRAL = getattr(args, "neutral")
