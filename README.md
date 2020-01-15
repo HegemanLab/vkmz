@@ -1,4 +1,4 @@
-# vkmz v1.4.4
+# vkmz v1.4.5
 
 vkmz is a visualization and annotation tool for high resolution liquid chromatography mass spectrometry and metabolomics.
 
