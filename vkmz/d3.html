@@ -259,17 +259,8 @@ function draw() {
     xMax = d3.max(data, d => d.x)
     yMax = d3.max(data, d => d.y)
 
-    if( xMax > overlayWidthMax) {
-      overlayWidth = overlayWidthMax / xMax * width;
-    } else if ( xMax < overlayWidthMax) {
-       overlayWidth = xMax / overlayWidthMax * width;
-    } else { overlayWidth = width };
-
-    if( yMax > overlayHeightMax) {
-      overlayHeight = overlayHeightMax / yMax * height;
-    } else if ( yMax < overlayHeightMax) {
-       overlayHeight = yMax / overlayHeightMax * height;
-    } else { overlayHeight = height };
+    overlayWidth = overlayWidthMax / xMax * width;
+    overlayHeight = overlayHeightMax / yMax * height;
 
     document.getElementById("overlayArea").setAttribute(
       "style",
