@@ -231,7 +231,10 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
         with open(sample_file, "r") as f:
             sample_data = csv.reader(f, delimiter="\t")
             header = next(sample_data)  # skip header
-            polarity_index = header.index("polarity")
+            if 'polarity' in header:
+                polarity_index = header.index("polarity")
+            else:
+                polarity_index = 2
             for row in sample_data:
                 sample = row[0]
                 if POLARITY:
