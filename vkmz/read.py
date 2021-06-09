@@ -230,13 +230,14 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
         polarity = {}
         with open(sample_file, "r") as f:
             sample_data = csv.reader(f, delimiter="\t")
-            next(sample_data)  # skip header
+            header = next(sample_data)  # skip header
+            polarity_index = header.index("polarity")
             for row in sample_data:
                 sample = row[0]
                 if POLARITY:
                     polarity[sample] = POLARITY
                 else:
-                    polarity[sample] = polaritySanitizer(row[2])
+                    polarity[sample] = polaritySanitizer(row[polarity_index])
     except IOError:
         print(f"Error while reading the XCMS tabular file {sample_file}")
         raise
@@ -285,6 +286,9 @@ def xcmsTabular(sample_file, variable_file, matrix_file):
         with open(matrix_file, "r") as f:
             matrix_data = csv.reader(f, delimiter="\t")
             header = next(matrix_data)  # list of samples
+            if header[0] == "":
+                header[0] = "X"
+            i = 0
             # remove empty columns
             # required for W4M-XCMS 1.7
             # TODO: check W4M-XCMS 3.0
